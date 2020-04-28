@@ -1,5 +1,6 @@
 name: SPNC
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - notebook=6.0.3
@@ -10,5 +11,8 @@ dependencies:
   - scipy=1.4.1
   - python=3.7.6
   - scikit-learn=0.22.1
-  - jupyterlab=1.2.6
+  - jupyterlab=2.1.1
+  - jupytext=1.4.2
+  - nodejs=13.13.0
+  - ipykernel=5.2.1
 prefix: C:\Users\Alexander\anaconda3\envs\SPNC
