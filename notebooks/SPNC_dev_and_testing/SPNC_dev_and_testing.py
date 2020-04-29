@@ -262,4 +262,72 @@ plt.ylabel('m')
 plt.title("Response to successive fields: h' is 100 random no's between -1 and 1; t'step = 0.01; b' = 3")
 plt.show()
 
+# %% [markdown]
+# #### Re-looking at the positive case, but $0 \le h' \le 0.25$ and longer time base
+
+# %%
+h_primes = np.random.rand(1000)/4
+
+plt.plot(h_primes)
+plt.xlabel('index')
+plt.ylabel("h'")
+plt.title("random applied field sequence")
+plt.show()
+
+i = 0
+h_avgs = []
+while i < len(h_primes) - 11:
+    this_window = h_primes[i:i+10]
+    window_avg = sum(this_window)/10
+    h_avgs.append(window_avg)
+    i+=1
+    
+plt.plot(h_avgs)
+plt.xlabel('index')
+plt.ylabel("h' moving avg")
+plt.title("moving avg of applied field sequence: window 10")
+plt.show()
+
+# %%
+time, mag = SPNC_mag_evolver_sw(3,h_primes,0.2)
+plt.plot(time,mag)
+plt.xlabel("t'")
+plt.ylabel('m')
+plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 0.2; b' = 3")
+plt.show()
+
+# %%
+time, mag = SPNC_mag_evolver_sw(3,h_primes,10)
+plt.plot(time,mag)
+plt.xlabel("t'")
+plt.ylabel('m')
+plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 10; b' = 3")
+plt.show()
+
+# %%
+time, mag = SPNC_mag_evolver_sw(3,h_primes,0.01)
+plt.plot(time,mag)
+plt.xlabel("t'")
+plt.ylabel('m')
+plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 0.01; b' = 3")
+plt.show()
+
+# %% [markdown]
+# We see that the behaviour looks kind of like it is intergrating the average, with noise from the deviation. The time scale sets how much the noise effects it and how long the averaging takes. Let's take a look at this by finding the expected result from the average input:
+
+# %%
+h_prime_avg = np.mean(h_primes)
+print("h_prime average =", h_prime_avg)
+total_time = 0.2 * 1000 #time step times number of points
+
+time_prime = np.arange(0,total_time,0.1)
+plt.plot(time_prime,SPNC_magnetisation_sw(3,h_prime_avg,0,time_prime))
+plt.xlabel("t'")
+plt.ylabel('m')
+plt.title("m for: h' = mean(h_primes)")
+plt.show()
+
+# %% [markdown]
+# Based on this, it looks a little more complicated that straight up averaging. Perhaps is averaging over a window? 
+
 # %%
