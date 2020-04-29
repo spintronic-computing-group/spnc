@@ -130,7 +130,7 @@ Then taking $\beta' = KV/K_BT$ and $H' = H/H_K$ and setting (without loss of gen
 $$ w_{\pm} = \exp{(-\beta' (1 \mp H')^2)} $$
 where we see from our condition $E_b \beta \ge 3$ that at minimum $\beta' \ge 3$ and $ |H'| < 1$. The second condition is also apparent as the higher energy state will no longer be a minimum once $H > H_K$ which breaks our two state model. <br>
 
-We see that the important features are a thermal energy like term and a field like term - although of course they are dimensionless here! We can also more generically absorb our constant $f_0$ into the time parameter to get the dimensionless, $t' = t/f_0$. Taking also that $n'_1 = n_1/n \, \, \& \, \, n'_2 = n_2 /n$, allows us to write:
+We see that the important features are a thermal energy like term and a field like term - although of course they are dimensionless here! We can also more generically absorb our constant $f_0$ into the time parameter to get the dimensionless, $t' = tf_0$. Taking also that $n'_1 = n_1/n \, \, \& \, \, n'_2 = n_2 /n$, allows us to write:
 
 $$ dn'_1 / dt' =  (1-n'_1) \exp{(-\beta' (1 - H')^2)} - n'_1 \exp{(-\beta' (1 + H')^2)}  $$
 For the integrated description, we find that:
@@ -138,9 +138,9 @@ $$ \frac{w_+ - w_-}{w} = \frac{e^{2\beta' H'} - e^{-2\beta' H'}}{e^{2\beta' H'} 
 and:
 $$ w = 2 \cosh{(2\beta' H')} \exp{(-\beta' (1+H'^2))} $$
 Such that:
-$$ m(t) = \tanh{(2\beta' H')} + [m(0) - \tanh{(2\beta' H')}] \exp{\left( - w t \right)} $$
+$$ m(t') = \tanh{(2\beta' H')} + [m(0) - \tanh{(2\beta' H')}] \exp{\left( - w t' \right)} $$
 Which we can rearrange to:
-$$ m(t) = \tanh{(2\beta' H')} \left[ 1 - \exp{\left( - w t \right)} \right] + m(0) \exp{\left( - w t \right)} $$
+$$ m(t') = \tanh{(2\beta' H')} \left[ 1 - \exp{\left( - w t' \right)} \right] + m(0) \exp{\left( - w t' \right)} $$
 
 We have two terms, an exciation and a decay, both with the same characteristic time scale. The decay represents loss of memory of the start state. The excitation represents response to the new input. Note, however, that for changing fields, the excitation to a value under one field and the decay away from it at another *do not* have the same time scale.
 
