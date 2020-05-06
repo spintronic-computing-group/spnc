@@ -855,4 +855,74 @@ plt.show()
 #NRMSE
 print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
+# %% [markdown]
+# **As many nodes as Appeltant!: Theta = 0.3, gamma = 0.2, Nvirt = 400, m0 = 1, beta_prime = 3**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = Mackey_Glass_SNR(1, 400, 1, m0=1, mask_sparse=0.5, bias=False)
+params = {'theta':0.3,'gamma':0.2,'beta_prime':3}
+
+
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#NRMSE
+print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# *Almost the Appeltant value!!*
+
+# %% [markdown]
+# **Same idea, but no feedback (with tweaks): Theta = 0.7, gamma = 0.0, Nvirt = 400, m0 = 1, beta_prime = 3**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = Mackey_Glass_SNR(1, 100, 1, m0=1, mask_sparse=0.5, bias=False)
+params = {'theta':0.7,'gamma':0.0,'beta_prime':3}
+
+
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#NRMSE
+print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# Not bad, but not amazing.
+
 # %%
