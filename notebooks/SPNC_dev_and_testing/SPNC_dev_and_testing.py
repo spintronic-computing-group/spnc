@@ -328,6 +328,531 @@ plt.title("m for: h' = mean(h_primes)")
 plt.show()
 
 # %% [markdown]
-# Based on this, it looks a little more complicated that straight up averaging. Perhaps is averaging over a window? 
+# Based on this, it looks a little more complicated that straight up averaging. Perhaps it is averaging over a window? 
+
+# %% [markdown]
+# ## Looking towards machine learning
+
+# %% [markdown]
+# *This is based on on Matt's code for a single node dynamical resivour (originly for the Mackey-Glass equations)*
+
+# %% [markdown]
+# ### First Matt's code:
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# %%
+def Ridge_regression(S, Y, l):
+    '''
+    For a linear layer we can solve the weights by a direct method
+    If the error function is the mean square error given by
+        E = |Y - S * W |^2 + \lambda |W|^2
+    where the L2 norm is being applied and the variables are
+        Y = [Nsamples x Noutputs] is the desired output
+        S = [Nsamples x Nweights] is the input signal
+        W = [Nweights x Noutputs] is the weight matrix
+    To minimise E we need to solve:
+        S^T * S = (S^T * Y  + \lambda I) * W
+        W = (S^T*S + \lambda I)^-1 * S^T * Y
+    '''
+    STS = np.matmul(S.T, S)
+    STY = np.matmul(S.T, Y)
+    Sdag = np.linalg.pinv(STS + l*np.eye(len(STS)))
+    return np.matmul(Sdag, STY)
+
+
+# %%
+def MG_func(x, J, gamma, eta, p):
+    return eta*(x + gamma*J) / (1 + np.power( x + gamma*J, p))
+
+
+
+# %%
+def MSE (pred, desired):
+    return np.mean(np.square(np.subtract(pred,desired)))
+
+
+# %%
+def sigmoid(x):
+    return 1.0/(1.0 + np.exp(-x))
+
+
+# %%
+def inv_sigmoid(y):
+    return - np.log((1.0/y) - 1.0)
+
+
+# %%
+class Mackey_Glass_SNR:
+    def __init__(self, Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None):
+        '''
+        Nin = input size
+        Nvirt = number of virtual nodes
+        Nout = output size
+        m0 = magnitude of the mask values
+        mask_sparse = sparsity factor for mask matrix
+        bias = bool flag for using bias
+        act = pass an activation function to use
+        inv_act = function which applies the inverse of act
+        '''
+        self.Nin = Nin
+        self.Nvirt = Nvirt
+        self.Nout = Nout
+        self.m0 = m0
+        
+        # Mask is random matrix of -m0 and m0
+        # mask_sparse defines the sparsity level of the input mask
+        # i.e 1.0 = full, 0.0 = empty
+        self.M = 2*self.m0*(np.random.randint(0,2, (Nvirt,Nin))-0.5)
+        #self.M *= 1.0*(np.random.random(size=(Nvirt, Nin)) <= mask_sparse)
+        # Empty weight matrix 
+        self.W = np.zeros( (Nvirt + int(bias), Nout))
+        
+        self.use_bias=bias
+        
+        # Activation and inverse activation functions
+        self.f_act = act
+        self.f_inv_act = inv_act
+        
+    def transform(self, u, params):
+        '''
+        Function to generate the reservoir signal from an input u
+        params = dict for various parameters
+        '''
+        Ns = len(u)
+        
+        # Unflattens input if it is 1d
+        u = u.reshape((Ns, self.Nin))
+        
+        J = np.zeros((Ns, self.Nvirt))
+        
+        # expands the signal to include a bias column is req'd
+        if self.use_bias:
+            S = np.ones((Ns, self.Nvirt+1))
+        else:
+            S = np.zeros((Ns, self.Nvirt))
+        
+        # theta = temporal node spacing
+        theta = params['theta']
+        
+        # parameters for the MG function
+        Sigma = np.exp(-theta)
+        gamma = 0.005
+        eta = 0.5
+        P = 1
+        
+        J = np.matmul(u, self.M.T)
+        for k in range(Ns):              
+            S[k,0] = S[k-1, self.Nvirt-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,0], J[k,0], gamma, eta, P)
+            for i in range(1,self.Nvirt):
+                S[k,i] = S[k,i-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,i], J[k,i], gamma, eta, P)   
+        return S
+    
+    def forward(self, S):
+        if self.f_act is not None:
+            return self.f_act(np.matmul(S, self.W))
+        else:
+            return np.matmul(S, self.W)
+    
+    def train(self, u_train, d_train, u_valid, d_valid, params):
+        
+        S_train = self.transform(u_train, params)
+        S_valid = self.transform(u_valid, params)
+                
+        if self.f_inv_act is not None:
+            inv_act_d_train = self.f_inv_act(d_train)
+            inv_act_d_valid = self.f_inv_act(d_valid)
+        else:
+            inv_act_d_train = d_train
+            inv_act_d_valid = d_valid
+        
+        # regularisation parameters to validate over
+        lambdas = np.exp(np.linspace(-6,0,num=20))
+        lambdas[0] = 0.0
+        
+        errs = np.zeros(lambdas.shape)
+        for i,l in enumerate(lambdas):
+            self.W = Ridge_regression(S_train, inv_act_d_train, l)
+            valid_pred = self.forward(S_valid)
+            errs[i] = MSE(valid_pred, d_valid)
+            print(l, MSE(valid_pred, d_valid))
+    
+        lopt = lambdas[np.argmin(errs)]
+        print('Optimal lambda = ', lopt, 'with MSE = ', np.min(errs))
+        self.W = Ridge_regression(S_train, d_train, lopt)
+        
+        
+
+# %%
+def NARMA10(N):
+    u = np.random.random(N+50)*0.5
+    y = np.zeros(N+50)
+    for k in range(10,N+50):
+        y[k] = 0.3*y[k-1] + 0.05*y[k-1]*np.sum(y[k-10:k]) + 1.5*u[k-1]*u[k-10] + 0.1
+    return u[50:], y[50:]
+
+
+# %%
+Ntrain = 5000
+Nvalid = 2000
+Ntest = 2000
+
+u, d = NARMA10(Ntrain + Nvalid + Ntest)
+
+utrain = u[:Ntrain]
+dtrain = d[:Ntrain]
+uvalid = u[Ntrain:Ntrain+Nvalid]
+dvalid = d[Ntrain:Ntrain+Nvalid]
+utest = u[Ntrain+Nvalid:]
+dtest = d[Ntrain+Nvalid:]
+
+# %%
+net = Mackey_Glass_SNR(1, 40, 1, m0=0.1, mask_sparse=0.5, bias=False)
+
+params = {'theta':0.2}
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+# %%
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+# %%
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+# %%
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+# %% [markdown]
+# We can see it does a reasonable job of the NARMA10 task.
+
+# %% [markdown]
+# ### Now for our case
+
+# %% [markdown]
+# ***Need to tidy this up!***
+
+# %% [markdown]
+# #### Defining the net
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# %%
+def Ridge_regression(S, Y, l):
+    '''
+    For a linear layer we can solve the weights by a direct method
+    If the error function is the mean square error given by
+        E = |Y - S * W |^2 + \lambda |W|^2
+    where the L2 norm is being applied and the variables are
+        Y = [Nsamples x Noutputs] is the desired output
+        S = [Nsamples x Nweights] is the input signal
+        W = [Nweights x Noutputs] is the weight matrix
+    To minimise E we need to solve:
+        S^T * S = (S^T * Y  + \lambda I) * W
+        W = (S^T*S + \lambda I)^-1 * S^T * Y
+    '''
+    STS = np.matmul(S.T, S)
+    STY = np.matmul(S.T, Y)
+    Sdag = np.linalg.pinv(STS + l*np.eye(len(STS)))
+    return np.matmul(Sdag, STY)
+
+
+# %%
+def MG_func(x, J, gamma, eta, p):
+    return eta*(x + gamma*J) / (1 + np.power( x + gamma*J, p))
+
+
+
+# %%
+# Reduced magnetisation for two state system evolving with constant field 
+# note: I am using the notation, w12: transition rate from state 1, to state 2
+# w12, w21 must be constant over the tstep!
+def SPNC_magnetisation_two_state(w21,w12,m0,tstep):
+
+    wdiff = w21 - w12
+    w = w12 + w21
+    wratio = wdiff/w
+    m = wratio + (m0 - wratio)*np.exp(-w*tstep)
+
+    return m
+
+# %%
+# Stoner-wolfarth rate
+    # plusminus = -1 gives rate 21, = +1 gives rate 12 
+def SPNC_rate_sw(beta_prime,h_prime,minusplus):
+    
+    w = np.exp( -beta_prime * np.power( (1 + minusplus * h_prime) ,2) )
+    
+    return w
+
+def SPNC_magnetisation_sw(beta_prime,h_prime,m0,t_prime_step):
+    
+    w21 = SPNC_rate_sw(beta_prime,h_prime,-1)
+    w12 = SPNC_rate_sw(beta_prime,h_prime,+1)
+    
+    return SPNC_magnetisation_two_state(w21,w12,m0,t_prime_step)
+
+
+# %%
+def MSE (pred, desired):
+    return np.mean(np.square(np.subtract(pred,desired)))
+
+
+# %%
+class Mackey_Glass_SNR:
+    def __init__(self, Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None):
+        '''
+        Nin = input size
+        Nvirt = number of virtual nodes
+        Nout = output size
+        m0 = magnitude of the mask values
+        mask_sparse = sparsity factor for mask matrix
+        bias = bool flag for using bias
+        act = pass an activation function to use
+        inv_act = function which applies the inverse of act
+        '''
+        self.Nin = Nin
+        self.Nvirt = Nvirt
+        self.Nout = Nout
+        self.m0 = m0
+        
+        # Mask is random matrix of -m0 and m0
+        # mask_sparse defines the sparsity level of the input mask
+        # i.e 1.0 = full, 0.0 = empty
+        self.M = 2*self.m0*(np.random.randint(0,2, (Nvirt,Nin))-0.5)
+        #self.M *= 1.0*(np.random.random(size=(Nvirt, Nin)) <= mask_sparse)
+        # Empty weight matrix 
+        self.W = np.zeros( (Nvirt + int(bias), Nout))
+        
+        self.use_bias=bias
+        
+        # Activation and inverse activation functions
+        self.f_act = act
+        self.f_inv_act = inv_act
+        
+    def transform(self, u, params):
+        '''
+        Function to generate the reservoir signal from an input u
+        params = dict for various parameters
+        '''
+        Ns = len(u)
+        
+        # Unflattens input if it is 1d
+        u = u.reshape((Ns, self.Nin))
+        
+        J = np.zeros((Ns, self.Nvirt))
+        
+        # expands the signal to include a bias column is req'd
+        if self.use_bias:
+            S = np.ones((Ns, self.Nvirt+1))
+        else:
+            S = np.zeros((Ns, self.Nvirt))
+        
+        #Getting parameters
+        # theta = temporal node spacing
+        theta = params['theta']
+        
+        # gamma = feedback term
+        gamma = params['gamma']
+        
+        #beta_prime = KV/KbT (effective temperature)
+        beta_prime = params['beta_prime']
+        
+        # parameters for the MG function
+        #Sigma = np.exp(-theta)
+        #gamma = 0.005
+        #eta = 0.5
+        #P = 1
+        
+        J = np.matmul(u, self.M.T)
+        for k in range(Ns):              
+            # S[k,0] = S[k-1, self.Nvirt-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,0], J[k,0], gamma, eta, P)
+            
+            #First column is fed into from last column of previous row
+            S[k,0] = SPNC_magnetisation_sw(beta_prime, (J[k,0] + gamma*S[k-1,0]) ,S[k-1,self.Nvirt-1],theta)
+            
+            for i in range(1,self.Nvirt):
+                # S[k,i] = S[k,i-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,i], J[k,i], gamma, eta, P)   
+                
+                #Moving along one row feeding in the values from the last column
+                S[k,i] = SPNC_magnetisation_sw(beta_prime, (J[k,i] + gamma*S[k-1,i]), S[k,i-1], theta)
+        return S
+    
+    def forward(self, S):
+        if self.f_act is not None:
+            return self.f_act(np.matmul(S, self.W))
+        else:
+            return np.matmul(S, self.W)
+    
+    def train(self, u_train, d_train, u_valid, d_valid, params):
+        
+        S_train = self.transform(u_train, params)
+        S_valid = self.transform(u_valid, params)
+                
+        if self.f_inv_act is not None:
+            inv_act_d_train = self.f_inv_act(d_train)
+            inv_act_d_valid = self.f_inv_act(d_valid)
+        else:
+            inv_act_d_train = d_train
+            inv_act_d_valid = d_valid
+        
+        # regularisation parameters to validate over
+        lambdas = np.exp(np.linspace(-6,0,num=20))
+        lambdas[0] = 0.0
+        
+        errs = np.zeros(lambdas.shape)
+        for i,l in enumerate(lambdas):
+            self.W = Ridge_regression(S_train, inv_act_d_train, l)
+            valid_pred = self.forward(S_valid)
+            errs[i] = MSE(valid_pred, d_valid)
+            print(l, MSE(valid_pred, d_valid))
+    
+        lopt = lambdas[np.argmin(errs)]
+        print('Optimal lambda = ', lopt, 'with MSE = ', np.min(errs))
+        self.W = Ridge_regression(S_train, d_train, lopt)
+        
+        
+
+# %% [markdown]
+# #### Defining the task
+
+# %%
+def NARMA10(N):
+    u = np.random.random(N+50)*0.5
+    y = np.zeros(N+50)
+    for k in range(10,N+50):
+        y[k] = 0.3*y[k-1] + 0.05*y[k-1]*np.sum(y[k-10:k]) + 1.5*u[k-1]*u[k-10] + 0.1
+    return u[50:], y[50:]
+
+
+# %%
+Ntrain = 5000
+Nvalid = 2000
+Ntest = 2000
+
+u, d = NARMA10(Ntrain + Nvalid + Ntest)
+
+utrain = u[:Ntrain]
+dtrain = d[:Ntrain]
+uvalid = u[Ntrain:Ntrain+Nvalid]
+dvalid = d[Ntrain:Ntrain+Nvalid]
+utest = u[Ntrain+Nvalid:]
+dtest = d[Ntrain+Nvalid:]
+
+# %% [markdown]
+# #### Testing perfomance of different nets
+
+# %% [markdown]
+# *We can look at the NRMSE for some indication of performance. A shift register can't beat 0.4. Before Appeltant, 0.18 was the best. Appeltant achieves 0.15*
+
+# %% [markdown]
+# **No feedback: Theta = 0.2, gammma = 0, Nvirt = 40, m0 = 1, beta_prime = 3**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = Mackey_Glass_SNR(1, 40, 1, m0=1, mask_sparse=0.5, bias=False)
+params = {'theta':0.2,'gamma':0.0,'beta_prime':3}
+
+
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#NRMSE
+print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# **Feedback: Theta = 0.3, gamma = 0.2, Nvirt = 40, m0 = 1, beta_prime = 3**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = Mackey_Glass_SNR(1, 40, 1, m0=1, mask_sparse=0.5, bias=False)
+params = {'theta':0.3,'gamma':0.2,'beta_prime':3}
+
+
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#NRMSE
+print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# **More virtual nodes!: Theta = 0.3, gamma = 0.2, Nvirt = 100, m0 = 1, beta_prime = 3**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = Mackey_Glass_SNR(1, 100, 1, m0=1, mask_sparse=0.5, bias=False)
+params = {'theta':0.3,'gamma':0.2,'beta_prime':3}
+
+
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#NRMSE
+print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %%
