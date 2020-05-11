@@ -534,8 +534,162 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
+
 # %% [markdown]
 # We can see it does a reasonable job of the NARMA10 task.
+
+# %% [markdown]
+# ### An aside on errors
+
+# %% [markdown]
+# The subject of how to define the error is somewhat muddled in the literature. From here on, these definitions will be used: <br>
+# **NRMSE** is $ \sqrt{\mbox{MSE}}/\sigma $ <br>
+# **NMSE** is $ \mbox{MSE}/\sigma^2 $ <br>
+# **Mean-NRMSE or MNRMSE** is $ \sqrt{\mbox{MSE}}/\mbox{mean} $ <br>
+# $\sigma = $ standard deviation (although should it be n or n-1?) <br>
+# MSE $= \frac{\sum{(\mbox{predicted}-\mbox{desired})^2}}{\mbox{total}} $ <br>
+# *In my opinion, either of the measures based on standard deviation provide something which is meaningful - error from the data normalised to variance in the data. These seem to be good metrics to stick with.*
+
+# %% [markdown]
+# ***Looking into it, it's not clear how exactly to calculate the Appelton calculated NRMSE. Instead, here I recompute using their optimum values for the net using my definitions:***
+
+# %%
+def MG_func(x, J, gamma, eta, p):
+    return eta*(x + gamma*J) / (1 + np.power( x + gamma*J, p))
+
+
+# %%
+class Mackey_Glass_SNR:
+    def __init__(self, Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None):
+        '''
+        Nin = input size
+        Nvirt = number of virtual nodes
+        Nout = output size
+        m0 = magnitude of the mask values
+        mask_sparse = sparsity factor for mask matrix
+        bias = bool flag for using bias
+        act = pass an activation function to use
+        inv_act = function which applies the inverse of act
+        '''
+        self.Nin = Nin
+        self.Nvirt = Nvirt
+        self.Nout = Nout
+        self.m0 = m0
+        
+        # Mask is random matrix of -m0 and m0
+        # mask_sparse defines the sparsity level of the input mask
+        # i.e 1.0 = full, 0.0 = empty
+        self.M = 2*self.m0*(np.random.randint(0,2, (Nvirt,Nin))-0.5)
+        #self.M *= 1.0*(np.random.random(size=(Nvirt, Nin)) <= mask_sparse)
+        # Empty weight matrix 
+        self.W = np.zeros( (Nvirt + int(bias), Nout))
+        
+        self.use_bias=bias
+        
+        # Activation and inverse activation functions
+        self.f_act = act
+        self.f_inv_act = inv_act
+        
+    def transform(self, u, params):
+        '''
+        Function to generate the reservoir signal from an input u
+        params = dict for various parameters
+        '''
+        Ns = len(u)
+        
+        # Unflattens input if it is 1d
+        u = u.reshape((Ns, self.Nin))
+        
+        J = np.zeros((Ns, self.Nvirt))
+        
+        # expands the signal to include a bias column is req'd
+        if self.use_bias:
+            S = np.ones((Ns, self.Nvirt+1))
+        else:
+            S = np.zeros((Ns, self.Nvirt))
+        
+        # theta = temporal node spacing
+        theta = params['theta']
+        
+        # parameters for the MG function
+        Sigma = np.exp(-theta)
+        gamma = 0.01
+        eta = 0.5
+        P = 1
+        
+        J = np.matmul(u, self.M.T)
+        for k in range(Ns):              
+            S[k,0] = S[k-1, self.Nvirt-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,0], J[k,0], gamma, eta, P)
+            for i in range(1,self.Nvirt):
+                S[k,i] = S[k,i-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,i], J[k,i], gamma, eta, P)   
+        return S
+    
+    def forward(self, S):
+        if self.f_act is not None:
+            return self.f_act(np.matmul(S, self.W))
+        else:
+            return np.matmul(S, self.W)
+    
+    def train(self, u_train, d_train, u_valid, d_valid, params):
+        
+        S_train = self.transform(u_train, params)
+        S_valid = self.transform(u_valid, params)
+                
+        if self.f_inv_act is not None:
+            inv_act_d_train = self.f_inv_act(d_train)
+            inv_act_d_valid = self.f_inv_act(d_valid)
+        else:
+            inv_act_d_train = d_train
+            inv_act_d_valid = d_valid
+        
+        # regularisation parameters to validate over
+        lambdas = np.exp(np.linspace(-6,0,num=20))
+        lambdas[0] = 0.0
+        
+        errs = np.zeros(lambdas.shape)
+        for i,l in enumerate(lambdas):
+            self.W = Ridge_regression(S_train, inv_act_d_train, l)
+            valid_pred = self.forward(S_valid)
+            errs[i] = MSE(valid_pred, d_valid)
+            print(l, MSE(valid_pred, d_valid))
+    
+        lopt = lambdas[np.argmin(errs)]
+        print('Optimal lambda = ', lopt, 'with MSE = ', np.min(errs))
+        self.W = Ridge_regression(S_train, d_train, lopt)
+        
+        
+
+# %%
+net = Mackey_Glass_SNR(1, 400, 1, m0=0.1, mask_sparse=0.5, bias=False)
+
+params = {'theta':0.2}
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+print('MNMSE (to check if Appelton was using this!) is ', (MSE(pred,dtest))/np.mean(dtest) )
+print('Variance-NRMSE (to check if Appelton was using this!) is' , np.sqrt(MSE(pred,dtest))/np.power(np.std(dtest),2))
+
+# %% [markdown]
+# This implies that they aren't using NRMSE (as I thought was implied in the text) as the value is larger than they say you should get for a shift register (0.4). Not clear they are using mean normalised either though (they claim only 0.15, not 0.13)...In fact none of these numbers are the same as theirs. They do, at least offer a comparison though!
 
 # %% [markdown]
 # ### Now for our case
@@ -757,7 +911,7 @@ dtest = d[Ntrain+Nvalid:]
 # #### Testing perfomance of different nets
 
 # %% [markdown]
-# *We can look at the NRMSE for some indication of performance. A shift register can't beat 0.4. Before Appeltant, 0.18 was the best. Appeltant achieves 0.15*
+# *We can look at the NRMSE for some indication of performance. From above, Appeltant ahieved NRMSE = 0.50 or equivalently NMSE = 0.25.* 
 
 # %% [markdown]
 # **No feedback: Theta = 0.2, gamma = 0, Nvirt = 40, m0 = 1, beta_prime = 3**
@@ -788,8 +942,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # **Feedback: Theta = 0.3, gamma = 0.2, Nvirt = 40, m0 = 1, beta_prime = 3**
@@ -820,8 +976,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # **More virtual nodes!: Theta = 0.3, gamma = 0.2, Nvirt = 100, m0 = 1, beta_prime = 3**
@@ -852,8 +1010,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # **As many nodes as Appeltant!: Theta = 0.3, gamma = 0.2, Nvirt = 400, m0 = 1, beta_prime = 3**
@@ -884,10 +1044,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
-print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
-print('NMSE (from variance) is' ,(MSE(pred,dtest))/np.power(np.std(dtest),2))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # *Almost the Appeltant value!!*
@@ -921,161 +1081,21 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 
 # %% [markdown]
 # Not bad, but not amazing.
 
 # %% [markdown]
-# ***Look into it, it's not clear how exactly to calculate the NRMSE so these values can not be compared directly to the Appelton paper. Instead we will recompute using their optimum values:***
-
-# %%
-def MG_func(x, J, gamma, eta, p):
-    return eta*(x + gamma*J) / (1 + np.power( x + gamma*J, p))
-
-
-
-# %%
-class Mackey_Glass_SNR:
-    def __init__(self, Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None):
-        '''
-        Nin = input size
-        Nvirt = number of virtual nodes
-        Nout = output size
-        m0 = magnitude of the mask values
-        mask_sparse = sparsity factor for mask matrix
-        bias = bool flag for using bias
-        act = pass an activation function to use
-        inv_act = function which applies the inverse of act
-        '''
-        self.Nin = Nin
-        self.Nvirt = Nvirt
-        self.Nout = Nout
-        self.m0 = m0
-        
-        # Mask is random matrix of -m0 and m0
-        # mask_sparse defines the sparsity level of the input mask
-        # i.e 1.0 = full, 0.0 = empty
-        self.M = 2*self.m0*(np.random.randint(0,2, (Nvirt,Nin))-0.5)
-        #self.M *= 1.0*(np.random.random(size=(Nvirt, Nin)) <= mask_sparse)
-        # Empty weight matrix 
-        self.W = np.zeros( (Nvirt + int(bias), Nout))
-        
-        self.use_bias=bias
-        
-        # Activation and inverse activation functions
-        self.f_act = act
-        self.f_inv_act = inv_act
-        
-    def transform(self, u, params):
-        '''
-        Function to generate the reservoir signal from an input u
-        params = dict for various parameters
-        '''
-        Ns = len(u)
-        
-        # Unflattens input if it is 1d
-        u = u.reshape((Ns, self.Nin))
-        
-        J = np.zeros((Ns, self.Nvirt))
-        
-        # expands the signal to include a bias column is req'd
-        if self.use_bias:
-            S = np.ones((Ns, self.Nvirt+1))
-        else:
-            S = np.zeros((Ns, self.Nvirt))
-        
-        # theta = temporal node spacing
-        theta = params['theta']
-        
-        # parameters for the MG function
-        Sigma = np.exp(-theta)
-        gamma = 0.01
-        eta = 0.5
-        P = 1
-        
-        J = np.matmul(u, self.M.T)
-        for k in range(Ns):              
-            S[k,0] = S[k-1, self.Nvirt-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,0], J[k,0], gamma, eta, P)
-            for i in range(1,self.Nvirt):
-                S[k,i] = S[k,i-1] * Sigma + (1.0 - Sigma)*MG_func( S[k-1,i], J[k,i], gamma, eta, P)   
-        return S
-    
-    def forward(self, S):
-        if self.f_act is not None:
-            return self.f_act(np.matmul(S, self.W))
-        else:
-            return np.matmul(S, self.W)
-    
-    def train(self, u_train, d_train, u_valid, d_valid, params):
-        
-        S_train = self.transform(u_train, params)
-        S_valid = self.transform(u_valid, params)
-                
-        if self.f_inv_act is not None:
-            inv_act_d_train = self.f_inv_act(d_train)
-            inv_act_d_valid = self.f_inv_act(d_valid)
-        else:
-            inv_act_d_train = d_train
-            inv_act_d_valid = d_valid
-        
-        # regularisation parameters to validate over
-        lambdas = np.exp(np.linspace(-6,0,num=20))
-        lambdas[0] = 0.0
-        
-        errs = np.zeros(lambdas.shape)
-        for i,l in enumerate(lambdas):
-            self.W = Ridge_regression(S_train, inv_act_d_train, l)
-            valid_pred = self.forward(S_valid)
-            errs[i] = MSE(valid_pred, d_valid)
-            print(l, MSE(valid_pred, d_valid))
-    
-        lopt = lambdas[np.argmin(errs)]
-        print('Optimal lambda = ', lopt, 'with MSE = ', np.min(errs))
-        self.W = Ridge_regression(S_train, d_train, lopt)
-        
-        
-
-# %%
-net = Mackey_Glass_SNR(1, 400, 1, m0=0.1, mask_sparse=0.5, bias=False)
-
-params = {'theta':0.2}
-net.train(utrain, dtrain, uvalid, dvalid, params)
-
-Stest = net.transform(utest, params)
-pred = net.forward(Stest)
-
-plt.plot(dtest[100:200], label='Desired Output')
-plt.plot(pred[100:200], label='Model Output')
-plt.legend(loc='lower left')
-plt.xlabel('time')
-plt.ylabel('NARMA10 output')
-plt.show()
-
-plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
-plt.plot(dtest[:], pred[:], 'o')
-plt.xlabel('Desired Output')
-plt.ylabel('Model Output')
-plt.show()
-
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
-print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
-print('NMSE (from variance) is' ,(MSE(pred,dtest))/np.power(np.std(dtest),2))
-
-
-# %% [markdown]
-# This implies that they aren't using NRMSE where the division is by standard deviation (as I thought was implied in the text) as the value is larger than they say you should get for a shift register (0.4). Not clear they are using my original one either though (they claim only 0.15)...At least this offers a comparison.
-
-# %% [markdown]
-# **Comparison to a shift register - not sure this is correct yet!!!**
+# **Comparison to a shift register - not sure this is the correct definition of a shift register, but it is informative!!!**
 
 # %%
 def shift_func(j, s_old, gamma):
     return j + s_old*gamma
-
 
 
 # %%
@@ -1205,9 +1225,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
-print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # **Add feedback to shift register (gamma : 0.5)**
@@ -1234,11 +1255,10 @@ plt.xlabel('Desired Output')
 plt.ylabel('Model Output')
 plt.show()
 
-#NRMSE
-print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
-print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # Suprisingly good, although not as good as with the reservoir.
-
-# %%
