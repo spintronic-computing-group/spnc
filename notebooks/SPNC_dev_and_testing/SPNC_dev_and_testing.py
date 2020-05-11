@@ -886,6 +886,8 @@ plt.show()
 
 #NRMSE
 print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE (from variance) is' ,(MSE(pred,dtest))/np.power(np.std(dtest),2))
 
 # %% [markdown]
 # *Almost the Appeltant value!!*
@@ -1061,6 +1063,7 @@ plt.show()
 #NRMSE
 print('NRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 print('NRMSE from std dev is ' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE (from variance) is' ,(MSE(pred,dtest))/np.power(np.std(dtest),2))
 
 
 # %% [markdown]
