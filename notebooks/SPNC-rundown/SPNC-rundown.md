@@ -148,7 +148,13 @@ We have two terms, an exciation and a decay, both with the same characteristic t
 ### An alternative viewpoint: anisotropy control
 
 
-Above, we considered manipulating the system via an effective temperature and field. However, these may not, in general, be the parameters we wish to change. If we envisage a fixed (non-zero) field and a changeable anisotropy (e.g. via strain) we can recast our expressions as follows: <br>
+Above, we considered manipulating the system via an effective temperature and field. However, these may not, in general, be the parameters we wish to change. If we envisage a fixed (non-zero) field and a changeable anisotropy (e.g. via strain) we can condsider whether it is possible to manipulate $m(t')$. Let us consider first turning on the field. For the next time step then, $m(0) = {(w_+ - w_-)}/{w}$. In our standard case, this is independant of anisotropy - $\tanh{(HM_s V/K_B T)}$. We can examine this more closely by writing:  <br>
+$$ \frac{w_+ - w_-}{w} = \frac{ f_0 \exp{(-E_+ \beta)} - f_0 \exp{(-E_- \beta)} }{ f_0 \exp{(-E_+ \beta)} + f_0 \exp{(-E_- \beta)} } $$
+Adjusting the anisotropy is akin to $ E_- \rightarrow E_- + \Delta E \, \, \&  \,\, E_+ \rightarrow E_+ + \Delta E$. 
+$$ \implies \frac{w_+ - w_-}{w} \rightarrow \frac{ \left[ f_0 \exp{(-E_+ \beta)} - f_0 \exp{(-E_- \beta)} \right] \exp{(-\Delta E \beta)}  }{ \left[ f_0 \exp{(-E_+ \beta)} + f_0 \exp{(-E_- \beta)} \right] \exp{(-\Delta E \beta)} } = \frac{w_+ - w_-}{w} $$
+
+
+What we need to achieve is the two energies changing *differently*. One way to do that, is by rotating the anisotropy away from the field&mdash;for example with a non-colinear strain. This is easily shown with a demonstration:
 
 ```python
 
