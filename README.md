@@ -9,6 +9,7 @@ This is code for the SPNC project!
 - run `conda env create --file [environment].yml` to create the environment with the correct dependencies (you'll have to have conda!)
 - Activate the environment `conda activate [environment]`
 - run `conda config --env --add channels conda-forge` to ensure conda-forge channel is in the environment
+- To enable ipywidgets in jupyter lab you must install the extension: `jupyter labextension install @jupyter-widgets/jupyterlab-manager` (or install it in jupyter lab's extension manager)
 
 
 ## Updating dependencies
