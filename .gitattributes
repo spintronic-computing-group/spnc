@@ -1,1 +1,9 @@
 *.ipynb -diff
+
+# Sort out line endings
+# Set default line ending behaviour
+* text=auto
+#Set these files as binary
+*.pdf binary
+*.jpg binary
+*.png binary
