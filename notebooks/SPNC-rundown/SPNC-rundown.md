@@ -51,8 +51,12 @@ $$ \frac{dn_1}{dt} = f_0 (n - n_1) \exp{(-\beta KV(1-H/H_k)^2)} - f_0 n_1 \exp{(
 
 
 ```python jupyter={"source_hidden": true}
+%matplotlib widget
 from matplotlib import pyplot as plt
 import numpy as np
+
+# Remove previously opened figure
+plt.close(fig)
 
 # Basic energy for 1D model with H along the anisotropy axis
 def basic_energy(K,V,muH,theta):
@@ -154,7 +158,56 @@ Adjusting the anisotropy is akin to $ E_- \rightarrow E_- + \Delta E \, \, \&  \
 $$ \implies \frac{w_+ - w_-}{w} \rightarrow \frac{ \left[ f_0 \exp{(-E_+ \beta)} - f_0 \exp{(-E_- \beta)} \right] \exp{(-\Delta E \beta)}  }{ \left[ f_0 \exp{(-E_+ \beta)} + f_0 \exp{(-E_- \beta)} \right] \exp{(-\Delta E \beta)} } = \frac{w_+ - w_-}{w} $$
 
 
-What we need to achieve is the two energies changing *differently*. One way to do that, is by rotating the anisotropy away from the field&mdash;for example with a non-colinear strain. This is easily shown with a demonstration:
+What we need to achieve is the two energy barriers changing *differently*. One way to do that, is by rotating the anisotropy away from the field&mdash;for example with a non-collinear strain. This is easily shown with a demonstration:
+
+```python jupyter={"source_hidden": true}
+import matplotlib.pyplot as plot
+import numpy as np
+import ipywidgets as widgets
+
+# Remove previously open figure
+plt.close(figure)
+
+# Basic energy for 1D model with H along the anisotropy axis (per unit volume)
+def basic_energy(theta,K,Ks,alpha,muHMs,gamma):
+    energy = (K*np.power(np.sin(theta*np.pi/180),2) + 
+              Ks*np.power(np.sin((theta-alpha)*np.pi/180),2) 
+              - muHMs * np.cos((theta-gamma)*np.pi/180)
+             )
+    return energy
+
+figure, ax = plt.subplots()
+'''
+ax.spines['left'].set_position('zero')
+ax.spines['right'].set_color('none')
+ax.spines['bottom'].set_position('zero')
+ax.spines['top'].set_color('none')
+'''
+ax.set_title('Energy landscape')
+ax.set_xlabel('Angle of M to easy axis / deg')
+ax.set_ylabel('Energy / AU')
+
+theta = np.arange(-180,180,1)
+ax.set_xlim([-180, 180])
+#ax.plot(theta, basic_energy(1, 1, 0.25, theta), color='C0')
+
+@widgets.interact(K=(0, 10, 0.1), Ks=(-10, 10, 0.1), 
+                  alpha=(0, 90, 5), muHMs=(0, 20, 0.1), gamma=(0, 90, 5)
+                 )
+def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
+    #Remove old lines from plot and plot new one
+    [l.remove() for l in ax.lines]
+    #Plot
+    ax.plot(theta, basic_energy(theta,K,Ks,alpha,muHMs,gamma), color='C0')
+    #Rescale axes
+    ax.relim()
+    ax.autoscale_view()
+
+
+```
+
+This shows the energy landscape for a single layer with intrinsic strain (K), Additional strain anisotropy (Ks) at an angle (alpha), and field (muHMs) at an angle (gamma). Our x axis is angle of the magnetisation $\implies -180^{\circ} = 180^{\circ}$. <br>
+Try introducing a strain anisotropy and playing with its angle under a fixed field. It's clear that the two energy barriers are changing differently.
 
 ```python
 
