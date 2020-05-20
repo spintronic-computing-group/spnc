@@ -26,7 +26,7 @@
 #
 # where $K$ is the constant of anisotropy along the easy axis, $M_S$ is the satured magnetization, $V$ the volume of the magnet and $\theta$ the angle between the easy axis and the magnetization $m$. Here we are interested in the behaviour of the extrema of $E(\theta)$ when we change $\theta_H$. Knowing the extrema of $E(\theta)$, we will be able to calculate the energy barriers of this two-state system. Using Arhhenius equation, we will plot the evolution of the system's magnetization at equilibrium, according to $\theta_H$.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
@@ -44,7 +44,7 @@ H = 0.4
 H_K = 2*K/(mu_0*M_S)
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def energy(theta,theta_H):
     mu_H = mu_0*M_S*H
     return(K*V*np.sin(theta*np.pi/180)**2-mu_H*np.cos((theta-theta_H)*np.pi/180))
@@ -54,20 +54,27 @@ def energy(theta,theta_H):
 # When $\theta_H = 30°$, the energy landscape looks like this:
 
 # %% jupyter={"outputs_hidden": false}
-theta = np.linspace(0,180,100)
+theta = np.linspace(-180,180,100)
 theta_H = 30
 E = energy(theta,theta_H)
 
 # %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
-plt.plot(theta, E, label = r'$\theta_H = 30°$')
+plt.plot(theta, E, label = r'$\theta_H =$'+str(theta_H)+"°")
 plt.grid(True)
-plt.xlim(0,180)
+plt.xlim(-180,180)
 plt.legend(loc="best")
 plt.xlabel(r'$\theta$')
 plt.ylabel(r'Energy')
 plt.title("Energy landscape with H/H_K = "+str(H/H_K))
 plt.show()
+
+# %% [markdown]
+# There are 4 extrema in this landscape. The positions of minima will be called $\theta_1$ and $\theta_2$. From each minimum, there are two ways of going to the other minimum. One way is to go through the "high maxima". In this case the energy barriers are called $E_{12,+}$ and $E_{21,+}$. The other way is going through the "low maxima". In this case the energy barriers are called $E_{12,-}$ and $E_{21,-}$.
+
+# %% jupyter={"outputs_hidden": false}
+%%html
+<img src="images/Energy_landscape_legend.png" style="width:700px;height:400px/">
 
 
 # %% [markdown]
@@ -75,9 +82,9 @@ plt.show()
 #
 # We can know evaluate the energy barriers of this landscape, according to the value of $\theta_H$. We both save the value of $\theta$ and the value $E(\theta)$ on the extrema.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def energy_barriers(theta_H):
-    theta = np.linspace(-1,181,100)
+    theta = np.linspace(-180,180,1000)
     E = energy(theta,theta_H)
     
     #Localization of extrema
@@ -85,43 +92,64 @@ def energy_barriers(theta_H):
     id_min = argrelextrema(E, np.less)[0]
     
     #Two-state case
-    if(len(id_max)==1 and len(id_min==2)):
+    if(len(id_max)==2 and len(id_min)==2):
         theta_1 = theta[id_min[0]]
         theta_2 = theta[id_min[1]]
-        e_12 = E[id_max[0]]-E[id_min[0]]
-        e_21 = E[id_max[0]]-E[id_min[1]]
+        e_12_1 = E[id_max[0]]-E[id_min[0]]
+        e_21_1 = E[id_max[0]]-E[id_min[1]]
+        e_12_2 = E[id_max[1]]-E[id_min[0]]
+        e_21_2 = E[id_max[1]]-E[id_min[1]]
+        
+    #Minimas in 0° and 180°
+    elif(len(id_max)==2):
+        print("Exception 1 "+str(theta_H))
+        theta_1 = 0
+        theta_2 = 180
+        e_12_1 = E[id_max[0]]-energy(0,theta_H)
+        e_21_1 = E[id_max[0]]-energy(180,theta_H)
+        e_12_2 = E[id_max[1]]-energy(0,theta_H)
+        e_21_2 = E[id_max[1]]-energy(180,theta_H)
         
     #The function argrelextrema fails for discrete values of theta_H, therefore we slightly change theta_H
     else:
-        E = energy(theta,theta_H-0.01)
+        print("Exception 2 "+str(theta_H))
+        E = energy(theta,theta_H-0.1)
         id_max = argrelextrema(E, np.greater)[0]
         id_min = argrelextrema(E, np.less)[0]
         theta_1 = theta[id_min[0]]
         theta_2 = theta[id_min[1]]
-        e_12 = E[id_max[0]]-E[id_min[0]]
-        e_21 = E[id_max[0]]-E[id_min[1]]
+        e_12_1 = E[id_max[0]]-E[id_min[0]]
+        e_21_1 = E[id_max[0]]-E[id_min[1]]
+        e_12_2 = E[id_max[1]]-E[id_min[0]]
+        e_21_2 = E[id_max[1]]-E[id_min[1]]
     
-    return(theta_1,theta_2,e_12,e_21)
+    return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
 
 
 # %% jupyter={"outputs_hidden": false}
 Theta_H = np.linspace(0,180,50)
-E_12 = []
-E_21 = []
+E_12_1 = []
+E_21_1 = []
+E_12_2 = []
+E_21_2 = []
 Theta_1 = []
 Theta_2 = []
 for theta_H in Theta_H:
-    (theta_1,theta_2,e_12,e_21) = energy_barriers(theta_H)
+    (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers(theta_H)
     Theta_1.append(theta_1)
     Theta_2.append(theta_2)
-    E_12.append(e_12)
-    E_21.append(e_21)
+    E_12_1.append(e_12_1)
+    E_21_1.append(e_21_1)
+    E_12_2.append(e_12_2)
+    E_21_2.append(e_21_2)
 
 # %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
-plt.plot(Theta_H,E_12,'g-',label=r'$E_{12}$')
-plt.plot(Theta_H,E_21,'r-',label=r'$E_{21}$')
-plt.plot(Theta_H,np.array(E_12)-np.array(E_21),'b-',label=r'$E_{12}-E_{21}$')
+plt.plot(Theta_H,E_12_1,'g--',label=r'$E_{12,+}$')
+plt.plot(Theta_H,E_21_1,'r--',label=r'$E_{21,+}$')
+plt.plot(Theta_H,E_12_2,'g-',label=r'$E_{12,-}$')
+plt.plot(Theta_H,E_21_2,'r-',label=r'$E_{21,-}$')
+plt.plot(Theta_H,np.array(E_12_2)-np.array(E_21_2),'b-',label=r'$E_{12,-}-E_{21,-}$')
 plt.legend(loc = "best")
 plt.xlim(0,180)
 plt.grid(True)
@@ -131,9 +159,9 @@ plt.title("Energy barriers with H/H_K = "+str(H/H_K))
 plt.show()
 
 # %% [markdown]
-# $E_{12}-E_{21}$ changes with $\theta_H$, which is what we are looking for!
+# $E_{12,-}-E_{21,-}$ changes with $\theta_H$, which is what we are looking for!
 #
-# *We may note that $E_{12}-E_{21}$ is almost linear in $\theta_H$ on a wide range around $\theta_H=90°$*
+# *We may note that $E_{12,-}-E_{21,-}$ is almost linear in $\theta_H$ on a wide range around $\theta_H=90°$*
 
 # %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
@@ -147,19 +175,37 @@ plt.ylabel(r'$\theta_{eq}$')
 plt.title("Angles of equilibrium with H/H_K = "+str(H/H_K))
 plt.show()
 
-
 # %% [markdown]
 # ### Arrhenius equation
 #
-# According to Arrhenius equation, the transition rate from one state to the other reads:
+# According to Arrhenius equation, **if there were only one barrier**, the transition rate from one state to the other would read:
 #
-# $$\omega = \frac{1}{\tau} = f_0\exp{(-E_b/K_BT)}$$
+# $$\omega = \frac{1}{\tau} = f_0\exp{\left(\frac{-E_b}{K_BT}\right)}$$
 #
-# where $E_b$ is the energy barrier, $k_B$ the Boltzmann constant and $T$ the temperature. We will fix $f_0=1$.
+# where $E_b$ is the energy barrier, $k_B$ the Boltzmann constant and $T$ the temperature. However, we have two barriers of energy. For the moment, we will write de transition rate like this:
+#
+# $$\omega = \frac{1}{\tau} = f_{0,-}\exp{\left(\frac{-E_{b,-}}{K_BT}\right)}+f_{0,+}\exp{\left(\frac{-E_{b,+}}{K_BT}\right)}$$
+#
+# We will fix $f_{0,-}=f_{0,+}=1$.
 
-# %%
-def omega(e_b,k_BT):
-    return(np.exp(-e_b/k_BT))
+# %% jupyter={"outputs_hidden": true}
+f_0_1=1
+f_0_2=2
+def omega(e_b_1,e_b_2,k_BT):
+    return(f_0_1*np.exp(-e_b_1/k_BT)+f_0_2*np.exp(-e_b_2/k_BT))
+
+
+# %% jupyter={"outputs_hidden": false}
+plt.figure(figsize = (10,6))
+plt.plot(Theta_H,omega(np.array(E_12_1),np.array(E_12_2),k_BT),'g-',label=r'$\omega_{12}$')
+plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT),'r-',label=r'$\omega_{21}$')
+plt.legend(loc = "best")
+plt.xlim(0,180)
+plt.grid(True)
+plt.xlabel(r'$\theta_H$')
+plt.ylabel(r'$\omega$')
+plt.title("Transition rates with H/H_K = "+str(H/H_K))
+plt.show()
 
 
 # %% [markdown]
@@ -181,14 +227,14 @@ def omega(e_b,k_BT):
 #
 # $$m_{eq} = \frac{\cos{\theta_1}\omega_{21} + \cos{\theta_2}\omega_{12}}{\omega}$$
 
-# %%
-def mag_eq(theta_1,theta_2,e_12,e_21,k_BT):
-    w_12 = omega(e_12,k_BT)
-    w_21 = omega(e_21,k_BT)
+# %% jupyter={"outputs_hidden": true}
+def mag_eq(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2,k_BT):
+    w_12 = omega(e_12_1,e_12_2,k_BT)
+    w_21 = omega(e_21_1,e_21_2,k_BT)
     return((np.cos(theta_1*np.pi/180)*w_21+np.cos(theta_2*np.pi/180)*w_12)/(w_21+w_12))
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 Temperatures = [0.1, 0.3, 1, 3, 10]
 
 # %% jupyter={"outputs_hidden": false}
@@ -196,7 +242,7 @@ Mag_eq_T = []
 for k_BT in Temperatures:
     Mag_eq = []
     for i in range(len(Theta_1)):
-        Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12[i],E_21[i],k_BT))
+        Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
     Mag_eq_T.append(Mag_eq)
 
 # %% jupyter={"outputs_hidden": false}
@@ -215,9 +261,9 @@ plt.show()
 # %% [markdown]
 # Since those curves look like hyperbolic tangent, let's try to interpolate those curves with the $\tanh$ function!
 #
-# $$m_{eq}=-M\tanh{(\alpha \theta_H)}$$
+# $$m_{eq}=-M\tanh{\left(\alpha\left(\theta_H-\frac{\pi}{2}\right)\right)}$$
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def interpolate_tanh(x,alpha,M):
     return(-M*np.tanh(alpha*(x-90)*np.pi/180))
 
@@ -250,7 +296,7 @@ Mag_eq_T = []
 for k_BT in Temperatures_large:
     Mag_eq = []
     for i in range(len(Theta_1)):
-        Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12[i],E_21[i],k_BT))
+        Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
     Mag_eq_T.append(Mag_eq)
 
 # %% jupyter={"outputs_hidden": false}
@@ -283,7 +329,7 @@ plt.show()
 # %% [markdown]
 # We can distinguish two regimes for $\alpha$ and $M$, depending on $k_BT$. We can try to get an intuition of the threshold $k_BT_{lim}$ above which the behaviours of $\alpha$ and $M$ change.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 H_list = [0.01,0.03,0.1,0.3]
 
 Alpha_vs_H = []
@@ -293,23 +339,27 @@ for h in H_list:
     H = h
 
     Theta_H = np.linspace(0,180,50)
-    E_12 = []
-    E_21 = []
+    E_12_1 = []
+    E_21_1 = []
+    E_12_2 = []
+    E_21_2 = []
     Theta_1 = []
     Theta_2 = []
     for theta_H in Theta_H:
-        (theta_1,theta_2,e_12,e_21) = energy_barriers(theta_H)
+        (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers(theta_H)
         Theta_1.append(theta_1)
         Theta_2.append(theta_2)
-        E_12.append(e_12)
-        E_21.append(e_21)
+        E_12_1.append(e_12_1)
+        E_21_1.append(e_21_1)
+        E_12_2.append(e_12_2)
+        E_21_2.append(e_21_2)
 
     Temperatures_large = np.logspace(-2,1,30)
     Mag_eq_T = []
     for k_BT in Temperatures_large:
         Mag_eq = []
         for i in range(len(Theta_1)):
-            Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12[i],E_21[i],k_BT))
+            Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
         Mag_eq_T.append(Mag_eq)
 
     Alpha_vs_T = []
@@ -359,23 +409,27 @@ for k in K_list:
     K = k
 
     Theta_H = np.linspace(0,180,50)
-    E_12 = []
-    E_21 = []
+    E_12_1 = []
+    E_21_1 = []
+    E_12_2 = []
+    E_21_2 = []
     Theta_1 = []
     Theta_2 = []
     for theta_H in Theta_H:
-        (theta_1,theta_2,e_12,e_21) = energy_barriers(theta_H)
+        (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers(theta_H)
         Theta_1.append(theta_1)
         Theta_2.append(theta_2)
-        E_12.append(e_12)
-        E_21.append(e_21)
+        E_12_1.append(e_12_1)
+        E_21_1.append(e_21_1)
+        E_12_2.append(e_12_2)
+        E_21_2.append(e_21_2)
 
     Temperatures_large = np.logspace(-2,1,30)
     Mag_eq_T = []
     for k_BT in Temperatures_large:
         Mag_eq = []
         for i in range(len(Theta_1)):
-            Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12[i],E_21[i],k_BT))
+            Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
         Mag_eq_T.append(Mag_eq)
 
     Alpha_vs_T = []
@@ -443,7 +497,32 @@ plt.show()
 #
 # In this simplistic system, we only looked at the influence $\theta_H$ on the energy barriers and on the magnetization at equilibrium (normalized and projected on the easy axis). The main result of this study is an expression of $m_{eq}$ as a function of $\theta_H$, when $k_BT \ll \mu_0M_SVH$:
 #
-# $$m_{eq}(\theta_H)=-\tanh{\left(\frac{\mu_0M_SVH}{k_BT}\theta_H\right)}$$
+# $$m_{eq}(\theta_H)=-\tanh{\left(\frac{\mu_0M_SVH}{k_BT}\left(\theta_H-\frac{\pi}{2}\right)\right)}$$
+
+# %% jupyter={"outputs_hidden": false}
+Temperatures = [0.1, 0.3, 1, 3, 10]
+
+Mag_eq_T = []
+for k_BT in Temperatures:
+    Mag_eq = []
+    for i in range(len(Theta_1)):
+        Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
+    Mag_eq_T.append(Mag_eq)
+
+plt.figure(figsize = (10,6))
+for i in range(len(Temperatures)):
+    plt.plot(Theta_H,Mag_eq_T[i],label="k_BT = "+str(Temperatures[i]))
+    if(i==len(Temperatures)-1):
+        plt.plot(Theta_H,-np.tanh(mu_0*M_S*V*H*(Theta_H-90)*np.pi/180/Temperatures[i]),'k--',label="Theory")
+    else:
+        plt.plot(Theta_H,-np.tanh(mu_0*M_S*V*H*(Theta_H-90)*np.pi/180/Temperatures[i]),'k--')
+plt.xlim(0,180)
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$\theta_H$')
+plt.ylabel(r'$M_{eq}$')
+plt.title("Mean magnetization at equilibrium with H/H_K = "+str(H/H_K)+" and theoretical curves")
+plt.show()
 
 # %% [markdown]
 # ## The Stoner-Wolfarth model -  control of anisotropy
@@ -474,8 +553,8 @@ plt.show()
 # %% [markdown]
 # #### Next steps
 #
-# 1. Studying the influence of $K_\sigma$ on the energy barriers and the magnetization at equilibrium, just like I did in the simple case (I should first suppose $\tilde{K}\approx K$).
-# 2. Taking into account the fact that $\tilde{K}$ depends on $K_\sigma$.
+# 1. Study p_1(t) and p_2(t)
+# 2. Studying the influence of $K_\sigma$ on the energy barriers and the magnetization at equilibrium, just like I did in the simple case.
 # 3. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
 # 4. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
 #
