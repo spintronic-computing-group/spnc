@@ -56,7 +56,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 # Remove previously opened figure
-plt.close(fig)
+if 'fig' in locals():
+    plt.close(fig)
 
 # Basic energy for 1D model with H along the anisotropy axis
 def basic_energy(K,V,muH,theta):
@@ -161,12 +162,13 @@ $$ \implies \frac{w_+ - w_-}{w} \rightarrow \frac{ \left[ f_0 \exp{(-E_+ \beta)}
 What we need to achieve is the two energy barriers changing *differently*. One way to do that, is by rotating the anisotropy away from the field&mdash;for example with a non-collinear strain. This is easily shown with a demonstration:
 
 ```python jupyter={"source_hidden": true}
-import matplotlib.pyplot as plot
+import matplotlib.pyplot as plt
 import numpy as np
 import ipywidgets as widgets
 
 # Remove previously open figure
-plt.close(figure)
+if 'figure' in locals():
+    plt.close(figure)
 
 # Basic energy for 1D model with H along the anisotropy axis (per unit volume)
 def basic_energy(theta,K,Ks,alpha,muHMs,gamma):
@@ -209,6 +211,5 @@ def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
 This shows the energy landscape for a single layer with intrinsic strain (K), Additional strain anisotropy (Ks) at an angle (alpha), and field (muHMs) at an angle (gamma). Our x axis is angle of the magnetisation $\implies -180^{\circ} = 180^{\circ}$. <br>
 Try introducing a strain anisotropy and playing with its angle under a fixed field. It's clear that the two energy barriers are changing differently.
 
-```python
 
-```
+This is explored in detail in the SPNC-anisotropy notebook
