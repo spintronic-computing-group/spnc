@@ -50,7 +50,7 @@ Therefore we can rewrite the master equation as:
 $$ \frac{dn_1}{dt} = f_0 (n - n_1) \exp{(-\beta KV(1-H/H_k)^2)} - f_0 n_1 \exp{(-\beta KV(1+H/H_k)^2)} $$ <br>
 
 
-```python jupyter={"source_hidden": true}
+```python
 %matplotlib widget
 from matplotlib import pyplot as plt
 import numpy as np
@@ -149,6 +149,62 @@ $$ m(t') = \tanh{(2\beta' H')} \left[ 1 - \exp{\left( - w t' \right)} \right] + 
 
 We have two terms, an exciation and a decay, both with the same characteristic time scale. The decay represents loss of memory of the start state. The excitation represents response to the new input. Note, however, that for changing fields, the excitation to a value under one field and the decay away from it at another *do not* have the same time scale.
 
+
+### Characteristic timescale
+
+
+This model works well as our basic case for ML, but it would be good to put time in reference to some charactersitic time scale. This means that in our resevoirs we don't need to worry about how changing $\beta$ changes time over which the basic (no field) decay happens.
+$$ w(H'=0) = w_0 = 2 \exp{(-\beta')} $$
+$$ \implies wt' = \frac{w}{w_0} [w_0 t'] = \cosh{(2 \beta' H')} \exp{(-\beta' H'^2)} [w_0 t'] = w' [w_0 t']$$
+This rearangment allows us to look at our time in units of $w_0$ and consider changes in rate with field via:
+$$ w' = \cosh{(2 \beta' H')} \exp{(-\beta' H'^2)} $$
+
+This gives us two advantages:
+1) We can reference timescales in our model to our base rate $w_o t'$. We won't have to worry about updating the timesteps between virtual nodes when we change $\beta'$ for example. <br>
+2) If we use $w_0t'$ as time, then we can see that one keyeffect of changing $\beta'$ is to change the sensitivity of the rate with field. We can examine $w'$ in more detail to see what this looks like. 
+
+**This also has an important implication:**
+Because running at different $\beta'$ changes the sensitivity to field, *we can not simply scale the time period as we scale $\beta'$ and get the same results*. This has implications for devices&mdash;*Size matters!*.
+
+Let's examine $w'$ in more detail:
+
+```python jupyter={"source_hidden": true}
+import matplotlib.pyplot as plt
+import numpy as np
+import ipywidgets as widgets
+
+#3D plotting
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+
+
+# Remove previously open figure
+if 'w_prime_fig' in locals():
+    plt.close(w_prime_fig)
+
+# Function that defines w_prime
+def w_prime(beta_prime,h_prime):
+    w_prime = np.cosh(2*beta_prime*h_prime)*np.exp(-beta_prime*np.power(h_prime,2))
+            
+    return w_prime
+
+# Set up plot
+w_prime_fig = plt.figure()
+ax = w_prime_fig.gca(projection='3d')
+beta_prime = np.arange(3,300,1.0)
+h_prime = np.arange(-1,1,0.05)
+beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
+ax.set_title('Sensitivity of rate to field')
+ax.set_xlabel("beta_prime")
+ax.set_ylabel('h_prime')
+ax.set_zlabel('log(base rate multiplier)')
+ax.view_init(azim=133, elev=45)
+# Plot
+surf = ax.plot_surface(beta_prime,h_prime,np.log(w_prime(beta_prime,h_prime)), cmap = cm.coolwarm,
+                      linewidth = 0, antialiased=False)
+plt.show()
+
+```
 
 ### An alternative viewpoint: anisotropy control
 
