@@ -14,7 +14,7 @@
 #     name: python3
 # ---
 
-# # Test Jupytext - SPNC - Control of magnetization through anistropy
+# # SPNC - Control of magnetization through anistropy
 
 # ## The Stoner-Wolfarth model - control of $\theta_H$
 #
@@ -64,7 +64,7 @@ plt.grid(True)
 plt.xlim(-180,180)
 plt.legend(loc="best")
 plt.xlabel(r'$\theta$')
-plt.ylabel(r'Energy')
+plt.ylabel('Energy')
 plt.title("Energy landscape with H/H_K = "+str(H/H_K))
 plt.show()
 
@@ -126,7 +126,7 @@ def energy_barriers(theta_H):
 
 
 # + jupyter={"outputs_hidden": false}
-Theta_H = np.linspace(0,180,50)
+Theta_H = np.linspace(0,180,100)
 E_12_1 = []
 E_21_1 = []
 E_12_2 = []
@@ -177,7 +177,7 @@ plt.show()
 
 # ### Arrhenius equation
 #
-# According to Arrhenius equation, **if there were only one barrier**, the transition rate from one state to the other would read:
+# According to Arrhenius equation, if the temperature is low enough ($E_b/(k_BT) = KV/(k_BT) > 3$), **and if there were only one barrier**, the transition rate from one state to the other would read:
 #
 # $$\omega = \frac{1}{\tau} = f_0\exp{\left(\frac{-E_b}{K_BT}\right)}$$
 #
@@ -185,7 +185,7 @@ plt.show()
 #
 # $$\omega = \frac{1}{\tau} = f_{0,-}\exp{\left(\frac{-E_{b,-}}{K_BT}\right)}+f_{0,+}\exp{\left(\frac{-E_{b,+}}{K_BT}\right)}$$
 #
-# We will fix $f_{0,-}=f_{0,+}=1$.
+# We will fix $f_{0,-}=f_{0,+}=1$. We will call $T_{max}$ the temperature verifying $KV/(k_BT) = 3$. Above $T_{max}$, the Arrhenius law cannot be used anymore and our simulation is incorrect.
 
 # + jupyter={"outputs_hidden": true}
 f_0_1=1
@@ -196,26 +196,69 @@ def omega(e_b_1,e_b_2,k_BT):
 
 # + jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
-plt.plot(Theta_H,omega(np.array(E_12_1),np.array(E_12_2),k_BT),'g-',label=r'$\omega_{12}$')
-plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT),'r-',label=r'$\omega_{21}$')
+k_BT = 0.1
+plt.plot(Theta_H,omega(np.array(E_12_1),np.array(E_12_2),k_BT),'r-',label=r'$\omega_{12}$')
+plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT),'g-',label=r'$\omega_{21}$')
 plt.legend(loc = "best")
 plt.xlim(0,180)
 plt.grid(True)
 plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'$\omega$')
-plt.title("Transition rates with H/H_K = "+str(H/H_K))
+plt.title("Transition rates with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
 plt.show()
-
-
 # -
 
-# ### Magnetization at equilibrium
+# ### Two-states system
 #
-# In this two-state system, the probability of being in state $i$ follows the equation:
+# In this two-states system, the probability of being in state $i$ follows the equation:
 #
 # $$p_i(t) =  \frac{\omega_{ji}}{\omega} + \left[p_i(0) - \frac{\omega_{ji}}{\omega} \right] \exp{(-\omega t)}$$
 #
-# where $\omega = \omega_{21}+\omega_{12}$. Here, the states 1 and 2 are not necessarily aligned with the easy axis. Therefore, the projection of the magnetization along the easy axis (normalized) is:
+# where $\omega = \omega_{21}+\omega_{12}$. Let's first look at the shape of $\omega(\theta_H)$.
+
+plt.figure(figsize = (10,6))
+k_BT = 0.1
+plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT)+omega(np.array(E_12_1),np.array(E_12_2),k_BT),color="magenta")
+plt.xlim(0,180)
+plt.grid(True)
+plt.xlabel(r'$\theta_H$')
+plt.ylabel(r'$\omega$')
+plt.title("Transition rate "+r'$\omega$'+" with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
+plt.show()
+
+
+# Let's see what happens when we start from equilibrium with $\theta_H=90°$ (so that $p_1(0)=p_2(0)=\frac{1}{2}$) and instaneously set $\theta_H=45°$.
+
+def probability_state(t,p_0,omega,omega_ji):
+    return(omega_ji/omega + (p_0-omega_ji/omega)*np.exp(-omega*t))
+
+
+theta_H_input = 45
+k_BT = 0.1
+p_0_1 = 0.5
+p_0_2 = 0.5
+(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers(theta_H_input)
+omega_12 = omega(e_12_1,e_12_2,k_BT)
+omega_21 = omega(e_21_1,e_21_2,k_BT)
+omega_tot = omega_12 + omega_21
+Time = np.linspace(0,10,100)
+p_1 = probability_state(Time,p_0_1,omega_tot,omega_21)
+p_2 = probability_state(Time,p_0_2,omega_tot,omega_12)
+
+plt.figure(figsize = (10,6))
+plt.plot(Time,p_1,'g-',label=r'$p_1(t)$')
+plt.plot(Time,p_2,'r-',label=r'$p_2(t)$')
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel('Time')
+plt.ylabel('Probability')
+plt.title("Evolution of "+r'$p(t)$'+" with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
+plt.show()
+
+
+# ### Magnetization at equilibrium
+#
+# Here, the states 1 and 2 are not necessarily aligned with the easy axis. Therefore, the projection of the magnetization along the easy axis (normalized) is:
 #
 # $$m(t) = \cos{\theta_1}p_1(t) + \cos{\theta_2}p_2(t)$$
 #
@@ -310,14 +353,18 @@ for i in range(len(Temperatures_large)):
 
 # + jupyter={"outputs_hidden": false}
 plt.figure(figsize = (12,8))
+k_BTmax = K*V/3
 plt.subplot(211)
+plt.axvline(x=k_BTmax,linestyle='--',color="red",label=r'$k_BT_{max}$')
 plt.plot(Temperatures_large, Alpha_vs_T, color = "blue", marker = '+')
 plt.grid(True)
+plt.legend(loc="best")
 plt.ylabel(r'$\alpha$')
 plt.title("Alpha as a function of k_BT with H/H_K = "+str(H/H_K))
 plt.xscale("log")
 plt.yscale("log")
 plt.subplot(212)
+plt.axvline(x=k_BTmax,linestyle='--',color="red")
 plt.plot(Temperatures_large, M_vs_T, color = "orange", marker='+')
 plt.grid(True)
 plt.xlabel(r'$k_BT$')
@@ -377,9 +424,12 @@ H = 0.4
 
 # + jupyter={"outputs_hidden": false}
 plt.figure(figsize = (15,10))
+k_BTmax = K*V/3
 plt.subplot(211)
 for i in range(len(H_list)):
     plt.plot(Temperatures_large, Alpha_vs_H[i], marker = '+', label = "mu_0*M_S*V*H = "+str(H_list[i]*mu_0*M_S*V))
+    if (i==len(H_list)-1):
+        plt.axvline(x=k_BTmax,linestyle='--',color="red",label=r'$k_BT_{max}$')
 plt.grid(True)
 plt.legend(loc="best")
 plt.ylabel(r'$\alpha$')
@@ -389,6 +439,8 @@ plt.yscale("log")
 plt.subplot(212)
 for i in range(len(H_list)):
     plt.plot(Temperatures_large, M_vs_H[i], marker = '+', label = "mu_0*M_S*V*H = "+str(H_list[i]*mu_0*M_S*V))
+    if (i==len(H_list)-1):
+        plt.axvline(x=k_BTmax,linestyle='--',color="red")
 plt.grid(True)
 plt.xlabel(r'$k_BT$')
 plt.ylabel(r'$M$')
@@ -447,9 +499,12 @@ K = 1
 
 # + jupyter={"outputs_hidden": false}
 plt.figure(figsize = (15,10))
+colors = ["blue","orange","green"]
 plt.subplot(211)
 for i in range(len(K_list)):
-    plt.plot(Temperatures_large, Alpha_vs_K[i], marker = '+', label = "KV = "+str(K_list[i]*V))
+    k_BTmax = K_list[i]*V/3
+    plt.plot(Temperatures_large, Alpha_vs_K[i], color=colors[i], marker = '+', label = "KV = "+str(K_list[i]*V))
+    plt.axvline(x=k_BTmax,linestyle='--',color=colors[i],label=r'$k_BT_{max}$')
 plt.grid(True)
 plt.legend(loc="best")
 plt.ylabel(r'$\alpha$')
@@ -458,7 +513,9 @@ plt.xscale("log")
 plt.yscale("log")
 plt.subplot(212)
 for i in range(len(K_list)):
-    plt.plot(Temperatures_large, M_vs_K[i], marker = '+', label = "KV = "+str(K_list[i]*V))
+    k_BTmax = K_list[i]*V/3
+    plt.plot(Temperatures_large, M_vs_K[i], color=colors[i], marker = '+', label = "KV = "+str(K_list[i]*V))
+    plt.axvline(x=k_BTmax,linestyle='--',color=colors[i])
 plt.grid(True)
 plt.xlabel(r'$k_BT$')
 plt.ylabel(r'$M$')
@@ -496,7 +553,7 @@ plt.show()
 #
 # #### Conclusion
 #
-# In this simplistic system, we only looked at the influence $\theta_H$ on the energy barriers and on the magnetization at equilibrium (normalized and projected on the easy axis). The main result of this study is an expression of $m_{eq}$ as a function of $\theta_H$, when $k_BT \ll \mu_0M_SVH$:
+# In this simplistic system, we only looked at the influence $\theta_H$ on the energy barriers and on the magnetization at equilibrium (normalized and projected on the easy axis). The main result of this study is an expression of $m_{eq}$ as a function of $\theta_H$, when $k_BT \ll \mu_0M_SVH$ **and** $KV/(k_BT)>3$:
 #
 # $$m_{eq}(\theta_H)=-\tanh{\left(\frac{\mu_0M_SVH}{k_BT}\left(\theta_H-\frac{\pi}{2}\right)\right)}$$
 
@@ -526,6 +583,8 @@ plt.title("Mean magnetization at equilibrium with H/H_K = "+str(H/H_K)+" and the
 plt.show()
 # -
 
+# We see that when the temperature is low enough ($k_BT\ll mu_0M_SVH$), the theoretical curve is very close to the simulation!
+
 # ## The Stoner-Wolfarth model -  control of anisotropy
 #
 # In reality, the goal is to influence $m_{eq}$ by applying a strain on the magnet, which will change the anisotropy of the system. If the strain induces an anistropy $K_\sigma$ forming an angle $\phi$ with the easy axis, the energy will read:
@@ -553,7 +612,7 @@ plt.show()
 
 # #### Next steps
 #
-# 1. Study p_1(t) and p_2(t)
+# 1. (done) Study $p_1(t)$ and $p_2(t)$
 # 2. Studying the influence of $K_\sigma$ on the energy barriers and the magnetization at equilibrium, just like I did in the simple case.
 # 3. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
 # 4. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
