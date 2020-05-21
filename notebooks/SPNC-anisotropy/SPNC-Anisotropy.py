@@ -2,11 +2,11 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py
+#     formats: ipynb,py:hydrogen
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
+#       format_name: hydrogen
+#       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
 #     display_name: Python 3
@@ -14,8 +14,10 @@
 #     name: python3
 # ---
 
+# %% [markdown]
 # # SPNC - Control of magnetization through anistropy
 
+# %% [markdown]
 # ## The Stoner-Wolfarth model - control of $\theta_H$
 #
 # We consider a superparamagnetic material in a field $H$, forming an angle $\theta_H$ with the magnet's easy axis. The energy of our system reads:
@@ -24,16 +26,16 @@
 #
 # where $K$ is the constant of anisotropy along the easy axis, $M_S$ is the satured magnetization, $V$ the volume of the magnet and $\theta$ the angle between the easy axis and the magnetization $m$. Here we are interested in the behaviour of the extrema of $E(\theta)$ when we change $\theta_H$. Knowing the extrema of $E(\theta)$, we will be able to calculate the energy barriers of this two-state system. Using Arhhenius equation, we will plot the evolution of the system's magnetization at equilibrium, according to $\theta_H$.
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
 from scipy.optimize import curve_fit
-# -
 
+# %% [markdown]
 # Let's fix the constant parameters and define the energy function.
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 K = 1
 V = 1
 mu_0 = 1
@@ -42,22 +44,21 @@ H = 0.4
 H_K = 2*K/(mu_0*M_S)
 
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 def energy(theta,theta_H):
     mu_H = mu_0*M_S*H
     return(K*V*np.sin(theta*np.pi/180)**2-mu_H*np.cos((theta-theta_H)*np.pi/180))
 
 
-# -
-
+# %% [markdown]
 # When $\theta_H = 30°$, the energy landscape looks like this:
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 theta = np.linspace(-180,180,100)
 theta_H = 30
 E = energy(theta,theta_H)
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(theta, E, label = r'$\theta_H =$'+str(theta_H)+"°")
 plt.grid(True)
@@ -68,20 +69,20 @@ plt.ylabel('Energy')
 plt.title("Energy landscape with H/H_K = "+str(H/H_K))
 plt.show()
 
-
-# -
-
+# %% [markdown]
 # There are 4 extrema in this landscape. The positions of minima will be called $\theta_1$ and $\theta_2$. From each minimum, there are two ways of going to the other minimum. One way is to go through the "high maxima". In this case the energy barriers are called $E_{12,+}$ and $E_{21,+}$. The other way is going through the "low maxima". In this case the energy barriers are called $E_{12,-}$ and $E_{21,-}$.
 
-# + jupyter={"outputs_hidden": false} language="html"
-# <img src="images/Energy_landscape_legend.png" style="width:700px;height:400px/">
-# -
+# %% jupyter={"outputs_hidden": false}
+%%html
+<img src="images/Energy_landscape_legend.png" style="width:700px;height:400px/">
 
+
+# %% [markdown]
 # ### Energy barriers
 #
 # We can know evaluate the energy barriers of this landscape, according to the value of $\theta_H$. We both save the value of $\theta$ and the value $E(\theta)$ on the extrema.
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 def energy_barriers(theta_H):
     theta = np.linspace(-180,180,1000)
     E = energy(theta,theta_H)
@@ -125,7 +126,7 @@ def energy_barriers(theta_H):
     return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
 
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 Theta_H = np.linspace(0,180,100)
 E_12_1 = []
 E_21_1 = []
@@ -142,7 +143,7 @@ for theta_H in Theta_H:
     E_12_2.append(e_12_2)
     E_21_2.append(e_21_2)
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Theta_H,E_12_1,'g--',label=r'$E_{12,+}$')
 plt.plot(Theta_H,E_21_1,'r--',label=r'$E_{21,+}$')
@@ -156,13 +157,13 @@ plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'Energy')
 plt.title("Energy barriers with H/H_K = "+str(H/H_K))
 plt.show()
-# -
 
+# %% [markdown]
 # $E_{12,-}-E_{21,-}$ changes with $\theta_H$, which is what we are looking for!
 #
 # *We may note that $E_{12,-}-E_{21,-}$ is almost linear in $\theta_H$ on a wide range around $\theta_H=90°$*
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Theta_H,Theta_1,'g-',label=r'$\theta_1$')
 plt.plot(Theta_H,Theta_2,'r-',label=r'$\theta_2$')
@@ -173,8 +174,8 @@ plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'$\theta_{eq}$')
 plt.title("Angles of equilibrium with H/H_K = "+str(H/H_K))
 plt.show()
-# -
 
+# %% [markdown]
 # ### Arrhenius equation
 #
 # According to Arrhenius equation, if the temperature is low enough ($E_b/(k_BT) = KV/(k_BT) > 3$), **and if there were only one barrier**, the transition rate from one state to the other would read:
@@ -187,14 +188,14 @@ plt.show()
 #
 # We will fix $f_{0,-}=f_{0,+}=1$. We will call $T_{max}$ the temperature verifying $KV/(k_BT) = 3$. Above $T_{max}$, the Arrhenius law cannot be used anymore and our simulation is incorrect.
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 f_0_1=1
 f_0_2=2
 def omega(e_b_1,e_b_2,k_BT):
     return(f_0_1*np.exp(-e_b_1/k_BT)+f_0_2*np.exp(-e_b_2/k_BT))
 
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 k_BT = 0.1
 plt.plot(Theta_H,omega(np.array(E_12_1),np.array(E_12_2),k_BT),'r-',label=r'$\omega_{12}$')
@@ -206,8 +207,8 @@ plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'$\omega$')
 plt.title("Transition rates with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
 plt.show()
-# -
 
+# %% [markdown]
 # ### Two-states system
 #
 # In this two-states system, the probability of being in state $i$ follows the equation:
@@ -216,6 +217,7 @@ plt.show()
 #
 # where $\omega = \omega_{21}+\omega_{12}$. Let's first look at the shape of $\omega(\theta_H)$.
 
+# %%
 plt.figure(figsize = (10,6))
 k_BT = 0.1
 plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT)+omega(np.array(E_12_1),np.array(E_12_2),k_BT),color="magenta")
@@ -227,12 +229,15 @@ plt.title("Transition rate "+r'$\omega$'+" with H/H_K = "+str(H/H_K)+" and k_BT 
 plt.show()
 
 
+# %% [markdown]
 # Let's see what happens when we start from equilibrium with $\theta_H=90°$ (so that $p_1(0)=p_2(0)=\frac{1}{2}$) and instaneously set $\theta_H=45°$.
 
+# %%
 def probability_state(t,p_0,omega,omega_ji):
     return(omega_ji/omega + (p_0-omega_ji/omega)*np.exp(-omega*t))
 
 
+# %%
 theta_H_input = 45
 k_BT = 0.1
 p_0_1 = 0.5
@@ -245,6 +250,7 @@ Time = np.linspace(0,10,100)
 p_1 = probability_state(Time,p_0_1,omega_tot,omega_21)
 p_2 = probability_state(Time,p_0_2,omega_tot,omega_12)
 
+# %%
 plt.figure(figsize = (10,6))
 plt.plot(Time,p_1,'g-',label=r'$p_1(t)$')
 plt.plot(Time,p_2,'r-',label=r'$p_2(t)$')
@@ -256,6 +262,7 @@ plt.title("Evolution of "+r'$p(t)$'+" with H/H_K = "+str(H/H_K)+" and k_BT = "+s
 plt.show()
 
 
+# %% [markdown]
 # ### Magnetization at equilibrium
 #
 # Here, the states 1 and 2 are not necessarily aligned with the easy axis. Therefore, the projection of the magnetization along the easy axis (normalized) is:
@@ -270,17 +277,17 @@ plt.show()
 #
 # $$m_{eq} = \frac{\cos{\theta_1}\omega_{21} + \cos{\theta_2}\omega_{12}}{\omega}$$
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 def mag_eq(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2,k_BT):
     w_12 = omega(e_12_1,e_12_2,k_BT)
     w_21 = omega(e_21_1,e_21_2,k_BT)
     return((np.cos(theta_1*np.pi/180)*w_21+np.cos(theta_2*np.pi/180)*w_12)/(w_21+w_12))
 
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 Temperatures = [0.1, 0.3, 1, 3, 10]
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 Mag_eq_T = []
 for k_BT in Temperatures:
     Mag_eq = []
@@ -288,7 +295,7 @@ for k_BT in Temperatures:
         Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
     Mag_eq_T.append(Mag_eq)
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(Temperatures)):
     plt.plot(Theta_H,Mag_eq_T[i],label="k_BT = "+str(Temperatures[i]))
@@ -301,18 +308,17 @@ plt.title("Mean magnetization at equilibrium with H/H_K = "+str(H/H_K))
 plt.show()
 
 
-# -
-
+# %% [markdown]
 # Since those curves look like hyperbolic tangent, let's try to interpolate those curves with the $\tanh$ function!
 #
 # $$m_{eq}=-M\tanh{\left(\alpha\left(\theta_H-\frac{\pi}{2}\right)\right)}$$
 
-# + jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": true}
 def interpolate_tanh(x,alpha,M):
     return(-M*np.tanh(alpha*(x-90)*np.pi/180))
 
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(Temperatures)):
     plt.plot(Theta_H,Mag_eq_T[i],label="k_BT = "+str(Temperatures[i]))
@@ -330,11 +336,11 @@ plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'$M_{eq}$')
 plt.title("Mean magnetization at equilibrium with H/H_K = "+str(H/H_K)+" and interpolations with hyperbolic tangents")
 plt.show()
-# -
 
+# %% [markdown]
 # We can try to evaluate $\alpha$ and $M$ as functions of $k_BT$ in $m_{eq}=-M\tanh{(\alpha \theta_H)}$.
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 Temperatures_large = np.logspace(-2,1,30)
 Mag_eq_T = []
 for k_BT in Temperatures_large:
@@ -343,7 +349,7 @@ for k_BT in Temperatures_large:
         Mag_eq.append(mag_eq(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
     Mag_eq_T.append(Mag_eq)
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 Alpha_vs_T = []
 M_vs_T = []
 for i in range(len(Temperatures_large)):
@@ -351,7 +357,7 @@ for i in range(len(Temperatures_large)):
     Alpha_vs_T.append(popt[0])
     M_vs_T.append(popt[1])
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (12,8))
 k_BTmax = K*V/3
 plt.subplot(211)
@@ -373,11 +379,11 @@ plt.xscale("log")
 plt.yscale("log")
 plt.title("M as a function of k_BT with H/H_K = "+str(H/H_K))
 plt.show()
-# -
 
+# %% [markdown]
 # We can distinguish two regimes for $\alpha$ and $M$, depending on $k_BT$. We can try to get an intuition of the threshold $k_BT_{lim}$ above which the behaviours of $\alpha$ and $M$ change.
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 H_list = [0.01,0.03,0.1,0.3]
 
 Alpha_vs_H = []
@@ -422,7 +428,7 @@ for h in H_list:
         
 H = 0.4
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (15,10))
 k_BTmax = K*V/3
 plt.subplot(211)
@@ -448,11 +454,11 @@ plt.xscale("log")
 plt.yscale("log")
 plt.title("M as a function of k_BT")
 plt.show()
-# -
 
+# %% [markdown]
 # The threshold $k_BT_{lim}$ seems to depend on the characteristic energy $\mu_0M_SVH$.
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 K_list = [1,2,5]
 
 Alpha_vs_K = []
@@ -497,7 +503,7 @@ for k in K_list:
         
 K = 1
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (15,10))
 colors = ["blue","orange","green"]
 plt.subplot(211)
@@ -523,8 +529,8 @@ plt.xscale("log")
 plt.yscale("log")
 plt.title("M as a function of k_BT")
 plt.show()
-# -
 
+# %% [markdown]
 # Surprinsingly, the threshold $k_BT_{lim}$ does not depend on the characteristic energy $KV$.
 #
 # Therefore, under the condition $k_BT\ll\mu_0M_SVH$, we have the following expressions for $M$ and $\alpha$:
@@ -535,7 +541,7 @@ plt.show()
 #
 # Where $c$ is a constant we now want to determine.
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(H_list)):
     plt.plot(Temperatures_large, Alpha_vs_H[i]*Temperatures_large/(mu_0*M_S*V*H_list[i]), marker = '+', label = "mu_0*M_S*V*H = "+str(H_list[i]*mu_0*M_S*V))
@@ -547,8 +553,8 @@ plt.title("The constant c as a function of k_BT")
 plt.xscale("log")
 plt.yscale("log")
 plt.show()
-# -
 
+# %% [markdown]
 # For $k_BT\ll\mu_0M_SVH$, the previous curves converge towards $c=1$.
 #
 # #### Conclusion
@@ -557,7 +563,7 @@ plt.show()
 #
 # $$m_{eq}(\theta_H)=-\tanh{\left(\frac{\mu_0M_SVH}{k_BT}\left(\theta_H-\frac{\pi}{2}\right)\right)}$$
 
-# + jupyter={"outputs_hidden": false}
+# %% jupyter={"outputs_hidden": false}
 Temperatures = [0.1, 0.3, 1, 3, 10]
 
 Mag_eq_T = []
@@ -581,10 +587,11 @@ plt.xlabel(r'$\theta_H$')
 plt.ylabel(r'$M_{eq}$')
 plt.title("Mean magnetization at equilibrium with H/H_K = "+str(H/H_K)+" and theoretical curves")
 plt.show()
-# -
 
+# %% [markdown]
 # We see that when the temperature is low enough ($k_BT\ll mu_0M_SVH$), the theoretical curve is very close to the simulation!
 
+# %% [markdown]
 # ## The Stoner-Wolfarth model -  control of anisotropy
 #
 # In reality, the goal is to influence $m_{eq}$ by applying a strain on the magnet, which will change the anisotropy of the system. If the strain induces an anistropy $K_\sigma$ forming an angle $\phi$ with the easy axis, the energy will read:
@@ -610,6 +617,7 @@ plt.show()
 # 1. $\tilde{K}$ depends on the control parameter $K_\sigma$.
 # 2. $\tilde{\theta}$ also depends on the control parameter $K_\sigma$
 
+# %% [markdown]
 # #### Next steps
 #
 # 1. (done) Study $p_1(t)$ and $p_2(t)$
@@ -619,5 +627,4 @@ plt.show()
 #
 # ...
 
-# + jupyter={"outputs_hidden": true}
-
+# %% jupyter={"outputs_hidden": true}
