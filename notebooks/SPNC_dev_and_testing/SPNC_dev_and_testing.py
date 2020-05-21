@@ -1660,3 +1660,4 @@ print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
 # This is somewhat better, although definitely worse than the low $\beta'$ case. It at least (just) out performs our shift register with feedback.
+# **One important factor might be scaling the narma input to be between -1 and 1 to make use of both sides of the resevoir or biasing it so we only need to deal with the oscilations, not the offset**
