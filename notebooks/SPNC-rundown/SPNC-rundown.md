@@ -50,7 +50,7 @@ Therefore we can rewrite the master equation as:
 $$ \frac{dn_1}{dt} = f_0 (n - n_1) \exp{(-\beta KV(1-H/H_k)^2)} - f_0 n_1 \exp{(-\beta KV(1+H/H_k)^2)} $$ <br>
 
 
-```python
+```python jupyter={"source_hidden": true}
 %matplotlib widget
 from matplotlib import pyplot as plt
 import numpy as np
@@ -161,7 +161,7 @@ $$ w' = \cosh{(2 \beta' H')} \exp{(-\beta' H'^2)} $$
 
 This gives us two advantages:
 1) We can reference timescales in our model to our base rate $w_o t'$. We won't have to worry about updating the timesteps between virtual nodes when we change $\beta'$ for example. <br>
-2) If we use $w_0t'$ as time, then we can see that one keyeffect of changing $\beta'$ is to change the sensitivity of the rate with field. We can examine $w'$ in more detail to see what this looks like. 
+2) If we use $w_0t'$ as time, then we can see that one key effect of changing $\beta'$ is to change the sensitivity of the rate with field. We can examine $w'$ in more detail to see what this looks like. 
 
 **This also has an important implication:**
 Because running at different $\beta'$ changes the sensitivity to field, *we can not simply scale the time period as we scale $\beta'$ and get the same results*. This has implications for devices&mdash;*Size matters!*.
@@ -205,6 +205,40 @@ surf = ax.plot_surface(beta_prime,h_prime,np.log(w_prime(beta_prime,h_prime)), c
 plt.show()
 
 ```
+
+Now lets look at the absolute rate $w$:
+
+```python jupyter={"source_hidden": true}
+# Remove previously open figure
+if 'w_prime_fig' in locals():
+    plt.close(w_prime_fig)
+
+# Function that defines w_prime
+def w_absolute(beta_prime,h_prime):
+    w_absolute = 2*np.cosh(2*beta_prime*h_prime)*np.exp( -beta_prime * ( 1+np.power(h_prime,2) ) )
+            
+    return w_absolute
+    
+
+# Set up plot
+w_prime_fig = plt.figure()
+ax = w_prime_fig.gca(projection='3d')
+beta_prime = np.arange(3,300,1.0)
+h_prime = np.arange(-1,1,0.05)
+beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
+ax.set_title("Absolute rate")
+ax.set_xlabel("beta_prime")
+ax.set_ylabel('h_prime')
+ax.set_zlabel('log(rate)')
+ax.view_init(azim=133, elev=45)
+# Plot
+surf = ax.plot_surface(beta_prime,h_prime,np.log(w_absolute(beta_prime,h_prime)), 
+                       cmap = cm.coolwarm, linewidth = 0, antialiased=False)
+plt.show()
+```
+
+As we go to higher values of $\beta'$, this dramatic change in field sensitivity may cause us problems with our machine learning problems as close variables will end up getting very highly seperated!
+
 
 ### An alternative viewpoint: anisotropy control
 
