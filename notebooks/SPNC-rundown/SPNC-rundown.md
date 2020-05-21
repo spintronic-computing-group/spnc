@@ -191,7 +191,7 @@ def w_prime(beta_prime,h_prime):
 # Set up plot
 w_prime_fig = plt.figure()
 ax = w_prime_fig.gca(projection='3d')
-beta_prime = np.arange(3,300,1.0)
+beta_prime = np.arange(3,30,.1)
 h_prime = np.arange(-1,1,0.05)
 beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
 ax.set_title('Sensitivity of rate to field')
@@ -223,7 +223,7 @@ def w_absolute(beta_prime,h_prime):
 # Set up plot
 w_prime_fig = plt.figure()
 ax = w_prime_fig.gca(projection='3d')
-beta_prime = np.arange(3,300,1.0)
+beta_prime = np.arange(3,30,.1)
 h_prime = np.arange(-1,1,0.05)
 beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
 ax.set_title("Absolute rate")
@@ -237,7 +237,23 @@ surf = ax.plot_surface(beta_prime,h_prime,np.log(w_absolute(beta_prime,h_prime))
 plt.show()
 ```
 
-As we go to higher values of $\beta'$, this dramatic change in field sensitivity may cause us problems with our machine learning problems as close variables will end up getting very highly seperated!
+As we go to higher values of $\beta'$, this dramatic change in field sensitivity may cause us problems with our machine learning problems as close variables will end up getting very highly seperated! Let's therefore consider some useful ranges of $\beta'$. For practical measurments in our lab we may want a base rate that operates in seconds. We want the time for a change in the input of $e^{-1}$:
+
+```python jupyter={"source_hidden": true}
+def beta_finder(t, f0):
+    beta_prime = -np.log(1/(t*2*f0))
+    return beta_prime
+
+def time_finder(beta_prime,f0):
+    time = 1/(2*f0*np.exp(-beta_prime))
+    return time
+
+print('Assuming f0 = 10^10')
+print('beta for measurment in seconds is ', beta_finder(1,10**10))
+print('time for a beta_prime of 3 is ', time_finder(3,10**10), 'seconds')
+```
+
+This means we can limit our exploration to values of $3 < \beta' < 30$ which helps! This gives a time base from seconds (for easy lab work) down to nano seconds (for a real device).
 
 
 ### An alternative viewpoint: anisotropy control

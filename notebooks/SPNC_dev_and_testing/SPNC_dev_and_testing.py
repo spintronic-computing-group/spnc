@@ -1313,7 +1313,7 @@ def SPNC_w_prime_sw(beta_prime,h_prime):
 # Set up plot
 w_prime_fig = plt.figure()
 ax = w_prime_fig.gca(projection='3d')
-beta_prime = np.arange(3,300,1.0)
+beta_prime = np.arange(3,30,0.1)
 h_prime = np.arange(-1,1,0.05)
 beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
 ax.set_title("Sensitivity of rate to field w'")
@@ -1345,7 +1345,7 @@ def SPNC_total_rate_sw(beta_prime,h_prime):
 # Set up plot
 w_prime_fig = plt.figure()
 ax = w_prime_fig.gca(projection='3d')
-beta_prime = np.arange(3,300,1.0)
+beta_prime = np.arange(3,30,0.1)
 h_prime = np.arange(-1,1,0.05)
 beta_prime, h_prime = np.meshgrid(beta_prime, h_prime)
 ax.set_title("Absolute rate")
@@ -1362,7 +1362,7 @@ plt.show()
 # %% [markdown]
 # From this we can see that whilst there is a dramatic drop in rate with increasing $\beta'$ at zero field, the rate for large field remains similar for all values. This makes sense as for large fields the energy barrier is always similar to the thermal energy. But for large $\beta'$ and low field the energy barrier becomes $\gg$ than the thermal energy.
 #
-# This field sensitivity might be a big problem for going to large values of beta in ML.
+# This field sensitivity might be a big problem for going to large values of $\beta'$ in ML. However, we should be able to stick to $\beta' < 30$ for any pratical device. 
 
 # %% [markdown]
 # ### ML at big beta
@@ -1554,10 +1554,9 @@ utest = u[Ntrain+Nvalid:]
 dtest = d[Ntrain+Nvalid:]
 
 # %% [markdown]
-# **Trying big beta: Theta = 0.005, gamma = 0.2, Nvirt = 40, m0 = 2, beta_prime = 300**
+# **Trying excessivley big beta: Theta = 0.005, gamma = 0.2, Nvirt = 40, m0 = 2, beta_prime = 300**
 
 # %%
-%matplotlib inline
 # Defining the net
 # potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
 net = SPNC_SNR(1, 40, 1, m0=2, mask_sparse=0.5, bias=False)
@@ -1589,10 +1588,9 @@ print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
 print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
-# **Reducing the field range: Theta = very big, gamma = 0.2, Nvirt = 400, m0 = 0.1, beta_prime = 300**
+# **Reducing the field range: Theta = very big, gamma = 0.2, Nvirt = 40, m0 = 0.1, beta_prime = 300**
 
 # %%
-%matplotlib inline
 # Defining the net
 # potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
 net = SPNC_SNR(1, 40, 1, m0=0.1, mask_sparse=0.5, bias=False)
@@ -1626,6 +1624,39 @@ print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
 print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 
 # %% [markdown]
-# This is clearly very problematic. It looks like when $\beta'$ is big then it becomes very hard to distinguish between the changes.
+# This is clearly very problematic. It looks like when $\beta'$ is big then it becomes very hard to distinguish between the changes. Let's look at the limits of our more realistic range:
+
+# %% [markdown]
+# **beta at limit of practical range: Theta = 0.5, gamma = 0.2, Nvirt = 40, m0 = 2, beta_prime = 30**
 
 # %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = SPNC_SNR(1, 40, 1, m0=2, mask_sparse=0.5, bias=False)
+params = {'theta': 0.5,'gamma':0.2,'beta_prime':30}
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# This is somewhat better, although definitely worse than the low $\beta'$ case. It at least (just) out performs our shift register with feedback.
