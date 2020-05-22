@@ -113,7 +113,7 @@ def energy_barriers(theta_H):
     #The function argrelextrema fails for discrete values of theta_H, therefore we slightly change theta_H
     else:
         print("Exception 2 "+str(theta_H))
-        E = energy(theta,theta_H-0.1)
+        E = energy(theta,theta_H-0.01)
         id_max = argrelextrema(E, np.greater)[0]
         id_min = argrelextrema(E, np.less)[0]
         theta_1 = theta[id_min[0]]
@@ -159,7 +159,7 @@ plt.title("Energy barriers with H/H_K = "+str(H/H_K))
 plt.show()
 
 # %% [markdown]
-# $E_{12,-}-E_{21,-}$ changes with $\theta_H$, which is what we are looking for!
+# $(E_{12,-}-E_{21,-})$ changes with $\theta_H$, which is what we are looking for!
 #
 # *We may note that $E_{12,-}-E_{21,-}$ is almost linear in $\theta_H$ on a wide range around $\theta_H=90°$*
 
@@ -600,7 +600,7 @@ plt.show()
 #
 # Which can be wrote:
 #
-# $$E(K_\sigma, \phi) = \tilde{K}V\sin^2{(\theta-\psi)} - \mu_0M_SVH\cos{(\theta-\theta_H)}$$
+# $$E(\theta, K_\sigma) = \tilde{K}V\sin^2{(\theta-\psi)} - \mu_0M_SVH\cos{(\theta-\theta_H)}$$
 #
 # where
 #
@@ -608,23 +608,272 @@ plt.show()
 #
 # $$\psi = \frac{1}{2}\arctan{\left(\frac{K_\sigma\sin{(2\phi)}}{K+K_\sigma\cos{(2\phi)}}\right)}$$
 #
-# With the new variable $\tilde{\theta}=\theta-\psi$ and $\theta_H=0$, we have:
+# With $\theta_H=0$, we have:
 #
-# $$E(\tilde{\theta}) = \tilde{K}V\sin^2{\tilde{\theta}} - \mu_0M_SVH\cos{(\tilde{\theta}+\psi)}$$
+# $$E(\tilde{\theta}) = \tilde{K}V\sin^2{(\theta-\psi)} - \mu_0M_SVH\cos{\theta}$$
 #
-# This form is close to the expression we had at the beginning. The control paramter is not $\theta_H$ anymore but $K_\sigma$, which influences the angle $\psi$. We should nonetheless keep in mind two important things:
+# This form is close to the expression we had at the beginning. The control paramter is not $\theta_H$ anymore but $K_\sigma$, which influences the angle $\psi$. We should nonetheless keep in mind that $\tilde{K}$ depends on the control parameter $K_\sigma$.
+
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.signal import argrelextrema
+from scipy.optimize import curve_fit
+
+# %% [markdown]
+# Let's fix some constants and define $E(\theta, K_\sigma)$, $\tilde{K}$ and $\psi$.
+
+# %%
+K = 1
+V = 1
+mu_0 = 1
+M_S = 2
+H = 0.4
+H_K = 2*K/(mu_0*M_S)
+phi = 45
+
+
+# %%
+def K_tilde(K_sigma):
+    return(np.sqrt((K+K_sigma*np.cos(2*phi*np.pi/180))**2+(K_sigma*np.sin(2*phi*np.pi/180))**2))
+
+def psi(K_sigma):
+    return(180*np.arctan2(K_sigma*np.sin(2*phi*np.pi/180),(K+K_sigma*np.cos(2*phi*np.pi/180)))/2/np.pi)
+
+
+# %%
+K_lim = 5
+K_sigma_list = np.linspace(-K_lim,K_lim,100)
+plt.figure(figsize = (10,8))
+plt.subplot(211)
+plt.plot(K_sigma_list,K_tilde(K_sigma_list),color="black")
+plt.grid(True)
+plt.xlim(-K_lim,K_lim)
+plt.ylabel(r'$\tilde{K}$')
+plt.title(r'$\tilde{K}$'+" as a function of "+r'$K_\sigma$')
+plt.subplot(212)
+plt.plot(K_sigma_list,psi(K_sigma_list),color="black")
+plt.grid(True)
+plt.xlim(-K_lim,K_lim)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'$\psi$')
+plt.title(r'$\psi$'+" as a function of "+r'$K_\sigma$')
+plt.show()
+
+
+# %%
+def energy_ani(theta,K_sigma):
+    return(K_tilde(K_sigma)*V*np.sin((theta-psi(K_sigma))*np.pi/180)**2-mu_0*M_S*V*H*np.cos(theta*np.pi/180))
+
+
+# %%
+theta = np.linspace(-180,180,100)
+K_sigma = 1
+E = energy_ani(theta,K_sigma)
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(theta, E, label = r'$K_\sigma = $'+str(K_sigma))
+plt.grid(True)
+plt.xlim(-180,180)
+plt.legend(loc="best")
+plt.xlabel(r'$\theta$')
+plt.ylabel('Energy')
+plt.title("Energy landscape")
+plt.show()
+
+
+# %% [markdown]
+# Again, there are 4 extrema. We will use the same notations as previously ($\theta_1$, $\theta_2$, $E_{12,-}$, $E_{12,+}$, $E_{21,-}$, $E_{21,+}$).
+
+# %% [markdown]
+# ### Energy barriers
+
+# %%
+def energy_barriers_ani(K_sigma):
+    theta = np.linspace(-180,180,1000)
+    E = energy_ani(theta,K_sigma)
+    
+    #Localization of extrema
+    id_max = argrelextrema(E, np.greater)[0]
+    id_min = argrelextrema(E, np.less)[0]
+    
+    #Two-state case
+    if(len(id_max)==2 and len(id_min)==2):
+        theta_1 = theta[id_min[0]]
+        theta_2 = theta[id_min[1]]
+        e_12_1 = E[id_max[0]]-E[id_min[0]]
+        e_21_1 = E[id_max[0]]-E[id_min[1]]
+        e_12_2 = E[id_max[1]]-E[id_min[0]]
+        e_21_2 = E[id_max[1]]-E[id_min[1]]
+        
+    #Minimas in 0° and 180°
+    elif(len(id_min)<=1 and len(id_max)==2):
+        print("Exception 1 "+str(K_sigma))
+        theta_1 = 0
+        theta_2 = 180
+        e_12_1 = E[id_max[0]]-energy_ani(0,K_sigma)
+        e_21_1 = E[id_max[0]]-energy_ani(180,K_sigma)
+        e_12_2 = E[id_max[1]]-energy_ani(0,K_sigma)
+        e_21_2 = E[id_max[1]]-energy_ani(180,K_sigma)
+        
+    #Maximas in 0° and 180°
+    elif(len(id_min)==2 and len(id_max)<=1):
+        print("Exception 2 "+str(K_sigma))
+        theta_1 = theta[id_min[0]]
+        theta_2 = theta[id_min[1]]
+        e_12_1 = energy_ani(0,K_sigma)-E[id_min[0]]
+        e_21_1 = energy_ani(180,K_sigma)-E[id_min[0]]
+        e_12_2 = energy_ani(0,K_sigma)-E[id_min[1]]
+        e_21_2 = energy_ani(180,K_sigma)-E[id_min[1]]
+        
+    #The function argrelextrema fails for discrete values of theta_H, therefore we give the value 0 to all variables
+    else:
+        print("Exception 3 "+str(K_sigma))
+        (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (0,0,0,0,0,0)
+        
+    #Re-order to keep coherent notations
+    if K_sigma>0:
+        (e_12_1,e_12_2,e_21_1,e_21_2) = (e_12_2,e_12_1,e_21_2,e_21_1)
+    else:
+        (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (theta_2,theta_1,e_21_1,e_21_2,e_12_1,e_12_2)
+    
+    return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
+
+
+# %%
+K_lim = 2
+K_sigma_list = np.linspace(-K_lim,K_lim,100)
+E_12_1 = []
+E_21_1 = []
+E_12_2 = []
+E_21_2 = []
+Theta_1 = []
+Theta_2 = []
+for K_sigma in K_sigma_list:
+    (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers_ani(K_sigma)
+    Theta_1.append(theta_1)
+    Theta_2.append(theta_2)
+    E_12_1.append(e_12_1)
+    E_21_1.append(e_21_1)
+    E_12_2.append(e_12_2)
+    E_21_2.append(e_21_2)
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(K_sigma_list,E_12_1,'g--',label=r'$E_{12,+}$')
+plt.plot(K_sigma_list,E_21_1,'r--',label=r'$E_{21,+}$')
+plt.plot(K_sigma_list,E_12_2,'g-',label=r'$E_{12,-}$')
+plt.plot(K_sigma_list,E_21_2,'r-',label=r'$E_{21,-}$')
+plt.plot(K_sigma_list,np.array(E_21_2)-np.array(E_12_2),'b-',label=r'$E_{21,-}-E_{12,-}$')
+plt.legend(loc = "best")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'Energy')
+plt.title("Energy barriers")
+plt.show()
+
+# %% [markdown]
+# $(E_{21,-}-E_{12,-})$ changes with $K_\sigma$, but very slowly.
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(K_sigma_list,Theta_1,'g+',label=r'$\theta_1$')
+plt.plot(K_sigma_list,Theta_2,'r+',label=r'$\theta_2$')
+plt.legend(loc = "best")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'$\theta_{eq}$')
+plt.title("Angles of equilibrium")
+plt.show()
+
+# %% [markdown]
+# ### Arrhenius equation
 #
-# 1. $\tilde{K}$ depends on the control parameter $K_\sigma$.
-# 2. $\tilde{\theta}$ also depends on the control parameter $K_\sigma$
+# We have two barriers of energy. For the moment, we will write de transition rate like this:
+#
+# $$\omega = \frac{1}{\tau} = f_{0,-}\exp{\left(\frac{-E_{b,-}}{K_BT}\right)}+f_{0,+}\exp{\left(\frac{-E_{b,+}}{K_BT}\right)}$$
+#
+# We will fix $f_{0,-}=f_{0,+}=1$. We will call $T_{max}$ the temperature verifying $KV/(k_BT) = 3$. Above $T_{max}$, the Arrhenius law cannot be used anymore and our simulation is incorrect.
+
+# %%
+f_0_1=1
+f_0_2=2
+def omega_ani(e_b_1,e_b_2,k_BT):
+    return(f_0_1*np.exp(-e_b_1/k_BT)+f_0_2*np.exp(-e_b_2/k_BT))
+
+
+# %%
+plt.figure(figsize = (10,6))
+k_BT = 0.1
+plt.plot(K_sigma_list,omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT),'r-',label=r'$\omega_{12}$')
+plt.plot(K_sigma_list,omega_ani(np.array(E_21_1),np.array(E_21_2),k_BT),'g-',label=r'$\omega_{21}$')
+plt.legend(loc = "best")
+plt.xlim(-K_lim,K_lim)
+plt.yscale("log")
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'$\omega$')
+plt.title("Transition rates with "+r'$k_BT$'+" = "+str(k_BT))
+plt.show()
+
+
+# %% [markdown]
+# ### Magnetization at equilibrium
+#
+# Here, the states 1 and 2 are not necessarily aligned with the easy axis. Therefore, the projection of the magnetization along the easy axis (normalized) is:
+#
+# $$m(t) = \cos{\theta_1}p_1(t) + \cos{\theta_2}p_2(t)$$
+#
+# Which gives the following expression for $m(t)$:
+#
+# $$m(t) = m_{eq} + \left[m(0) - m_{eq} \right]\exp{(-\omega t)}$$
+#
+# where $m_{eq}$ is is the magnetization at equilibrium (projected on the east axis) and reads:
+#
+# $$m_{eq} = \frac{\cos{\theta_1}\omega_{21} + \cos{\theta_2}\omega_{12}}{\omega}$$
+
+# %%
+def mag_eq_ani(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2,k_BT):
+    w_12 = omega(e_12_1,e_12_2,k_BT)
+    w_21 = omega(e_21_1,e_21_2,k_BT)
+    return((np.cos(theta_1*np.pi/180)*w_21+np.cos(theta_2*np.pi/180)*w_12)/(w_21+w_12))
+
+
+# %%
+Temperatures = [0.1, 0.3, 1, 3, 10]
+
+# %%
+Mag_eq_T = []
+for k_BT in Temperatures:
+    Mag_eq = []
+    for i in range(len(Theta_1)):
+        Mag_eq.append(mag_eq_ani(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
+    Mag_eq_T.append(Mag_eq)
+
+# %%
+plt.figure(figsize = (10,6))
+for i in range(len(Temperatures)):
+    plt.plot(K_sigma_list,Mag_eq_T[i],label="k_BT = "+str(Temperatures[i]))
+plt.xlim(-K_lim,K_lim)
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'$m_{eq}$')
+plt.title("Mean magnetization at equilibrium")
+plt.show()
 
 # %% [markdown]
 # #### Next steps
 #
-# 1. (done) Study $p_1(t)$ and $p_2(t)$
-# 2. Studying the influence of $K_\sigma$ on the energy barriers and the magnetization at equilibrium, just like I did in the simple case.
-# 3. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
-# 4. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
+# 1. Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
+# 2. (done) Studying the influence of $K_\sigma$ on the energy barriers (and the magnetization at equilibrium), just like I did in the simple case.
+# 3. Going deeper into studying the role of phi and H. Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
+# 4. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
+# 5. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
 #
 # ...
 
-# %% jupyter={"outputs_hidden": true}
+# %%
