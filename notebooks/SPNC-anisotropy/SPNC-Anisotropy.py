@@ -218,9 +218,14 @@ plt.show()
 # where $\omega = \omega_{21}+\omega_{12}$. Let's first look at the shape of $\omega(\theta_H)$.
 
 # %%
-plt.figure(figsize = (10,6))
 k_BT = 0.1
-plt.plot(Theta_H,omega(np.array(E_21_1),np.array(E_21_2),k_BT)+omega(np.array(E_12_1),np.array(E_12_2),k_BT),color="magenta")
+omega_12 = omega(np.array(E_12_1),np.array(E_12_2),k_BT)
+omega_21 = omega(np.array(E_21_1),np.array(E_21_2),k_BT)
+omega_tot = omega_12 + omega_21
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(Theta_H,omega_tot,color="magenta")
 plt.xlim(0,180)
 plt.grid(True)
 plt.xlabel(r'$\theta_H$')
@@ -259,6 +264,39 @@ plt.grid(True)
 plt.xlabel('Time')
 plt.ylabel('Probability')
 plt.title("Evolution of "+r'$p(t)$'+" with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
+plt.show()
+
+# %% [markdown]
+# We can also plot the evolution of $p_1(t=\infty)=p_{1,eq}$ and $p_2(t=\infty)=p_{2,eq}$ as functions of $\theta_H$.
+
+# %%
+k_BT = 0.1
+omega_12 = omega(np.array(E_12_1),np.array(E_12_2),k_BT)
+omega_21 = omega(np.array(E_21_1),np.array(E_21_2),k_BT)
+omega_tot = omega_12 + omega_21
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(Theta_H,omega_21/omega_tot,color="green",label=r'$p_{1,eq}$')
+plt.plot(Theta_H,omega_12/omega_tot,color="red",label=r'$p_{2,eq}$')
+plt.legend(loc="best")
+plt.xlim(0,180)
+plt.grid(True)
+plt.xlabel(r'$\theta_H$')
+#plt.yscale("log")
+plt.ylabel(r'$p_{eq}$')
+plt.title("Probabilities for being in each state (at equilibrium) with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
+plt.show()
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(Theta_H,omega_21/omega_12,color="orange")
+plt.xlim(-0,180)
+plt.grid(True)
+plt.yscale("log")
+plt.ylabel(r'$p_{1,eq}/p_{2,eq}$')
+plt.xlabel(r'$\theta_H$')
+plt.title("Ratio of probabilities for being in each state (at equilibrium)")
 plt.show()
 
 
@@ -608,10 +646,6 @@ plt.show()
 #
 # $$\psi = \frac{1}{2}\arctan{\left(\frac{K_\sigma\sin{(2\phi)}}{K+K_\sigma\cos{(2\phi)}}\right)}$$
 #
-# With $\theta_H=0$, we have:
-#
-# $$E(\tilde{\theta}) = \tilde{K}V\sin^2{(\theta-\psi)} - \mu_0M_SVH\cos{\theta}$$
-#
 # This form is close to the expression we had at the beginning. The control paramter is not $\theta_H$ anymore but $K_\sigma$, which influences the angle $\psi$. We should nonetheless keep in mind that $\tilde{K}$ depends on the control parameter $K_\sigma$.
 
 # %%
@@ -628,9 +662,10 @@ K = 1
 V = 1
 mu_0 = 1
 M_S = 2
-H = 0.4
+H = 0.4 #H<0.5 so that there should always be two minima
 H_K = 2*K/(mu_0*M_S)
-phi = 45
+phi = 45 #intermediate between 0 and 90
+theta_H = 90 #Non-linearities are the greatest when theta_H=90
 
 
 # %%
@@ -663,7 +698,7 @@ plt.show()
 
 # %%
 def energy_ani(theta,K_sigma):
-    return(K_tilde(K_sigma)*V*np.sin((theta-psi(K_sigma))*np.pi/180)**2-mu_0*M_S*V*H*np.cos(theta*np.pi/180))
+    return(K_tilde(K_sigma)*V*np.sin((theta-psi(K_sigma))*np.pi/180)**2-mu_0*M_S*V*H*np.cos((theta-theta_H)*np.pi/180))
 
 
 # %%
@@ -697,52 +732,53 @@ def energy_barriers_ani(K_sigma):
     #Localization of extrema
     id_max = argrelextrema(E, np.greater)[0]
     id_min = argrelextrema(E, np.less)[0]
+    ind1 = 0
+    ind2 = 1
     
-    #Two-state case
+    #if theta_1 after theta_2, switch ind1 and ind2
+    if (len(id_min)>=1 and theta[id_min[0]]>(-90)):
+        ind1 = 1
+        ind2 = 0
+    
+    #Two-states case (1 for + ; 2 for -)
     if(len(id_max)==2 and len(id_min)==2):
-        theta_1 = theta[id_min[0]]
-        theta_2 = theta[id_min[1]]
-        e_12_1 = E[id_max[0]]-E[id_min[0]]
-        e_21_1 = E[id_max[0]]-E[id_min[1]]
-        e_12_2 = E[id_max[1]]-E[id_min[0]]
-        e_21_2 = E[id_max[1]]-E[id_min[1]]
+        theta_1 = theta[id_min[ind1]]
+        theta_2 = theta[id_min[ind2]]
+        e_12_1 = max((E[id_max[0]]-E[id_min[ind1]]),(E[id_max[1]]-E[id_min[ind1]]))
+        e_21_1 = max((E[id_max[0]]-E[id_min[ind2]]),(E[id_max[1]]-E[id_min[ind2]]))
+        e_12_2 = min((E[id_max[0]]-E[id_min[ind1]]),(E[id_max[1]]-E[id_min[ind1]]))
+        e_21_2 = min((E[id_max[0]]-E[id_min[ind2]]),(E[id_max[1]]-E[id_min[ind2]]))
         
     #Minimas in 0° and 180°
     elif(len(id_min)<=1 and len(id_max)==2):
-        print("Exception 1 "+str(K_sigma))
+        print("Exception 1 ; K_sigma = "+str(K_sigma))
         theta_1 = 0
         theta_2 = 180
-        e_12_1 = E[id_max[0]]-energy_ani(0,K_sigma)
-        e_21_1 = E[id_max[0]]-energy_ani(180,K_sigma)
-        e_12_2 = E[id_max[1]]-energy_ani(0,K_sigma)
-        e_21_2 = E[id_max[1]]-energy_ani(180,K_sigma)
+        e_12_1 = max((E[id_max[0]]-energy_ani(0,K_sigma)),(E[id_max[1]]-energy_ani(0,K_sigma)))
+        e_21_1 = max((E[id_max[0]]-energy_ani(180,K_sigma)),(E[id_max[1]]-energy_ani(180,K_sigma)))
+        e_12_2 = min((E[id_max[0]]-energy_ani(0,K_sigma)),(E[id_max[1]]-energy_ani(0,K_sigma)))
+        e_21_2 = min((E[id_max[0]]-energy_ani(180,K_sigma)),(E[id_max[1]]-energy_ani(180,K_sigma)))
         
     #Maximas in 0° and 180°
     elif(len(id_min)==2 and len(id_max)<=1):
-        print("Exception 2 "+str(K_sigma))
-        theta_1 = theta[id_min[0]]
-        theta_2 = theta[id_min[1]]
-        e_12_1 = energy_ani(0,K_sigma)-E[id_min[0]]
-        e_21_1 = energy_ani(180,K_sigma)-E[id_min[0]]
-        e_12_2 = energy_ani(0,K_sigma)-E[id_min[1]]
-        e_21_2 = energy_ani(180,K_sigma)-E[id_min[1]]
+        print("Exception 2 ; K_sigma = "+str(K_sigma))
+        theta_1 = theta[id_min[ind1]]
+        theta_2 = theta[id_min[ind2]]
+        e_12_1 = max((energy_ani(0,K_sigma)-E[id_min[ind1]]),(energy_ani(180,K_sigma)-E[id_min[ind1]]))
+        e_21_1 = max((energy_ani(0,K_sigma)-E[id_min[ind2]]),(energy_ani(180,K_sigma)-E[id_min[ind2]]))
+        e_12_2 = min((energy_ani(0,K_sigma)-E[id_min[ind1]]),(energy_ani(180,K_sigma)-E[id_min[ind1]]))
+        e_21_2 = min((energy_ani(0,K_sigma)-E[id_min[ind2]]),(energy_ani(180,K_sigma)-E[id_min[ind2]]))
         
-    #The function argrelextrema fails for discrete values of theta_H, therefore we give the value 0 to all variables
+    #There might be only one minimum. In this case we take the arbitrary valu 0 for all parameters
     else:
-        print("Exception 3 "+str(K_sigma))
+        print("Exception 3 ; K_sigma = "+str(K_sigma))
         (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (0,0,0,0,0,0)
-        
-    #Re-order to keep coherent notations
-    if K_sigma>0:
-        (e_12_1,e_12_2,e_21_1,e_21_2) = (e_12_2,e_12_1,e_21_2,e_21_1)
-    else:
-        (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (theta_2,theta_1,e_21_1,e_21_2,e_12_1,e_12_2)
     
     return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
 
 
 # %%
-K_lim = 2
+K_lim = 5
 K_sigma_list = np.linspace(-K_lim,K_lim,100)
 E_12_1 = []
 E_21_1 = []
@@ -800,7 +836,7 @@ plt.show()
 
 # %%
 f_0_1=1
-f_0_2=2
+f_0_2=1
 def omega_ani(e_b_1,e_b_2,k_BT):
     return(f_0_1*np.exp(-e_b_1/k_BT)+f_0_2*np.exp(-e_b_2/k_BT))
 
@@ -817,6 +853,70 @@ plt.grid(True)
 plt.xlabel(r'$K_\sigma$')
 plt.ylabel(r'$\omega$')
 plt.title("Transition rates with "+r'$k_BT$'+" = "+str(k_BT))
+plt.show()
+
+# %% [markdown]
+# ### Two states system
+#
+# As before, we can plot $\omega(K_\sigma)$, $p_{1,eq}(K_\sigma)$ and $p_{2,eq}(K_\sigma)$:
+
+# %%
+k_BT = 0.1
+omega_12 = omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT)
+omega_21 = omega_ani(np.array(E_21_1),np.array(E_21_2),k_BT)
+omega_tot = omega_12 + omega_21
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(K_sigma_list,omega_tot,color="magenta")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+plt.ylabel(r'$\omega$')
+plt.title("Transition rate "+r'$\omega$')
+plt.show()
+
+# %%
+plt.figure(figsize = (10,8))
+plt.subplot(211)
+plt.plot(K_sigma_list,omega_21/omega_tot,color="green")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+#plt.yscale("log")
+plt.ylabel(r'$p_{1,eq}$')
+plt.title("Probability for being in state 1 (at equilibrium)")
+plt.subplot(212)
+plt.plot(K_sigma_list,omega_12/omega_tot,color="red")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+plt.xlabel(r'$K_\sigma$')
+#plt.yscale("log")
+plt.ylabel(r'$p_{2,eq}$')
+plt.title("Probability for being in state 2 (at equilibrium)")
+plt.show()
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(K_sigma_list,omega_21/omega_tot,color="green",label=r'$p_{1,eq}$')
+plt.plot(K_sigma_list,omega_12/omega_tot,color="red",label=r'$p_{2,eq}$')
+plt.xlim(-K_lim,K_lim)
+plt.legend(loc="best")
+plt.grid(True)
+#plt.yscale("log")
+plt.ylabel(r'$p_{eq}$')
+plt.xlabel(r'$K_\sigma$')
+plt.title("Probabilities for being in each state (at equilibrium)")
+plt.show()
+
+# %%
+plt.figure(figsize = (10,6))
+plt.plot(K_sigma_list,omega_21/omega_12,color="orange")
+plt.xlim(-K_lim,K_lim)
+plt.grid(True)
+plt.yscale("log")
+plt.ylabel(r'$p_{1,eq}/p_{2,eq}$')
+plt.xlabel(r'$K_\sigma$')
+plt.title("Ratio of probabilities for being in each state (at equilibrium)")
 plt.show()
 
 
@@ -837,8 +937,8 @@ plt.show()
 
 # %%
 def mag_eq_ani(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2,k_BT):
-    w_12 = omega(e_12_1,e_12_2,k_BT)
-    w_21 = omega(e_21_1,e_21_2,k_BT)
+    w_12 = omega_ani(e_12_1,e_12_2,k_BT)
+    w_21 = omega_ani(e_21_1,e_21_2,k_BT)
     return((np.cos(theta_1*np.pi/180)*w_21+np.cos(theta_2*np.pi/180)*w_12)/(w_21+w_12))
 
 
@@ -866,13 +966,108 @@ plt.title("Mean magnetization at equilibrium")
 plt.show()
 
 # %% [markdown]
+# ### Influence of $\theta_H$
+#
+# The goal is to maximize the influence of $K_\sigma$ on $p_{1,eq}$ and $p_{2,eq}$. The parameter $\theta_H$ seems to be crucial in this problem. Let's see what happens when $\theta_H$ varies. We will both look at $p_{1,eq}/p_{2,eq}$ and $m_{eq}$.
+
+# %%
+theta_H_list = np.linspace(0,90,5)
+K_lim = 5
+k_BT = 0.1
+
+# %%
+p1p2_vs_tH = []
+
+for tH in theta_H_list:
+    theta_H = tH
+    
+    K_sigma_list = np.linspace(-K_lim,K_lim,500)
+    E_12_1 = []
+    E_21_1 = []
+    E_12_2 = []
+    E_21_2 = []
+    Theta_1 = []
+    Theta_2 = []
+    for K_sigma in K_sigma_list:
+        (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers_ani(K_sigma)
+        Theta_1.append(theta_1)
+        Theta_2.append(theta_2)
+        E_12_1.append(e_12_1)
+        E_21_1.append(e_21_1)
+        E_12_2.append(e_12_2)
+        E_21_2.append(e_21_2)
+    
+    omega_12 = omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT)
+    omega_21 = omega_ani(np.array(E_21_1),np.array(E_21_2),k_BT)
+    
+    p1p2_vs_tH.append(omega_21/omega_12)
+
+# %%
+plt.figure(figsize = (10,6))
+for i in range(len(theta_H_list)):
+    plt.plot(K_sigma_list,p1p2_vs_tH[i],label=r'$\theta_H = $'+str(theta_H_list[i])+"°")
+plt.xlim(-K_lim,K_lim)
+plt.legend(loc="best")
+plt.grid(True)
+plt.yscale("log")
+plt.ylabel(r'$p_{1,eq}/p_{2,eq}$')
+plt.xlabel(r'$K_\sigma$')
+plt.title("Ratio of probabilities for being in each state (at equilibrium)")
+plt.show()
+
+# %%
+m_eq_vs_tH = []
+k_BT = 0.1
+K_sigma_list = np.linspace(-K_lim,K_lim,500)
+
+for tH in theta_H_list:
+    theta_H = tH
+    
+    E_12_1 = []
+    E_21_1 = []
+    E_12_2 = []
+    E_21_2 = []
+    Theta_1 = []
+    Theta_2 = []
+    for K_sigma in K_sigma_list:
+        (theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2) = energy_barriers_ani(K_sigma)
+        Theta_1.append(theta_1)
+        Theta_2.append(theta_2)
+        E_12_1.append(e_12_1)
+        E_21_1.append(e_21_1)
+        E_12_2.append(e_12_2)
+        E_21_2.append(e_21_2)
+    
+    omega_12 = omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT)
+    omega_21 = omega_ani(np.array(E_21_1),np.array(E_21_2),k_BT)
+    omega_tot = omega_12 + omega_21
+    
+    m_eq_vs_tH.append((omega_21*np.cos(np.array(Theta_1)*np.pi/180)+omega_12*np.cos(np.array(Theta_2)*np.pi/180))/omega_tot)
+
+# %%
+plt.figure(figsize = (10,6))
+for i in range(len(theta_H_list)):
+    plt.plot(K_sigma_list,m_eq_vs_tH[i], label=r'$\theta_H = $'+str(theta_H_list[i])+"°")
+plt.xlim(-K_lim,K_lim)
+plt.legend(loc="best")
+plt.grid(True)
+plt.ylabel(r'$m_{eq}$')
+plt.xlabel(r'$K_\sigma$')
+plt.title("Mean magnetization at equilibrium")
+plt.show()
+
+# %% [markdown]
+# As we can see, when $\theta_H=90°$, we get the nonlinear response with the biggest amplitude.
+
+# %% [markdown]
 # #### Next steps
 #
-# 1. Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
+# 1. (done) Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
 # 2. (done) Studying the influence of $K_\sigma$ on the energy barriers (and the magnetization at equilibrium), just like I did in the simple case.
-# 3. Going deeper into studying the role of phi and H. Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
-# 4. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
-# 5. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
+# 3. (done) Studying $p_{1,eq}$ and $p_{2,eq}$.
+# 4. Going deeper into studying the role of phi, theta_H and H. Studying $p_1(t)$ and $p_2(t)$.
+# 5. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
+# 6. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
 #
 # ...
 
