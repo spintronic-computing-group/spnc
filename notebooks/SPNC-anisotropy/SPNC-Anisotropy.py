@@ -26,7 +26,7 @@
 #
 # where $K$ is the constant of anisotropy along the easy axis, $M_S$ is the satured magnetization, $V$ the volume of the magnet and $\theta$ the angle between the easy axis and the magnetization $m$. Here we are interested in the behaviour of the extrema of $E(\theta)$ when we change $\theta_H$. Knowing the extrema of $E(\theta)$, we will be able to calculate the energy barriers of this two-state system. Using Arhhenius equation, we will plot the evolution of the system's magnetization at equilibrium, according to $\theta_H$.
 
-# %% jupyter={"outputs_hidden": true}
+# %% jupyter={"outputs_hidden": false}
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
@@ -217,13 +217,13 @@ plt.show()
 #
 # where $\omega = \omega_{21}+\omega_{12}$. Let's first look at the shape of $\omega(\theta_H)$.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 k_BT = 0.1
 omega_12 = omega(np.array(E_12_1),np.array(E_12_2),k_BT)
 omega_21 = omega(np.array(E_21_1),np.array(E_21_2),k_BT)
 omega_tot = omega_12 + omega_21
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Theta_H,omega_tot,color="magenta")
 plt.xlim(0,180)
@@ -237,12 +237,12 @@ plt.show()
 # %% [markdown]
 # Let's see what happens when we start from equilibrium with $\theta_H=90°$ (so that $p_1(0)=p_2(0)=\frac{1}{2}$) and instaneously set $\theta_H=45°$.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def probability_state(t,p_0,omega,omega_ji):
     return(omega_ji/omega + (p_0-omega_ji/omega)*np.exp(-omega*t))
 
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 theta_H_input = 45
 k_BT = 0.1
 p_0_1 = 0.5
@@ -255,7 +255,7 @@ Time = np.linspace(0,10,100)
 p_1 = probability_state(Time,p_0_1,omega_tot,omega_21)
 p_2 = probability_state(Time,p_0_2,omega_tot,omega_12)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Time,p_1,'g-',label=r'$p_1(t)$')
 plt.plot(Time,p_2,'r-',label=r'$p_2(t)$')
@@ -269,13 +269,13 @@ plt.show()
 # %% [markdown]
 # We can also plot the evolution of $p_1(t=\infty)=p_{1,eq}$ and $p_2(t=\infty)=p_{2,eq}$ as functions of $\theta_H$.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 k_BT = 0.1
 omega_12 = omega(np.array(E_12_1),np.array(E_12_2),k_BT)
 omega_21 = omega(np.array(E_21_1),np.array(E_21_2),k_BT)
 omega_tot = omega_12 + omega_21
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Theta_H,omega_21/omega_tot,color="green",label=r'$p_{1,eq}$')
 plt.plot(Theta_H,omega_12/omega_tot,color="red",label=r'$p_{2,eq}$')
@@ -288,7 +288,7 @@ plt.ylabel(r'$p_{eq}$')
 plt.title("Probabilities for being in each state (at equilibrium) with H/H_K = "+str(H/H_K)+" and k_BT = "+str(k_BT))
 plt.show()
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(Theta_H,omega_21/omega_12,color="orange")
 plt.xlim(-0,180)
@@ -648,7 +648,7 @@ plt.show()
 #
 # This form is close to the expression we had at the beginning. The control paramter is not $\theta_H$ anymore but $K_\sigma$, which influences the angle $\psi$. We should nonetheless keep in mind that $\tilde{K}$ depends on the control parameter $K_\sigma$.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
@@ -657,7 +657,7 @@ from scipy.optimize import curve_fit
 # %% [markdown]
 # Let's fix some constants and define $E(\theta, K_\sigma)$, $\tilde{K}$ and $\psi$.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 K = 1
 V = 1
 mu_0 = 1
@@ -668,7 +668,7 @@ phi = 45 #intermediate between 0 and 90
 theta_H = 90 #Non-linearities are the greatest when theta_H=90
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def K_tilde(K_sigma):
     return(np.sqrt((K+K_sigma*np.cos(2*phi*np.pi/180))**2+(K_sigma*np.sin(2*phi*np.pi/180))**2))
 
@@ -676,7 +676,7 @@ def psi(K_sigma):
     return(180*np.arctan2(K_sigma*np.sin(2*phi*np.pi/180),(K+K_sigma*np.cos(2*phi*np.pi/180)))/2/np.pi)
 
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 K_lim = 5
 K_sigma_list = np.linspace(-K_lim,K_lim,100)
 plt.figure(figsize = (10,8))
@@ -696,17 +696,17 @@ plt.title(r'$\psi$'+" as a function of "+r'$K_\sigma$')
 plt.show()
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def energy_ani(theta,K_sigma):
     return(K_tilde(K_sigma)*V*np.sin((theta-psi(K_sigma))*np.pi/180)**2-mu_0*M_S*V*H*np.cos((theta-theta_H)*np.pi/180))
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 theta = np.linspace(-180,180,100)
 K_sigma = 1
 E = energy_ani(theta,K_sigma)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(theta, E, label = r'$K_\sigma = $'+str(K_sigma))
 plt.grid(True)
@@ -724,7 +724,7 @@ plt.show()
 # %% [markdown]
 # ### Energy barriers
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 def energy_barriers_ani(K_sigma):
     theta = np.linspace(-180,180,1000)
     E = energy_ani(theta,K_sigma)
@@ -777,7 +777,7 @@ def energy_barriers_ani(K_sigma):
     return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
 
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 K_lim = 5
 K_sigma_list = np.linspace(-K_lim,K_lim,100)
 E_12_1 = []
@@ -795,7 +795,7 @@ for K_sigma in K_sigma_list:
     E_12_2.append(e_12_2)
     E_21_2.append(e_21_2)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(K_sigma_list,E_12_1,'g--',label=r'$E_{12,+}$')
 plt.plot(K_sigma_list,E_21_1,'r--',label=r'$E_{21,+}$')
@@ -813,7 +813,7 @@ plt.show()
 # %% [markdown]
 # $(E_{21,-}-E_{12,-})$ changes with $K_\sigma$, but very slowly.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(K_sigma_list,Theta_1,'g+',label=r'$\theta_1$')
 plt.plot(K_sigma_list,Theta_2,'r+',label=r'$\theta_2$')
@@ -834,14 +834,14 @@ plt.show()
 #
 # We will fix $f_{0,-}=f_{0,+}=1$. We will call $T_{max}$ the temperature verifying $KV/(k_BT) = 3$. Above $T_{max}$, the Arrhenius law cannot be used anymore and our simulation is incorrect.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 f_0_1=1
 f_0_2=1
 def omega_ani(e_b_1,e_b_2,k_BT):
     return(f_0_1*np.exp(-e_b_1/k_BT)+f_0_2*np.exp(-e_b_2/k_BT))
 
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 k_BT = 0.1
 plt.plot(K_sigma_list,omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT),'r-',label=r'$\omega_{12}$')
@@ -860,13 +860,13 @@ plt.show()
 #
 # As before, we can plot $\omega(K_\sigma)$, $p_{1,eq}(K_\sigma)$ and $p_{2,eq}(K_\sigma)$:
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 k_BT = 0.1
 omega_12 = omega_ani(np.array(E_12_1),np.array(E_12_2),k_BT)
 omega_21 = omega_ani(np.array(E_21_1),np.array(E_21_2),k_BT)
 omega_tot = omega_12 + omega_21
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(K_sigma_list,omega_tot,color="magenta")
 plt.xlim(-K_lim,K_lim)
@@ -876,7 +876,7 @@ plt.ylabel(r'$\omega$')
 plt.title("Transition rate "+r'$\omega$')
 plt.show()
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,8))
 plt.subplot(211)
 plt.plot(K_sigma_list,omega_21/omega_tot,color="green")
@@ -895,7 +895,7 @@ plt.ylabel(r'$p_{2,eq}$')
 plt.title("Probability for being in state 2 (at equilibrium)")
 plt.show()
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(K_sigma_list,omega_21/omega_tot,color="green",label=r'$p_{1,eq}$')
 plt.plot(K_sigma_list,omega_12/omega_tot,color="red",label=r'$p_{2,eq}$')
@@ -908,7 +908,7 @@ plt.xlabel(r'$K_\sigma$')
 plt.title("Probabilities for being in each state (at equilibrium)")
 plt.show()
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 plt.plot(K_sigma_list,omega_21/omega_12,color="orange")
 plt.xlim(-K_lim,K_lim)
@@ -935,17 +935,17 @@ plt.show()
 #
 # $$m_{eq} = \frac{\cos{\theta_1}\omega_{21} + \cos{\theta_2}\omega_{12}}{\omega}$$
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 def mag_eq_ani(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2,k_BT):
     w_12 = omega_ani(e_12_1,e_12_2,k_BT)
     w_21 = omega_ani(e_21_1,e_21_2,k_BT)
     return((np.cos(theta_1*np.pi/180)*w_21+np.cos(theta_2*np.pi/180)*w_12)/(w_21+w_12))
 
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 Temperatures = [0.1, 0.3, 1, 3, 10]
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 Mag_eq_T = []
 for k_BT in Temperatures:
     Mag_eq = []
@@ -953,7 +953,7 @@ for k_BT in Temperatures:
         Mag_eq.append(mag_eq_ani(Theta_1[i],Theta_2[i],E_12_1[i],E_21_1[i],E_12_2[i],E_21_2[i],k_BT))
     Mag_eq_T.append(Mag_eq)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(Temperatures)):
     plt.plot(K_sigma_list,Mag_eq_T[i],label="k_BT = "+str(Temperatures[i]))
@@ -970,12 +970,12 @@ plt.show()
 #
 # The goal is to maximize the influence of $K_\sigma$ on $p_{1,eq}$ and $p_{2,eq}$. The parameter $\theta_H$ seems to be crucial in this problem. Let's see what happens when $\theta_H$ varies. We will both look at $p_{1,eq}/p_{2,eq}$ and $m_{eq}$.
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 theta_H_list = np.linspace(0,90,5)
 K_lim = 5
 k_BT = 0.1
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 p1p2_vs_tH = []
 
 for tH in theta_H_list:
@@ -1002,7 +1002,7 @@ for tH in theta_H_list:
     
     p1p2_vs_tH.append(omega_21/omega_12)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(theta_H_list)):
     plt.plot(K_sigma_list,p1p2_vs_tH[i],label=r'$\theta_H = $'+str(theta_H_list[i])+"°")
@@ -1015,7 +1015,7 @@ plt.xlabel(r'$K_\sigma$')
 plt.title("Ratio of probabilities for being in each state (at equilibrium)")
 plt.show()
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 m_eq_vs_tH = []
 k_BT = 0.1
 K_sigma_list = np.linspace(-K_lim,K_lim,500)
@@ -1044,7 +1044,7 @@ for tH in theta_H_list:
     
     m_eq_vs_tH.append((omega_21*np.cos(np.array(Theta_1)*np.pi/180)+omega_12*np.cos(np.array(Theta_2)*np.pi/180))/omega_tot)
 
-# %%
+# %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))
 for i in range(len(theta_H_list)):
     plt.plot(K_sigma_list,m_eq_vs_tH[i], label=r'$\theta_H = $'+str(theta_H_list[i])+"°")
@@ -1071,4 +1071,4 @@ plt.show()
 #
 # ...
 
-# %%
+# %% jupyter={"outputs_hidden": true}
