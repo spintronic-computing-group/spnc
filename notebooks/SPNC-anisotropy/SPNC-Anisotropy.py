@@ -703,7 +703,7 @@ def energy_ani(theta,K_sigma):
 
 # %% jupyter={"outputs_hidden": true}
 theta = np.linspace(-180,180,100)
-K_sigma = 1
+K_sigma = 10
 E = energy_ani(theta,K_sigma)
 
 # %% jupyter={"outputs_hidden": false}
@@ -811,7 +811,7 @@ plt.title("Energy barriers")
 plt.show()
 
 # %% [markdown]
-# $(E_{21,-}-E_{12,-})$ changes with $K_\sigma$, but very slowly.
+# $(E_{21,-}-E_{12,-})$ changes with $K_\sigma$!
 
 # %% jupyter={"outputs_hidden": false}
 plt.figure(figsize = (10,6))

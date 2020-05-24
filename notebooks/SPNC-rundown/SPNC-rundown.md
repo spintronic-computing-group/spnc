@@ -308,8 +308,8 @@ def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
     #Plot
     ax.plot(theta, basic_energy(theta,K,Ks,alpha,muHMs,gamma), color='C0')
     #Rescale axes
-    ax.relim()
-    ax.autoscale_view()
+    #ax.relim()
+    #ax.autoscale_view()
 
 
 ```

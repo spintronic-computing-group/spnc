@@ -394,7 +394,7 @@ for th in np.linspace(0,np.pi):
     
 plt.plot(x,y)
 plt.show()
-    
+
 
 # %%
 from scipy.integrate import odeint
