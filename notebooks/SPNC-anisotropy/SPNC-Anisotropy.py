@@ -44,7 +44,7 @@ H = 0.4
 H_K = 2*K/(mu_0*M_S)
 
 
-# %% jupyter={"outputs_hidden": true}
+# %%
 def energy(theta,theta_H):
     mu_H = mu_0*M_S*H
     return(K*V*np.sin(theta*np.pi/180)**2-mu_H*np.cos((theta-theta_H)*np.pi/180))
@@ -72,9 +72,9 @@ plt.show()
 # %% [markdown]
 # There are 4 extrema in this landscape. The positions of minima will be called $\theta_1$ and $\theta_2$. From each minimum, there are two ways of going to the other minimum. One way is to go through the "high maxima". In this case the energy barriers are called $E_{12,+}$ and $E_{21,+}$. The other way is going through the "low maxima". In this case the energy barriers are called $E_{12,-}$ and $E_{21,-}$.
 
-# %% jupyter={"outputs_hidden": false}
-%%html
-<img src="images/Energy_landscape_legend.png" style="width:700px;height:400px/">
+# %% jupyter={"source_hidden": true}
+from IPython.display import Image
+Image(filename="images/Energy_landscape_legend.png")
 
 
 # %% [markdown]
@@ -1071,4 +1071,4 @@ plt.show()
 #
 # ...
 
-# %% jupyter={"outputs_hidden": true}
+# %%
