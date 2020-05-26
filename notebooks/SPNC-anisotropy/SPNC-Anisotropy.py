@@ -703,7 +703,7 @@ def energy_ani(theta,K_sigma):
 
 # %% jupyter={"outputs_hidden": true}
 theta = np.linspace(-180,180,100)
-K_sigma = 10
+K_sigma = 2
 E = energy_ani(theta,K_sigma)
 
 # %% jupyter={"outputs_hidden": false}
@@ -719,7 +719,7 @@ plt.show()
 
 
 # %% [markdown]
-# Again, there are 4 extrema. We will use the same notations as previously ($\theta_1$, $\theta_2$, $E_{12,-}$, $E_{12,+}$, $E_{21,-}$, $E_{21,+}$).
+# Again, there are 4 extrema. We will use the same notations as previously ($\theta_1$, $\theta_2$, $E_{12,-}$, $E_{12,+}$, $E_{21,-}$, $E_{21,+}$). 1 is the minimum near 180° and 2 is the minimum around 0° (contrary to the previous section).
 
 # %% [markdown]
 # ### Energy barriers
@@ -749,7 +749,7 @@ def energy_barriers_ani(K_sigma):
         e_12_2 = min((E[id_max[0]]-E[id_min[ind1]]),(E[id_max[1]]-E[id_min[ind1]]))
         e_21_2 = min((E[id_max[0]]-E[id_min[ind2]]),(E[id_max[1]]-E[id_min[ind2]]))
         
-    #Minimas in 0° and 180°
+    #Minima in 0° and 180°
     elif(len(id_min)<=1 and len(id_max)==2):
         print("Exception 1 ; K_sigma = "+str(K_sigma))
         theta_1 = 0
@@ -759,7 +759,7 @@ def energy_barriers_ani(K_sigma):
         e_12_2 = min((E[id_max[0]]-energy_ani(0,K_sigma)),(E[id_max[1]]-energy_ani(0,K_sigma)))
         e_21_2 = min((E[id_max[0]]-energy_ani(180,K_sigma)),(E[id_max[1]]-energy_ani(180,K_sigma)))
         
-    #Maximas in 0° and 180°
+    #Maxima in 0° and 180°
     elif(len(id_min)==2 and len(id_max)<=1):
         print("Exception 2 ; K_sigma = "+str(K_sigma))
         theta_1 = theta[id_min[ind1]]
@@ -769,7 +769,7 @@ def energy_barriers_ani(K_sigma):
         e_12_2 = min((energy_ani(0,K_sigma)-E[id_min[ind1]]),(energy_ani(180,K_sigma)-E[id_min[ind1]]))
         e_21_2 = min((energy_ani(0,K_sigma)-E[id_min[ind2]]),(energy_ani(180,K_sigma)-E[id_min[ind2]]))
         
-    #There might be only one minimum. In this case we take the arbitrary valu 0 for all parameters
+    #There might be only one minimum. In this case we take the arbitrary value 0 for all parameters
     else:
         print("Exception 3 ; K_sigma = "+str(K_sigma))
         (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (0,0,0,0,0,0)
@@ -1065,9 +1065,9 @@ plt.show()
 # 1. (done) Studying $p_1(t)$ and $p_2(t)$. Studying $p_{1,eq}$ and $p_{2,eq}$.
 # 2. (done) Studying the influence of $K_\sigma$ on the energy barriers (and the magnetization at equilibrium), just like I did in the simple case.
 # 3. (done) Studying $p_{1,eq}$ and $p_{2,eq}$.
-# 4. Going deeper into studying the role of phi, theta_H and H. Studying $p_1(t)$ and $p_2(t)$.
+# 4. Going deeper into studying the role of $\theta_H$ and $H$ (and $\phi$ ?). Studying $p_1(t)$ and $p_2(t)$.
 # 5. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
-# 6. Considering the cinetic aspects of the system, and therefore study the "memory" of the magnet.
+# 6. Considering the kinetic aspects of the system, and therefore study the "memory" of the magnet.
 #
 # ...
 
