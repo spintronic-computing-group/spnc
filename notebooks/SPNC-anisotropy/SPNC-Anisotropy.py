@@ -662,7 +662,7 @@ K = 1
 V = 1
 mu_0 = 1
 M_S = 2
-H = 0.4 #H<0.5 so that there should always be two minima
+H = 1.1 #H<0.5 so that there should always be two minima
 H_K = 2*K/(mu_0*M_S)
 phi = 45 #intermediate between 0 and 90
 theta_H = 90 #Non-linearities are the greatest when theta_H=90
@@ -703,7 +703,7 @@ def energy_ani(theta,K_sigma):
 
 # %% jupyter={"outputs_hidden": true}
 theta = np.linspace(-180,180,100)
-K_sigma = 2
+K_sigma = 1
 E = energy_ani(theta,K_sigma)
 
 # %% jupyter={"outputs_hidden": false}
@@ -734,8 +734,8 @@ def energy_barriers_ani(K_sigma):
     id_min = argrelextrema(E, np.less)[0]
     ind1 = 0
     ind2 = 1
-    
-    #if theta_1 after theta_2, switch ind1 and ind2
+
+    #if theta_1 after theta_2, switch ind1 and ind2 (ind2 around 0)
     if (len(id_min)>=1 and theta[id_min[0]]>(-90)):
         ind1 = 1
         ind2 = 0
@@ -772,7 +772,7 @@ def energy_barriers_ani(K_sigma):
     #There might be only one minimum. In this case we take the arbitrary value 0 for all parameters
     else:
         print("Exception 3 ; K_sigma = "+str(K_sigma))
-        (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (0,0,0,0,0,0)
+        (theta_1,theta_2,e_12_1,e_12_2,e_21_1,e_21_2) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
     
     return(theta_1,theta_2,e_12_1,e_21_1,e_12_2,e_21_2)
 
