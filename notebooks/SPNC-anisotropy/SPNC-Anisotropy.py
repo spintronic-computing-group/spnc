@@ -662,7 +662,7 @@ K = 1
 V = 1
 mu_0 = 1
 M_S = 2
-H = 1.1 #H<0.5 so that there should always be two minima
+H = 0.4 #H<0.5 so that there should always be two minima
 H_K = 2*K/(mu_0*M_S)
 phi = 45 #intermediate between 0 and 90
 theta_H = 90 #Non-linearities are the greatest when theta_H=90
