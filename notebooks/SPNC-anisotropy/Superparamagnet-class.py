@@ -92,39 +92,40 @@ def calculate_energy_barriers(spn):
     id_min = argrelextrema(E, np.less)[0]
     ind1 = 0
     ind2 = 1
-
-    #if theta_1 before theta_2, switch ind1 and ind2 (ind1 should be around 0)
-    if (len(id_min)>=1 and theta[id_min[0]]<(-90)):
-        ind1 = 1
-        ind2 = 0
     
     #Two-states case
     if(len(id_max)==2 and len(id_min)==2):
+        if (theta[id_min[0]]<(-90)):
+            ind1 = 1
+            ind2 = 0
         theta_1 = theta[id_min[ind1]]
         theta_2 = theta[id_min[ind2]]
         e_12_big = max((E[id_max[0]]-E[id_min[ind1]]),(E[id_max[1]]-E[id_min[ind1]]))
         e_21_big = max((E[id_max[0]]-E[id_min[ind2]]),(E[id_max[1]]-E[id_min[ind2]]))
         e_12_small = min((E[id_max[0]]-E[id_min[ind1]]),(E[id_max[1]]-E[id_min[ind1]]))
         e_21_small = min((E[id_max[0]]-E[id_min[ind2]]),(E[id_max[1]]-E[id_min[ind2]]))
-        
-    #Minima in 0° and 180°
-    elif(len(id_min)<=1 and len(id_max)==2):
-        theta_1 = 0
+    
+    #One minimum in 180°
+    elif(len(id_min)==1 and len(id_max)==2):
+        theta_1 = theta[id_min[0]]
         theta_2 = 180
-        e_12_big = max((E[id_max[0]]-energy(spn,0)),(E[id_max[1]]-energy(spn,0)))
+        e_12_big = max((E[id_max[0]]-E[id_min[0]]),(E[id_max[1]]-E[id_min[0]]))
         e_21_big = max((E[id_max[0]]-energy(spn,180)),(E[id_max[1]]-energy(spn,180)))
-        e_12_small = min((E[id_max[0]]-energy(spn,0)),(E[id_max[1]]-energy(spn,0)))
+        e_12_small = min((E[id_max[0]]-E[id_min[0]]),(E[id_max[1]]-E[id_min[0]]))
         e_21_small = min((E[id_max[0]]-energy(spn,180)),(E[id_max[1]]-energy(spn,180)))
         
-    #Maxima in 0° and 180°
-    elif(len(id_min)==2 and len(id_max)<=1):
+    #One maximum in 180°
+    elif(len(id_min)==2 and len(id_max)==1):
+        if (theta[id_min[0]]<(-90)):
+            ind1 = 1
+            ind2 = 0
         theta_1 = theta[id_min[ind1]]
         theta_2 = theta[id_min[ind2]]
-        e_12_big = max((energy(spn,0)-E[id_min[ind1]]),(energy(spn,180)-E[id_min[ind1]]))
-        e_21_big = max((energy(spn,0)-E[id_min[ind2]]),(energy(spn,180)-E[id_min[ind2]]))
-        e_12_small = min((energy(spn,0)-E[id_min[ind1]]),(energy(spn,180)-E[id_min[ind1]]))
-        e_21_small = min((energy(spn,0)-E[id_min[ind2]]),(energy(spn,180)-E[id_min[ind2]]))
-        
+        e_12_big = max((E[id_max[0]]-E[id_min[ind1]]),(energy(spn,180)-E[id_min[ind1]]))
+        e_21_big = max((E[id_max[0]]-E[id_min[ind2]]),(energy(spn,180)-E[id_min[ind2]]))
+        e_12_small = min((E[id_max[0]]-E[id_min[ind1]]),(energy(spn,180)-E[id_min[ind1]]))
+        e_21_small = min((E[id_max[0]]-E[id_min[ind2]]),(energy(spn,180)-E[id_min[ind2]]))
+    
     #There might be only one minimum. In this case put nans for all parameters
     else:
         (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
@@ -174,7 +175,7 @@ class SP_Network:
         return(np.exp(-self.e_21_small*self.beta_prime)+np.exp(-self.e_21_big*self.beta_prime))
     
     def get_omega_prime(self):
-        return(self.get_omega_prime_12()+self.get_omega_prime_12())
+        return(self.get_omega_prime_12()+self.get_omega_prime_21())
 
 
 # %%
@@ -363,5 +364,252 @@ plt.show()
 
 # %% [markdown]
 # ## Behaviour of $p_{1,eq}$ and $p_{2,eq}$
+#
+# $$p_{1,eq} = \frac{\omega_{21}}{\omega}$$
+#
+# $$p_{2,eq} = \frac{\omega_{12}}{\omega}$$
+#
+# ### 1. Influence of $\beta'$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+beta_prime_list = [1,2,5,10,50]
+p1_vs_bp = []
+p2_vs_bp = []
+for bp in beta_prime_list:
+    spn.beta_prime = bp
+    p1 = []
+    p2 = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
+        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+    p1_vs_bp.append(p1)
+    p2_vs_bp.append(p2)
+
+# %%
+plt.figure(figsize=(10,12))
+
+plt.subplot(311)
+for i in range(len(beta_prime_list)):
+    bp = beta_prime_list[i]
+    plt.plot(k_s_list,p1_vs_bp[i],label = r'$\beta^\prime = $'+str(bp))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+
+plt.subplot(312)
+for i in range(len(beta_prime_list)):
+    bp = beta_prime_list[i]
+    plt.plot(k_s_list,p2_vs_bp[i],label = r'$\beta^\prime = $'+str(bp))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+
+plt.subplot(313)
+for i in range(len(beta_prime_list)):
+    bp = beta_prime_list[i]
+    plt.plot(k_s_list,np.array(p1_vs_bp[i])-np.array(p2_vs_bp[i]),label = r'$\beta^\prime = $'+str(bp))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+
+plt.show()
+
+# %% [markdown]
+# ### 2. Influence of $h$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+h_list = np.logspace(-2,0,5)
+p1_vs_h = []
+p2_vs_h = []
+for h in h_list:
+    spn.h = h
+    p1 = []
+    p2 = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
+        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+    p1_vs_h.append(p1)
+    p2_vs_h.append(p2)
+
+# %%
+plt.figure(figsize=(10,12))
+
+plt.subplot(311)
+for i in range(len(h_list)):
+    h = h_list[i]
+    plt.plot(k_s_list,p1_vs_h[i],label = r'$h = $'+str(h))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+
+plt.subplot(312)
+for i in range(len(h_list)):
+    h = h_list[i]
+    plt.plot(k_s_list,p2_vs_h[i],label = r'$h = $'+str(h))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+
+plt.subplot(313)
+for i in range(len(h_list)):
+    h = h_list[i]
+    plt.plot(k_s_list,np.array(p1_vs_h[i])-np.array(p2_vs_h[i]),label = r'$h = $'+str(h))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+
+plt.show()
+
+# %% [markdown]
+# ### 3. Influence of $\theta_H$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+theta_H_list = np.linspace(90,0,5)
+p1_vs_th = []
+p2_vs_th = []
+for theta_H in theta_H_list:
+    spn.theta_H = theta_H
+    p1 = []
+    p2 = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
+        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+    p1_vs_th.append(p1)
+    p2_vs_th.append(p2)
+
+# %%
+plt.figure(figsize=(10,12))
+
+plt.subplot(311)
+for i in range(len(theta_H_list)):
+    theta_H = theta_H_list[i]
+    plt.plot(k_s_list,p1_vs_th[i],label = r'$\theta_H = $'+str(theta_H))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
+
+plt.subplot(312)
+for i in range(len(theta_H_list)):
+    theta_H = theta_H_list[i]
+    plt.plot(k_s_list,p2_vs_th[i],label = r'$\theta_H = $'+str(theta_H))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
+
+plt.subplot(313)
+for i in range(len(theta_H_list)):
+    theta_H = theta_H_list[i]
+    plt.plot(k_s_list,np.array(p1_vs_th[i])-np.array(p2_vs_th[i]),label = r'$\theta_H = $'+str(theta_H))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
+
+plt.show()
+
+# %% [markdown]
+# ### 4. Influence of $\phi$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+phi_list = np.linspace(45,0,5)
+p1_vs_phi = []
+p2_vs_phi = []
+for phi in phi_list:
+    spn.phi = phi
+    p1 = []
+    p2 = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
+        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+    p1_vs_phi.append(p1)
+    p2_vs_phi.append(p2)
+
+# %%
+plt.figure(figsize=(10,12))
+
+plt.subplot(311)
+for i in range(len(phi_list)):
+    phi = phi_list[i]
+    plt.plot(k_s_list,p1_vs_phi[i],label = r'$\phi = $'+str(phi))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+
+plt.subplot(312)
+for i in range(len(phi_list)):
+    phi = phi_list[i]
+    plt.plot(k_s_list,p2_vs_phi[i],label = r'$\phi = $'+str(phi))
+plt.legend(loc="best")
+plt.grid(True)
+#plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+
+plt.subplot(313)
+for i in range(len(phi_list)):
+    phi = phi_list[i]
+    plt.plot(k_s_list,np.array(p1_vs_phi[i])-np.array(p2_vs_phi[i]),label = r'$\phi = $'+str(phi))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+#plt.yscale("log")
+plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+
+plt.show()
 
 # %%
