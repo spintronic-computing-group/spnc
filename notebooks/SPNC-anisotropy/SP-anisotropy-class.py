@@ -15,7 +15,7 @@
 # ---
 
 # %% [markdown]
-# # Superparamagnets Network - Control of magnetization through anistropy
+# # Superparamagnetic Network - Control of magnetization through anistropy
 
 # %%
 import matplotlib.pyplot as plt
@@ -69,7 +69,7 @@ from scipy.optimize import curve_fit
 #
 # The condition to use this law is to have $e_{b,min}\beta'\geq3$. If this condition is not observed, we **will simply not plot the function**.
 #
-# ## Superparamagnets network class
+# ## Superparamagnetic network class
 
 # %%
 #Dimensionless equations
@@ -130,7 +130,7 @@ def calculate_energy_barriers(spn):
     else:
         (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
     
-    #Check the condition e_b_min*beta_prime<=3
+    #Check the condition e_b_min*beta_prime>=3
     e_b_min = min(e_12_small,e_21_small)
     if(e_b_min*spn.beta_prime<=3):
         (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
@@ -176,6 +176,12 @@ class SP_Network:
     
     def get_omega_prime(self):
         return(self.get_omega_prime_12()+self.get_omega_prime_21())
+    
+    def get_theta_1(self):
+        return(self.theta_1)
+    
+    def get_theta_2(self):
+        return(self.theta_2)
 
 
 # %%
@@ -204,12 +210,12 @@ for k_s in k_s_list:
 
 # %%
 plt.figure(figsize = (10,6))
-plt.plot(k_s_list,E_12_big,'g--',label=r'$E^+_{12}$')
-plt.plot(k_s_list,E_21_big,'r--',label=r'$E^+_{21}$')
-plt.plot(k_s_list,E_12_small,'g-',label=r'$E^-_{12}$')
-plt.plot(k_s_list,E_21_small,'r-',label=r'$E^-_{21}$')
-plt.plot(k_s_list,E_b_min,'k--',label=r'$E_{b,min}$')
-plt.plot(k_s_list,np.array(E_21_small)-np.array(E_12_small),'b-',label=r'$E^-_{21}-E^-_{12}$')
+plt.plot(k_s_list,E_12_big,'g--',label=r'$e^+_{12}$')
+plt.plot(k_s_list,E_21_big,'r--',label=r'$e^+_{21}$')
+plt.plot(k_s_list,E_12_small,'g-',label=r'$e^-_{12}$')
+plt.plot(k_s_list,E_21_small,'r-',label=r'$e^-_{21}$')
+plt.plot(k_s_list,E_b_min,'k--',label=r'$e_{b,min}$')
+plt.plot(k_s_list,np.array(E_21_small)-np.array(E_12_small),'b-',label=r'$e^-_{21}-e^-_{12}$')
 plt.legend(loc = "best")
 plt.xlim(-k_s_lim,k_s_lim)
 plt.grid(True)
@@ -239,10 +245,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 10
+k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [1,2,5,10]
+beta_prime_list = [1,2,5,10,50]
 omega_vs_beta = []
 for beta_prime in beta_prime_list:
     spn.beta_prime = beta_prime
@@ -262,6 +268,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$\omega^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
 plt.yscale("log")
 plt.title(r'$\omega^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 plt.show()
@@ -271,10 +278,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 10
+k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-h_list = np.logspace(-2,0,5)
+h_list = np.logspace(-3,0,5)
 omega_vs_h = []
 for h in h_list:
     spn.h = h
@@ -294,6 +301,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$\omega^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
 plt.yscale("log")
 plt.title(r'$\omega^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 plt.show()
@@ -326,6 +334,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$\omega^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
 plt.yscale("log")
 plt.title(r'$\omega^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
 plt.show()
@@ -358,6 +367,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$\omega^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
 plt.yscale("log")
 plt.title(r'$\omega^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
 plt.show()
@@ -373,7 +383,7 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 5
+k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
 beta_prime_list = [1,2,5,10,50]
@@ -402,6 +412,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 
@@ -413,6 +424,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 
@@ -424,6 +436,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 
@@ -463,6 +476,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 
@@ -474,6 +488,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 
@@ -485,6 +500,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 
@@ -524,6 +540,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
 
@@ -535,6 +552,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
 
@@ -546,6 +564,7 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
 
@@ -585,6 +604,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
 
@@ -596,6 +616,7 @@ plt.legend(loc="best")
 plt.grid(True)
 #plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
 
@@ -607,9 +628,309 @@ plt.legend(loc="best")
 plt.grid(True)
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$p_{1,eq}-p_{2,eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$p_{1,eq}-p_{2,eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
 
 plt.show()
+
+# %% [markdown]
+# ## Behaviour of $m_{eq}$
+#
+# $$m_{eq} = \cos{\theta_1}p_{1,eq}+\cos{\theta_2}p_{2,eq}$$
+#
+# ### 1. Influence of $\beta'$
+
+# %%
+#Computation
+k_s_lim = 1
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+beta_prime_list = [1,2,5,10,50]
+m_eq_vs_bp = []
+for bp in beta_prime_list:
+    spn.beta_prime = bp
+    m_eq = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        c1 = np.cos(spn.get_theta_1()*np.pi/180)
+        c2 = np.cos(spn.get_theta_2()*np.pi/180)
+        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
+        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
+        m_eq.append(c1*p1+c2*p2)
+    m_eq_vs_bp.append(m_eq)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(beta_prime_list)):
+    beta_prime = beta_prime_list[i]
+    plt.plot(k_s_list,m_eq_vs_bp[i],label = r'$\beta^\prime = $'+str(beta_prime))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$m_{eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+plt.show()
+
+# %% [markdown]
+# ### 2. Influence of $h$
+
+# %%
+#Computation
+k_s_lim = 1
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+h_list = np.logspace(-2,0,5)
+m_eq_vs_h = []
+for h in h_list:
+    spn.h = h
+    m_eq = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        c1 = np.cos(spn.get_theta_1()*np.pi/180)
+        c2 = np.cos(spn.get_theta_2()*np.pi/180)
+        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
+        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
+        m_eq.append(c1*p1+c2*p2)
+    m_eq_vs_h.append(m_eq)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(h_list)):
+    h = h_list[i]
+    plt.plot(k_s_list,m_eq_vs_h[i],label = r'$h = $'+str(h))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$m_{eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+plt.show()
+
+# %% [markdown]
+# ### 3. Influence of $\theta_H$
+
+# %%
+#Computation
+k_s_lim = 1
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+theta_H_list = np.linspace(90,0,5)
+m_eq_vs_th = []
+for th in theta_H_list:
+    spn.theta_H = th
+    m_eq = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        c1 = np.cos(spn.get_theta_1()*np.pi/180)
+        c2 = np.cos(spn.get_theta_2()*np.pi/180)
+        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
+        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
+        m_eq.append(c1*p1+c2*p2)
+    m_eq_vs_th.append(m_eq)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(theta_H_list)):
+    theta_H = theta_H_list[i]
+    plt.plot(k_s_list,m_eq_vs_th[i],label = r'$\theta_H = $'+str(theta_H))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$m_{eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
+plt.show()
+
+# %% [markdown]
+# ### 4. Influence of $\phi$
+
+# %%
+#Computation
+k_s_lim = 1
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+phi_list = np.linspace(45,0,5)
+m_eq_vs_phi = []
+for phi in phi_list:
+    spn.phi = phi
+    m_eq = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        c1 = np.cos(spn.get_theta_1()*np.pi/180)
+        c2 = np.cos(spn.get_theta_2()*np.pi/180)
+        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
+        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
+        m_eq.append(c1*p1+c2*p2)
+    m_eq_vs_phi.append(m_eq)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(phi_list)):
+    phi = phi_list[i]
+    plt.plot(k_s_list,m_eq_vs_phi[i],label = r'$\phi = $'+str(phi))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$m_{eq}$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+plt.show()
+
+# %% [markdown]
+# ## Behaviour of $e_{b,min}\beta'$
+#
+# ### 1. Influence of $\beta'$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+beta_prime_list = [1,2,5,10]
+eb_vs_bp = []
+for bp in beta_prime_list:
+    spn.beta_prime = bp
+    eb = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        eb.append(spn.get_e_b_min()*spn.beta_prime)
+    eb_vs_bp.append(eb)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(beta_prime_list)):
+    beta_prime = beta_prime_list[i]
+    plt.plot(k_s_list,eb_vs_bp[i],label = r'$\beta^\prime = $'+str(beta_prime))
+plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{b,min}\beta^\prime=3$')
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$e_{b,min}\beta^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+plt.show()
+
+# %% [markdown]
+# ### 2. Influence of $h$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+h_list = np.logspace(-2,0,5)
+eb_vs_h = []
+for h in h_list:
+    spn.h = h
+    eb = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        eb.append(spn.get_e_b_min()*spn.beta_prime)
+    eb_vs_h.append(eb)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(h_list)):
+    h = h_list[i]
+    plt.plot(k_s_list,eb_vs_h[i],label = r'$h = $'+str(h))
+plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{b,min}\beta^\prime=3$')
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$e_{b,min}\beta^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+plt.show()
+
+# %% [markdown]
+# ### 3. Influence of $\theta_H$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+th_list = np.linspace(90,0,5)
+eb_vs_th = []
+for th in th_list:
+    spn.theta_H = th
+    eb = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        eb.append(spn.get_e_b_min()*spn.beta_prime)
+    eb_vs_th.append(eb)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(theta_H_list)):
+    theta_H = theta_H_list[i]
+    plt.plot(k_s_list,eb_vs_th[i],label = r'$\theta_H = $'+str(theta_H))
+plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{b,min}\beta^\prime=3$')
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$e_{b,min}\beta^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\theta_H$')
+plt.show()
+
+# %% [markdown]
+# ### 4. Influence of $\phi$
+
+# %%
+#Computation
+k_s_lim = 5
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+phi_list = np.linspace(45,0,5)
+eb_vs_phi = []
+for phi in phi_list:
+    spn.phi = phi
+    eb = []
+    for k_s in k_s_list:
+        spn.k_s = k_s
+        calculate_energy_barriers(spn)
+        eb.append(spn.get_e_b_min()*spn.beta_prime)
+    eb_vs_phi.append(eb)
+
+# %%
+plt.figure(figsize=(10,6))
+for i in range(len(phi_list)):
+    phi = phi_list[i]
+    plt.plot(k_s_list,eb_vs_phi[i],label = r'$\phi = $'+str(phi))
+plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{b,min}\beta^\prime=3$')
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$k_\sigma$')
+plt.ylabel(r'$e_{b,min}\beta^\prime$')
+plt.xlim(-k_s_lim,k_s_lim)
+#plt.yscale("log")
+plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+plt.show()
+
+# %% [markdown]
+# ## Comments
+#
+# * $\omega'$ is varying too much with $k_\sigma$ when $\beta'>3$.
+# * If we decrease $\beta'$, the condition $e_{b,min}$ won't be observed anymore.
+# * If we decrease $h$, $e_{b,min}$ increases but the range of $p_{eq}$ and $m_{eq}$ decrease a lot.
+# * The solution could be to decrease the range of $k_\sigma$!
+# * $\phi = 45°$ and $\theta_H = 90°$ seem to be good choices.
 
 # %%

@@ -15,7 +15,7 @@
 # ---
 
 # %% [markdown]
-# # SPNC - Control of magnetization through anistropy
+# # Superparamagnetic Network - Control of magnetization through anistropy (dev)
 
 # %% [markdown]
 # ## The Stoner-Wolfarth model - control of $\theta_H$
@@ -1062,11 +1062,12 @@ plt.show()
 # %% [markdown]
 # #### Next steps
 #
-# 1. Write dimensionless equations.
-# 2. Create a class for a superparamagnetic network.
-# 3. Look at the influence of $\beta'$, $H'$, $\theta_H$, $K'_\sigma$ and $\phi$ on $\omega$, $p_{1,eq}$, $p_{2,eq}$, $p_{1,eq} - p_{1,eq}$, $m_{eq}$ and $E'_b\beta'$.
-# 4. Going deeper into studying the role of $\theta_H$ and $H$ (and $\phi$ ?). Studying $p_1(t)$ and $p_2(t)$.
-# 5. Studying the link between the voltage imposed to the ferroelectric material and $K_\sigma$.
-# 6. Considering the kinetic aspects of the system, and therefore study the "memory" of the magnet.
+# 1. (done) Write dimensionless equations.
+# 2. (done) Create a class for a superparamagnetic network.
+# 3. (done) Look at the influence of $\beta'$, $H'$, $\theta_H$, $K'_\sigma$ and $\phi$ on $\omega$, $p_{1,eq}$, $p_{2,eq}$, $p_{1,eq} - p_{1,eq}$, $m_{eq}$ and $E'_b\beta'$.
+#
+# see Superparamagnet-class notebook
 #
 # ...
+
+# %%
