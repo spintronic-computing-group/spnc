@@ -1,20 +1,241 @@
+# -*- coding: utf-8 -*-
 # %% [markdown]
-# # SPNC development and testing
-
-# %% [markdown]
-# *This is a notebook for testing and development of ideas*
+# # Superparamagnetic Network - Machine Learning Testing
 
 # %%
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 from scipy import constants
+import random as rnd
 
-# Magic to choose matplotlib backend (used mostly)
-%matplotlib inline
+import SP_anisotropy_class as SPN
 
 #3D plotting
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+
+# %% [markdown]
+# ## The SP Network
+#
+# $e = \frac{E}{KV}$, $H_K = \frac{2K}{\mu_0M_S}$, $h=\frac{H}{H_K}$, $k_\sigma=\frac{K_\sigma}{K}$, $\omega'=\frac{\omega}{f_0}$ and $\beta'=\frac{KV}{k_BT}$
+#
+# $h=0.4$
+#
+# $\theta_H=90°$
+#
+# $\phi=45°$
+#
+# $\beta'=10$
+#
+# The system is at equilibrium with $k_\sigma=0$ and we instantly set $k_\sigma=1$.
+#
+# $f_0=10^{10}Hz$
+#
+# We call the characteristic memory time scale $\tau$.
+
+# %%
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
+
+f0 = 1e10
+
+# %%
+spn.k_s = 1
+SPN.calculate_energy_barriers(spn)
+tau = 1./(spn.get_omega_prime()*f0) #Characteristic memory time
+t_step = tau/100 #We take a t_step 100 times smaller than tau
+time = np.arange(0,5*tau,t_step) #We want to see 5 tau
+m_t = [spn.get_m()]
+
+for i in range(len(time)-1):
+    spn.evolve(f0,t_step)
+    m_t.append(spn.get_m())
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(time*1e9,m_t)
+plt.grid(True)
+plt.title("Response to excitation during 5"+r'$\tau$')
+plt.ylabel(r'$m(t)$')
+plt.xlabel("Time (ns)")
+plt.show()
+
+
+# %% [markdown]
+# Now let's use a random signal as input.
+
+# %%
+def rnd_signal(n):
+    signal = []
+    for i in range(n):
+        signal.append(2*rnd.random()-1)
+    return(signal)
+
+
+# %%
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
+SPN.calculate_energy_barriers(spn)
+tau = 1./(spn.get_omega_prime()*f0)
+
+n = 10 #Number of inputs
+N = 100 #Number of steps per input
+tau_signal = tau #Duration of each input
+t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+signal = rnd_signal(n) #Input signal
+time_signal = np.arange(n)*tau_signal
+time = np.linspace(0,n*tau_signal,n*N)
+
+m_t = []
+
+for i in range(n):
+    m_t.append(spn.get_m())
+    spn.k_s = signal[i]
+    SPN.calculate_energy_barriers(spn)
+    for j in range(N-1):
+        spn.evolve(f0,t_step)
+        m_t.append(spn.get_m())
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal")
+plt.plot(time*1e9,m_t,'r-',label="Output")
+plt.grid(True)
+plt.legend(loc="best")
+plt.title("Response to random input with "+r'$\tau_{signal}=\tau$')
+plt.ylabel(r'$m(t)$')
+plt.xlabel("Time (ns)")
+plt.show()
+plt.show()
+
+# %%
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
+SPN.calculate_energy_barriers(spn)
+tau = 1./(spn.get_omega_prime()*f0)
+
+n = 10 #Number of inputs
+N = 100 #Number of steps per input
+tau_signal = tau/10 #Duration of each input
+t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+signal = rnd_signal(n) #Input signal
+time_signal = np.arange(n)*tau_signal
+time = np.linspace(0,n*tau_signal,n*N)
+
+m_t = []
+
+for i in range(n):
+    m_t.append(spn.get_m())
+    spn.k_s = signal[i]
+    SPN.calculate_energy_barriers(spn)
+    for j in range(N-1):
+        spn.evolve(f0,t_step)
+        m_t.append(spn.get_m())
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal")
+plt.plot(time*1e9,m_t,'r-',label="Output")
+plt.grid(True)
+plt.legend(loc="best")
+plt.title("Response to random input with "+r'$\tau_{signal}=\tau/10$')
+plt.ylabel(r'$m(t)$')
+plt.xlabel("Time (ns)")
+plt.show()
+plt.show()
+
+# %%
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
+SPN.calculate_energy_barriers(spn)
+tau = 1./(spn.get_omega_prime()*f0)
+
+n = 10 #Number of inputs
+N = 100 #Number of steps per input
+tau_signal = tau*10 #Duration of each input
+t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+signal = rnd_signal(n) #Input signal
+time_signal = np.arange(n)*tau_signal
+time = np.linspace(0,n*tau_signal,n*N)
+
+m_t = []
+
+for i in range(n):
+    m_t.append(spn.get_m())
+    spn.k_s = signal[i]
+    SPN.calculate_energy_barriers(spn)
+    for j in range(N-1):
+        spn.evolve(f0,t_step)
+        m_t.append(spn.get_m())
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal")
+plt.plot(time*1e9,m_t,'r-',label="Output")
+plt.grid(True)
+plt.legend(loc="best")
+plt.title("Response to random input with "+r'$\tau_{signal}=10\tau$')
+plt.ylabel(r'$m(t)$')
+plt.xlabel("Time (ns)")
+plt.show()
+plt.show()
+
+
+# %% [markdown]
+# ## Towards Machine Learning
+
+# %%
+def Ridge_regression(S, Y, alpha):
+    '''
+    For a linear layer we can solve the weights by a direct method
+    If the error function is the mean square error given by
+        E = |Y - S * W |^2 + \alpha |W|^2
+    where the L2 norm is being applied and the variables are
+        Y = [Nsamples x Noutputs] is the desired output
+        S = [Nsamples x Nweights] is the input signal
+        W = [Nweights x Noutputs] is the weight matrix
+    To minimise E we need to solve:
+        S^T * Y = (S^T * S  + \alpha I) * W
+        W = (S^T*S + \alpha I)^-1 * S^T * Y
+    '''
+    STS = np.matmul(S.T, S)
+    STY = np.matmul(S.T, Y)
+    Sdag = np.linalg.pinv(STS + alpha*np.eye(len(STS)))
+    return np.matmul(Sdag, STY)
+
+
+# %%
+def NARMA10(n):
+    u = np.random.random(n)*0.5
+    y = np.zeros(n)
+    for k in range(10,n):
+        y[k] = 0.3*y[k-1] + 0.05*y[k-1]*np.sum(y[k-10:k]) + 1.5*u[k-1]*u[k-10] + 0.1
+    return (u, y[10:])
+
+
+# %%
+def mask_NARMA10(N,M):
+    # N is the number of virtual nodes
+    # M is the number of output nodes
+    mask = []
+    for i in range(N):
+        mask.append(rnd.choice([-1,1]))
+    mask = mask*M
+    return(mask)
+
+
+# %%
+Ntrain = 5000
+Nvalid = 2000
+
+(u, x) = NARMA10(Ntrain + Nvalid)
+
+utrain = u[:Ntrain]
+dtrain = d[:Ntrain]
+uvalid = u[Ntrain:]
+dvalid = d[Ntrain:]
+
 
 # %% [markdown]
 # ## Define our magnetic system
@@ -81,258 +302,8 @@ def SPNC_mag_evolver_sw(beta_prime,h_primes,t_prime):
 # %% [markdown]
 # ### Excitation from zero m
 
-# %%
-time_prime = np.arange(0,50,0.1)
-
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0.5,0,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Single field long time: h' = 0.5")
-plt.show()
-
-# %%
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0.1,0,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Single field long time: h' = 0.1")
-plt.show()
-
-# %% [markdown]
-# #### Long time excitation
-
-# %%
-h_primes = np.arange(-1,1,0.01)
-
-plt.plot(h_primes,SPNC_magnetisation_sw(3,h_primes,0,1000))
-plt.plot(h_primes,SPNC_magnetisation_sw(3,h_primes,0,5))
-plt.plot(h_primes,np.tanh(2*3*h_primes),'k--')
-plt.xlabel("h'")
-plt.ylabel('m')
-plt.legend(['Long time','Short time',"tanh(2b'h')"])
-plt.title("magnetisation as a function of field at long and short times: t'short = 5, t'long = 1000")
-plt.show()
-
-# %% [markdown]
-# We can see that the output field matches exactly the expected tanh function when in the limit of long time (dotted is tanh, blue is long time, orange is short time)
-
-# %% [markdown]
-# ### Decay from m
-
-# %%
-time_prime = np.arange(0,50,0.1)
-
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0,1,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("No field long time decay: m(0) = 1")
-plt.show()
-
-# %%
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0,0.5,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("No field long time decay: m(0) = 0.5")
-plt.show()
-
-# %% [markdown]
-# The same decay length is seen regardless of the starting m(0) provided the applied field (here zero) is the same
-
-# %% [markdown]
-# #### Decay with field
-
-# %%
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0.05,0.5,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Long time decay under field: m(0) = 0.5, h' = 0.05")
-plt.show()
-
-# %% [markdown]
-# #### Excitation from starting m(0)
-
-# %%
-plt.plot(time_prime,SPNC_magnetisation_sw(3,0.1,0.5,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Long time excitation under field: m(0) = 0.5, h' = 0.1")
-plt.show()
-
-# %% [markdown]
-# We see here that changing from $h' = 0.05$ to $h' = 0.1$ results in a change from decay down to a new value to exitation up to a new one
-
-# %% [markdown]
-# ### Successive field inputs (memory and non-linearity)
-
-# %% [markdown]
-# Here we use time_prime as a time step between inputs. A combination of beta and the time step sets the "memory"
-
-# %% [markdown]
-# #### First let's examine the case where $0 \le h' \le 1$
-
-# %%
-h_primes = np.random.rand(100)
-
-plt.plot(h_primes)
-plt.xlabel('index')
-plt.ylabel("h'")
-plt.title("random applied field sequence")
-plt.show()
-
-i = 0
-h_avgs = []
-while i < len(h_primes) - 11:
-    this_window = h_primes[i:i+10]
-    window_avg = sum(this_window)/10
-    h_avgs.append(window_avg)
-    i+=1
-    
-plt.plot(h_avgs)
-plt.xlabel('index')
-plt.ylabel("h' moving avg")
-plt.title("moving avg of applied field sequence: window 10")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.2)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between 0 and 1; t'step = 0.2; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,10)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between 0 and 1; t'step = 10; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.01)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between 0 and 1; t'step = 0.01; b' = 3")
-plt.show()
-
-# %% [markdown]
-# We can see that we run into problems of saturating our system, so let us change our bounds on $h'$
-
-# %% [markdown]
-# ####  $-1 \le h' \le 1$
-
-# %%
-h_primes = 2 * np.random.rand(100) - 1
-
-plt.plot(h_primes)
-plt.xlabel('index')
-plt.ylabel("h'")
-plt.title("random applied field sequence")
-plt.show()
-
-i = 0
-h_avgs = []
-while i < len(h_primes) - 11:
-    this_window = h_primes[i:i+10]
-    window_avg = sum(this_window)/10
-    h_avgs.append(window_avg)
-    i+=1
-    
-plt.plot(h_avgs)
-plt.xlabel('index')
-plt.ylabel("h' moving avg")
-plt.title("moving avg of applied field sequence: window 10")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.2)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between -1 and 1; t'step = 0.2; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,10)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between -1 and 1; t'step = 10; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.01)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 100 random no's between -1 and 1; t'step = 0.01; b' = 3")
-plt.show()
-
-# %% [markdown]
-# #### Re-looking at the positive case, but $0 \le h' \le 0.25$ and longer time base
-
-# %%
-h_primes = np.random.rand(1000)/4
-
-plt.plot(h_primes)
-plt.xlabel('index')
-plt.ylabel("h'")
-plt.title("random applied field sequence")
-plt.show()
-
-i = 0
-h_avgs = []
-while i < len(h_primes) - 11:
-    this_window = h_primes[i:i+10]
-    window_avg = sum(this_window)/10
-    h_avgs.append(window_avg)
-    i+=1
-    
-plt.plot(h_avgs)
-plt.xlabel('index')
-plt.ylabel("h' moving avg")
-plt.title("moving avg of applied field sequence: window 10")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.2)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 0.2; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,10)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 10; b' = 3")
-plt.show()
-
-# %%
-time, mag = SPNC_mag_evolver_sw(3,h_primes,0.01)
-plt.plot(time,mag)
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("Response to successive fields: h' is 1000 random no's between 0 and 0.25; t'step = 0.01; b' = 3")
-plt.show()
-
 # %% [markdown]
 # We see that the behaviour looks kind of like it is intergrating the average, with noise from the deviation. The time scale sets how much the noise effects it and how long the averaging takes. Let's take a look at this by finding the expected result from the average input:
-
-# %%
-h_prime_avg = np.mean(h_primes)
-print("h_prime average =", h_prime_avg)
-total_time = 0.2 * 1000 #time step times number of points
-
-time_prime = np.arange(0,total_time,0.1)
-plt.plot(time_prime,SPNC_magnetisation_sw(3,h_prime_avg,0,time_prime))
-plt.xlabel("t'")
-plt.ylabel('m')
-plt.title("m for: h' = mean(h_primes)")
-plt.show()
 
 # %% [markdown]
 # Based on this, it looks a little more complicated that straight up averaging. Perhaps it is averaging over a window? 
@@ -374,7 +345,6 @@ def Ridge_regression(S, Y, l):
 # %%
 def MG_func(x, J, gamma, eta, p):
     return eta*(x + gamma*J) / (1 + np.power( x + gamma*J, p))
-
 
 
 # %%

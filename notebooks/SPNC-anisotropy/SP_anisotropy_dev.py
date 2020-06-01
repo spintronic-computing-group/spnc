@@ -15,7 +15,7 @@
 # ---
 
 # %% [markdown]
-# # Superparamagnetic Network - Control of magnetization through anistropy (dev)
+# # Superparamagnetic Network - Control of magnetization through anisotropy (dev)
 
 # %% [markdown]
 # ## The Stoner-Wolfarth model - control of $\theta_H$

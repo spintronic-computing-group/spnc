@@ -15,13 +15,12 @@
 # ---
 
 # %% [markdown]
-# # Superparamagnetic Network - Control of magnetization through anistropy
+# # Superparamagnetic Network - Control of magnetization through anisotropy
 
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
-from scipy.optimize import curve_fit
 
 
 # %% [markdown]
@@ -149,21 +148,34 @@ def calculate_energy_barriers(spn):
 #We define a superparamagnetic network as a class
 class SP_Network:
     def __init__(self,h,theta_H,k_s,phi,beta_prime):
+        #Parameters
         self.h = h
         self.theta_H = theta_H
         self.k_s = k_s
         self.phi = phi
         self.beta_prime = beta_prime
+        #Computed
         self.e_12_small = np.nan
         self.e_21_small = np.nan
         self.e_12_big = np.nan
         self.e_21_big = np.nan
         self.theta_1 = np.nan
         self.theta_2 = np.nan
+        #Dynamic
+        calculate_energy_barriers(self)
+        self.p1 = self.get_p1_eq
+        self.p2 = self.get_p2_eq
     
     def get_energy_barriers(self):
         calculate_energy_barriers(self)
         return(self.theta_1,self.theta_2,self.e_12_small,self.e_21_small,self.e_12_big,self.e_21_big)
+    
+    def get_m_eq(self):
+        c1 = np.cos(self.theta_1*np.pi/180)
+        c2 = np.cos(self.theta_2*np.pi/180)
+        p1 = self.get_p1_eq()
+        p2 = self.get_p2_eq()
+        return(c1*p1+c2*p2)
     
     def get_e_b_min(self):
         return(min(self.e_12_small,self.e_21_small))
@@ -177,11 +189,19 @@ class SP_Network:
     def get_omega_prime(self):
         return(self.get_omega_prime_12()+self.get_omega_prime_21())
     
-    def get_theta_1(self):
-        return(self.theta_1)
+    def get_p1_eq(self):
+        return(self.get_omega_prime_21()/self.get_omega_prime())
     
-    def get_theta_2(self):
-        return(self.theta_2)
+    def get_p2_eq(self):
+        return(self.get_omega_prime_12()/self.get_omega_prime())
+    
+    #Dynamic
+    
+    def evolve(self,f0,t_step):
+        calculate_energy_barriers(self)
+        self.p1 = self.get_p1_eq() + (self.p1 - self.get_p1_eq())*np.exp(-f0*self.get_omega_prime*t_step)
+        self.p2 = self.get_p2_eq() + (self.p2 - self.get_p2_eq())*np.exp(-f0*self.get_omega_prime*t_step)
+        return()
 
 
 # %%
@@ -396,8 +416,8 @@ for bp in beta_prime_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
-        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+        p1.append(spn.get_p1_eq())
+        p2.append(spn.get_p2_eq())
     p1_vs_bp.append(p1)
     p2_vs_bp.append(p2)
 
@@ -460,8 +480,8 @@ for h in h_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
-        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+        p1.append(spn.get_p1_eq())
+        p2.append(spn.get_p2_eq())
     p1_vs_h.append(p1)
     p2_vs_h.append(p2)
 
@@ -524,8 +544,8 @@ for theta_H in theta_H_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
-        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+        p1.append(spn.get_p1_eq())
+        p2.append(spn.get_p2_eq())
     p1_vs_th.append(p1)
     p2_vs_th.append(p2)
 
@@ -588,8 +608,8 @@ for phi in phi_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        p1.append(spn.get_omega_prime_21()/spn.get_omega_prime())
-        p2.append(spn.get_omega_prime_12()/spn.get_omega_prime())
+        p1.append(spn.get_p1_eq())
+        p2.append(spn.get_p2_eq())
     p1_vs_phi.append(p1)
     p2_vs_phi.append(p2)
 
@@ -654,11 +674,7 @@ for bp in beta_prime_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        c1 = np.cos(spn.get_theta_1()*np.pi/180)
-        c2 = np.cos(spn.get_theta_2()*np.pi/180)
-        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
-        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
-        m_eq.append(c1*p1+c2*p2)
+        m_eq.append(spn.get_m_eq())
     m_eq_vs_bp.append(m_eq)
 
 # %%
@@ -691,11 +707,7 @@ for h in h_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        c1 = np.cos(spn.get_theta_1()*np.pi/180)
-        c2 = np.cos(spn.get_theta_2()*np.pi/180)
-        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
-        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
-        m_eq.append(c1*p1+c2*p2)
+        m_eq.append(spn.get_m_eq())
     m_eq_vs_h.append(m_eq)
 
 # %%
@@ -728,11 +740,7 @@ for th in theta_H_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        c1 = np.cos(spn.get_theta_1()*np.pi/180)
-        c2 = np.cos(spn.get_theta_2()*np.pi/180)
-        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
-        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
-        m_eq.append(c1*p1+c2*p2)
+        m_eq.append(spn.get_m_eq())
     m_eq_vs_th.append(m_eq)
 
 # %%
@@ -765,11 +773,7 @@ for phi in phi_list:
     for k_s in k_s_list:
         spn.k_s = k_s
         calculate_energy_barriers(spn)
-        c1 = np.cos(spn.get_theta_1()*np.pi/180)
-        c2 = np.cos(spn.get_theta_2()*np.pi/180)
-        p1 = spn.get_omega_prime_21()/spn.get_omega_prime()
-        p2 = spn.get_omega_prime_12()/spn.get_omega_prime()
-        m_eq.append(c1*p1+c2*p2)
+        m_eq.append(spn.get_m_eq())
     m_eq_vs_phi.append(m_eq)
 
 # %%
