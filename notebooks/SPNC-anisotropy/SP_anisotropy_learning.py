@@ -31,7 +31,7 @@ from matplotlib import cm
 #
 # $f_0=10^{10}Hz$
 #
-# We call the characteristic memory time scale $\tau$.
+# We call the characteristic memory time scale $T$.
 
 # %%
 h = 0.4
@@ -46,9 +46,9 @@ f0 = 1e10
 # %%
 spn.k_s = 1
 SPN.calculate_energy_barriers(spn)
-tau = 1./(spn.get_omega_prime()*f0) #Characteristic memory time
-t_step = tau/100 #We take a t_step 100 times smaller than tau
-time = np.arange(0,5*tau,t_step) #We want to see 5 tau
+T = 1./(spn.get_omega_prime()*f0) #Characteristic memory time
+t_step = T/100 #We take a t_step 100 times smaller than T
+time = np.arange(0,5*T,t_step) #We want to see 5 T
 m_t = [spn.get_m()]
 
 for i in range(len(time)-1):
@@ -59,7 +59,7 @@ for i in range(len(time)-1):
 plt.figure(figsize=(10,6))
 plt.plot(time*1e9,m_t)
 plt.grid(True)
-plt.title("Response to excitation during 5"+r'$\tau$')
+plt.title("Response to excitation during 5"+r'$T$')
 plt.ylabel(r'$m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
@@ -79,15 +79,15 @@ def rnd_signal(n):
 # %%
 spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 SPN.calculate_energy_barriers(spn)
-tau = 1./(spn.get_omega_prime()*f0)
+T = 1./(spn.get_omega_prime()*f0)
 
 n = 10 #Number of inputs
 N = 100 #Number of steps per input
-tau_signal = tau #Duration of each input
-t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+theta = T #Duration of each input
+t_step = theta/N #We take a t_step 100 times smaller than theta
 signal = rnd_signal(n) #Input signal
-time_signal = np.arange(n)*tau_signal
-time = np.linspace(0,n*tau_signal,n*N)
+time_signal = np.arange(n)*theta
+time = np.linspace(0,n*theta,n*N)
 
 m_t = []
 
@@ -105,7 +105,7 @@ plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal"
 plt.plot(time*1e9,m_t,'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
-plt.title("Response to random input with "+r'$\tau_{signal}=\tau$')
+plt.title("Response to random input with "+r'$\theta=T$')
 plt.ylabel(r'$m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
@@ -114,15 +114,15 @@ plt.show()
 # %%
 spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 SPN.calculate_energy_barriers(spn)
-tau = 1./(spn.get_omega_prime()*f0)
+T = 1./(spn.get_omega_prime()*f0)
 
 n = 10 #Number of inputs
 N = 100 #Number of steps per input
-tau_signal = tau/10 #Duration of each input
-t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+theta = T/10 #Duration of each input
+t_step = theta/N #We take a t_step 100 times smaller than theta
 signal = rnd_signal(n) #Input signal
-time_signal = np.arange(n)*tau_signal
-time = np.linspace(0,n*tau_signal,n*N)
+time_signal = np.arange(n)*theta
+time = np.linspace(0,n*theta,n*N)
 
 m_t = []
 
@@ -140,7 +140,7 @@ plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal"
 plt.plot(time*1e9,m_t,'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
-plt.title("Response to random input with "+r'$\tau_{signal}=\tau/10$')
+plt.title("Response to random input with "+r'$\theta=T/10$')
 plt.ylabel(r'$m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
@@ -149,15 +149,15 @@ plt.show()
 # %%
 spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 SPN.calculate_energy_barriers(spn)
-tau = 1./(spn.get_omega_prime()*f0)
+T = 1./(spn.get_omega_prime()*f0)
 
 n = 10 #Number of inputs
 N = 100 #Number of steps per input
-tau_signal = tau*10 #Duration of each input
-t_step = tau_signal/N #We take a t_step 100 times smaller than tau_signal
+theta = T*10 #Duration of each input
+t_step = theta/N #We take a t_step 100 times smaller than tau_signal
 signal = rnd_signal(n) #Input signal
-time_signal = np.arange(n)*tau_signal
-time = np.linspace(0,n*tau_signal,n*N)
+time_signal = np.arange(n)*theta
+time = np.linspace(0,n*theta,n*N)
 
 m_t = []
 
@@ -175,7 +175,7 @@ plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal"
 plt.plot(time*1e9,m_t,'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
-plt.title("Response to random input with "+r'$\tau_{signal}=10\tau$')
+plt.title("Response to random input with "+r'$\theta=10T$')
 plt.ylabel(r'$m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
@@ -202,39 +202,240 @@ def Ridge_regression(S, Y, alpha):
     STS = np.matmul(S.T, S)
     STY = np.matmul(S.T, Y)
     Sdag = np.linalg.pinv(STS + alpha*np.eye(len(STS)))
-    return np.matmul(Sdag, STY)
+    return(np.matmul(Sdag, STY))
 
 
 # %%
-def NARMA10(n):
-    u = np.random.random(n)*0.5
-    y = np.zeros(n)
-    for k in range(10,n):
+def NARMA10(Ns):
+    # Ns is the number of samples
+    u = np.random.random(Ns+50)*0.5
+    y = np.zeros(Ns+50)
+    for k in range(10,Ns+50):
         y[k] = 0.3*y[k-1] + 0.05*y[k-1]*np.sum(y[k-10:k]) + 1.5*u[k-1]*u[k-10] + 0.1
-    return (u, y[10:])
+    return(u[50:],y[50:])
 
 
 # %%
-def mask_NARMA10(N,M):
-    # N is the number of virtual nodes
-    # M is the number of output nodes
+def mask_NARMA10(m0,Nvirt):
+    # Nvirt is the number of virtual nodes
     mask = []
-    for i in range(N):
-        mask.append(rnd.choice([-1,1]))
-    mask = mask*M
+    for i in range(Nvirt):
+        mask.append(rnd.choice([-1,1])*m0)
+    mask = mask
     return(mask)
 
 
 # %%
-Ntrain = 5000
-Nvalid = 2000
+def NRMSE(Y,Y_pred):
+    var = np.var(Y)
+    return np.sqrt(np.square(Y_pred-Y).mean()/var)
 
-(u, x) = NARMA10(Ntrain + Nvalid)
+def NRMSE_list(y,y_pred):
+    Y = np.array(y)
+    Y_pred = np.array(y_pred)
+    return(NRMSE(Y,Y_pred))
 
-utrain = u[:Ntrain]
-dtrain = d[:Ntrain]
-uvalid = u[Ntrain:]
-dvalid = d[Ntrain:]
+
+# %%
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+f0 = 1e10
+m0 = 2 #This gives approximately k_s between -1 and 1
+class Single_Node_Reservoir_NARMA10:
+    
+    def __init__(self, Nvirt, T_theta_ratio):
+        self.Nin = 1
+        self.Nvirt = Nvirt
+        self.Nout = 1
+        
+        self.spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
+        SPN.calculate_energy_barriers(spn)
+        self.T = 1./(spn.get_omega_prime()*f0)
+        self.theta = self.T/T_theta_ratio
+        self.tau = self.Nvirt*self.theta
+        
+        self.M = mask_NARMA10(m0,Nvirt)
+        self.W = np.zeros((Nvirt,1))
+    
+    def gen_signal(self, u):
+        Ns = len(u)
+        J = np.zeros((Ns,self.Nvirt))
+        S = np.zeros((Ns,self.Nvirt))
+        
+        for k in range(Ns):
+            if k%10==0:
+                print(k)
+            for i in range(self.Nvirt):
+                S[k,i] = spn.get_m()
+                j = self.M[i]*u[k]
+                J[k,i] = j
+                spn.k_s = j
+                SPN.calculate_energy_barriers(spn)
+                spn.evolve(f0,self.theta)
+                
+        return(J,S)
+    
+    def train(self, S, y, S_valid, y_valid):
+        alphas = np.logspace(-10,-1,10)
+        alphas[0] = 0.
+        
+        Ns = S.shape[0]
+        Ns_valid = S_valid.shape[0]
+        Y = y.reshape((Ns,1))
+        Y_valid = y_valid.reshape((Ns_valid,1))
+        
+        errs = np.zeros(alphas.shape)
+        for i in range(len(alphas)):
+            self.W = Ridge_regression(S, Y, alphas[i])
+            Y_pred_valid = np.array(self.predict(S_valid)).reshape(Ns_valid,1)
+            errs[i] = NRMSE(Y_valid, Y_pred_valid)
+            print(alphas[i], NRMSE(Y_valid, Y_pred_valid))
+    
+        alpha_opt = alphas[np.argmin(errs)]
+        print('Optimal alpha = '+str(alpha_opt)+' with NRMSE = '+str(np.min(errs)))
+        self.W = Ridge_regression(S, Y, alpha_opt)
+    
+    def predict(self, S):
+        Ns = S.shape[0]
+        return(np.matmul(S, self.W).reshape(1,Ns).tolist()[0])
+    
+    #Time lists (in ns)
+    
+    def get_time_list_u(self, u):
+        #We need to make sure that time_u has Ns elements with a delay tau
+        Ns = len(u)
+        t_u = 0
+        time_u = [t_u]
+        while len(time_u)<Ns:
+            t_u += self.tau
+            time_u.append(t_u)
+        return(np.array(time_u)*1e9)
+    
+    def get_time_list_S(self, S):
+        Ns = S.shape[0]
+        return(np.arange(0,Ns*self.tau,self.theta)*1e9)
+
+
+# %%
+Ntrain = 50
+(u,y) = NARMA10(Ntrain)
+
+net = Single_Node_Reservoir_NARMA10(400,5)
+time_u = net.get_time_list_u(u)
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(time_u,u,drawstyle='steps-post',label="Input")
+plt.plot(time_u,y,drawstyle='steps-post',label="Desired output")
+plt.xlabel("Time (ns)")
+plt.legend(loc="best")
+plt.show()
+
+# %%
+(J,S) = net.gen_signal(u)
+time_S = net.get_time_list_S(S)
+
+# %%
+plt.figure(figsize=(10,6))
+L = 20
+plt.grid(True)
+plt.plot(time_u[-L:],u[-L:],drawstyle='steps-post',label="Input")
+#plt.plot(time_S[-L*net.Nvirt:],J.flatten()[-L*net.Nvirt:],drawstyle='steps-post',label="Transformed input")
+plt.plot(time_S[-L*net.Nvirt:],S.flatten()[-L*net.Nvirt:],'r-',label="Signal")
+plt.legend(loc="best")
+plt.xlabel("Time (ns)")
+#plt.ylim(-0.6,0.6)
+plt.show()
+
+# %%
+T_theta_list = np.logspace(-1.5,1.5,15)
+amplitude = []
+Ntrain = 50
+(u,y) = NARMA10(Ntrain)
+N_mean = 10
+L = 20
+for T_t in T_theta_list:
+    print(T_t)
+    amp_mean = 0
+    for i in range(N_mean):
+        net = Single_Node_Reservoir_NARMA10(20,T_t)
+        (J,S) = net.gen_signal(u)
+        #M = max(S.flatten()[-L*net.Nvirt:])
+        #m = min(S.flatten()[-L*net.Nvirt:])
+        #amp_mean += M-m
+        amp_mean += np.std(S.flatten())
+    amplitude.append(amp_mean/N_mean)
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(T_theta_list,amplitude,'r+')
+plt.xscale("log")
+plt.xlabel(r'$T/\theta$'+" ratio")
+plt.ylabel("Standard deviation of the signal")
+plt.title("20 virtual nodes")
+plt.show()
+
+# %%
+Ntrain = 500
+Nvalid = 100
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+
+net = Single_Node_Reservoir_NARMA10(400,10)
+(J,S) = net.gen_signal(u)
+(J_valid,S_valid) = net.gen_signal(u_valid)
+
+# %%
+net.train(S,y,S_valid,y_valid)
+
+# %%
+y_pred_train = net.predict(S)
+y_pred_valid = net.predict(S_valid)
+
+Ntest = 100
+(u_test,y_test) = NARMA10(Ntest)
+(J_test,S_test) = net.gen_signal(u_test)
+y_pred_test = net.predict(S_test)
+
+# %%
+time_u = net.get_time_list_u(u)
+plt.figure(figsize=(10,6))
+plt.plot(time_u,y_pred_train,drawstyle='steps-post',label="Predicted output (training)")
+plt.plot(time_u,y,drawstyle='steps-post',label="Desired output (training)")
+plt.xlabel("Time (ns)")
+plt.legend(loc="best")
+plt.show()
+
+# %%
+print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
+plt.figure(figsize=(10,6))
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y,y_pred_train,'ro')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.show()
+
+# %%
+print("NRMSE (validation) = "+str(NRMSE_list(y_valid,y_pred_valid)))
+plt.figure(figsize=(10,6))
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_valid,y_pred_valid,'ro')
+plt.xlabel("Desired output (validation)")
+plt.ylabel("Predicted output (validation)")
+plt.show()
+
+# %%
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+plt.figure(figsize=(10,6))
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_test,y_pred_test,'ro')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.show()
 
 
 # %% [markdown]
