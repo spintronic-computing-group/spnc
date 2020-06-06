@@ -797,10 +797,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 5
+k_s_lim = .5
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [1,2,5,10]
+beta_prime_list = [9.5,10]
 eb_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp
