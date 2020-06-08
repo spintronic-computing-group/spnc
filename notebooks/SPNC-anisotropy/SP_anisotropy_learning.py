@@ -298,6 +298,33 @@ class Single_Node_Reservoir_NARMA10:
         
         return(J[spacer:],S[spacer:])
     
+    def gen_signal_fast(self,u):
+        Ns = len(u)
+        if self.use_bias:
+            print("Use bias")
+            J = np.zeros((Ns,self.Nvirt+1)) #We add one for the bias
+            S = np.zeros((Ns,self.Nvirt+1))
+        else:
+            J = np.zeros((Ns,self.Nvirt))
+            S = np.zeros((Ns,self.Nvirt))
+        
+        for k in range(Ns):
+            if k%100==0:
+                print(k)
+            for i in range(self.Nvirt):
+                S[k,i] = self.spn.get_m_fast()
+                j = self.M[i]*u[k]
+                J[k,i] = j + self.gamma*J[k-1,i] #J will be useful to test the role of memory and nonlinearity
+                self.spn.k_s = j + self.gamma*S[k-1,i] #Feedback 
+                self.spn.evolve_fast(f0,self.theta)
+        
+        if self.use_bias:
+            for k in range(Ns):
+                J[k,self.Nvirt] = 1
+                S[k,self.Nvirt] = 1
+        
+        return(J[spacer:],S[spacer:])
+    
     def gen_signal_without_SPN(self,u):
         Ns = len(u)
         J = np.zeros((Ns,self.Nvirt))
@@ -312,7 +339,7 @@ class Single_Node_Reservoir_NARMA10:
         return(J[spacer:])
     
     def train(self, S, y, S_valid, y_valid):
-        alphas = np.logspace(-5,-1,10)
+        alphas = np.logspace(-5,1,10)
         alphas[0] = 0.
         
         Ns = S.shape[0]
@@ -323,12 +350,13 @@ class Single_Node_Reservoir_NARMA10:
         errs = np.zeros(alphas.shape)
         for i in range(len(alphas)):
             self.W = Ridge_regression(S, Y, alphas[i])
+            Y_pred = np.array(self.predict(S)).reshape(Ns,1)
             Y_pred_valid = np.array(self.predict(S_valid)).reshape(Ns_valid,1)
             errs[i] = NRMSE(Y_valid, Y_pred_valid)
-            print(alphas[i], NRMSE(Y_valid, Y_pred_valid))
+            print("alpha = " + str(alphas[i]) + " ; NRMSE (train) = " + str(int(1000*NRMSE(Y,Y_pred))/1000) + " ; NRMSE (validation) = " + str(int(1000*NRMSE(Y_valid, Y_pred_valid))/1000))
     
         alpha_opt = alphas[np.argmin(errs)]
-        print('Optimal alpha = '+str(alpha_opt)+' with NRMSE = '+str(np.min(errs)))
+        print('Optimal alpha = ' + str(alpha_opt) + ' with NRMSE (validation) = ' + str(np.min(errs)))
         self.W = Ridge_regression(S, Y, alpha_opt)
     
     def train_without_SPN(self, J, y, J_valid, y_valid):
@@ -368,7 +396,7 @@ class Single_Node_Reservoir_NARMA10:
         return(np.array(time_u)*1e9)
     
     def get_time_list_y(self, y):
-        #We need to make sure that time_u has Ns elements with a delay tau
+        #We need to make sure that time_y has Ns elements with a delay tau
         Ns = len(y)
         t_y = spacer*self.tau
         time_y = [t_y]
@@ -383,10 +411,10 @@ class Single_Node_Reservoir_NARMA10:
 
 
 # %%
-Ntrain = 50
+Ntrain = 500
 (u,y) = NARMA10(Ntrain)
 
-net = Single_Node_Reservoir_NARMA10(40,1e-3,1e-1,0.25)
+net = Single_Node_Reservoir_NARMA10(400,1e-2,8e-2,0.26)
 time_u = net.get_time_list_u(u)
 time_y = net.get_time_list_y(y)
 
@@ -399,7 +427,7 @@ plt.legend(loc="best")
 plt.show()
 
 # %%
-(J,S) = net.gen_signal(u)
+(J,S) = net.gen_signal_fast(u)
 time_S = net.get_time_list_S(S)
 
 # %%
@@ -443,13 +471,13 @@ plt.title("40 virtual nodes")
 plt.show()
 
 # %%
-Ntrain = 5000
-Nvalid = 2000
+Ntrain = 500
+Nvalid = 200
 
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
 
-net = Single_Node_Reservoir_NARMA10(800,1,8e-2,0.26)
+net = Single_Node_Reservoir_NARMA10(400,1e-2,8e-2,0.26)
 (J,S) = net.gen_signal(u)
 (J_valid,S_valid) = net.gen_signal(u_valid)
 
@@ -460,7 +488,8 @@ net.train(S,y,S_valid,y_valid)
 y_pred_train = net.predict(S)
 y_pred_valid = net.predict(S_valid)
 
-Ntest = 2000
+# %%
+Ntest = 200
 (u_test,y_test) = NARMA10(Ntest)
 (J_test,S_test) = net.gen_signal(u_test)
 y_pred_test = net.predict(S_test)
@@ -468,8 +497,8 @@ y_pred_test = net.predict(S_test)
 # %%
 time_y = net.get_time_list_y(y)
 plt.figure(figsize=(10,6))
-xmin = 500
-xmax = 800
+xmin = 100
+xmax = 200
 plt.plot(time_y[xmin:xmax],y[xmin:xmax],drawstyle='steps-post',label="Desired output (training)")
 plt.plot(time_y[xmin:xmax],y_pred_train[xmin:xmax],drawstyle='steps-post',label="Predicted output (training)")
 plt.xlabel("Time (ns)")

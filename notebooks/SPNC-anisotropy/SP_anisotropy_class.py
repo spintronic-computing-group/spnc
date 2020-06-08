@@ -21,6 +21,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema
+from scipy import interpolate
 
 
 # %%
@@ -96,11 +97,43 @@ def calculate_energy_barriers(spn):
     
     return()
 
+#Interpolations to avoid calculating too many times the energy landscape
+def functions_energy_barriers(spn,k_s_lim):
+    #Computation on a sample
+    k_s_list = np.linspace(-k_s_lim,k_s_lim,int(50*2*k_s_lim))
+    #Make a copy of the network
+    spn_copy = SP_Network(spn.h,spn.theta_H,spn.k_s,spn.phi,spn.beta_prime,compute_interpolation=False)
+    Theta_1 = []
+    Theta_2 = []
+    E_12_small = []
+    E_21_small = []
+    E_12_big = []
+    E_21_big = []
+    for k_s in k_s_list:
+        spn_copy.k_s = k_s
+        (theta_1,theta_2,e_12_small,e_21_small,e_12_big,e_21_big) = spn_copy.get_energy_barriers()
+        Theta_1.append(theta_1)
+        Theta_2.append(theta_2)
+        E_12_small.append(e_12_small)
+        E_21_small.append(e_21_small)
+        E_12_big.append(e_12_big)
+        E_21_big.append(e_21_big)
+        
+    #Interpolation
+    f_theta_1 = interpolate.interp1d(k_s_list, Theta_1)
+    f_theta_2 = interpolate.interp1d(k_s_list, Theta_2)
+    f_e_12_small = interpolate.interp1d(k_s_list, E_12_small)
+    f_e_21_small = interpolate.interp1d(k_s_list, E_21_small)
+    f_e_12_big = interpolate.interp1d(k_s_list, E_12_big)
+    f_e_21_big = interpolate.interp1d(k_s_list, E_21_big)
+    
+    return(f_theta_1,f_theta_2,f_e_12_small,f_e_21_small,f_e_12_big,f_e_21_big)
+
 
 # %%
 #We define a superparamagnetic network as a class
 class SP_Network:
-    def __init__(self,h,theta_H,k_s,phi,beta_prime):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=2,compute_interpolation=True):
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -118,6 +151,10 @@ class SP_Network:
         calculate_energy_barriers(self)
         self.p1 = self.get_p1_eq()
         self.p2 = self.get_p2_eq()
+        #Interpolations to fasten the code
+        if compute_interpolation:
+            (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
+            (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
     
     def get_energy_barriers(self):
         calculate_energy_barriers(self)
@@ -148,6 +185,20 @@ class SP_Network:
     def get_p2_eq(self):
         return(self.get_omega_prime_12()/self.get_omega_prime())
     
+    def calculate_f_p1_om(self,k_s_lim):
+        #Computation on a sample
+        k_s_list = np.linspace(-k_s_lim,k_s_lim,int(50*2*k_s_lim))
+        Om_12 = np.exp(-self.f_e_12_small(k_s_list)*self.beta_prime)+np.exp(-self.f_e_12_big(k_s_list)*self.beta_prime)
+        Om_21 = np.exp(-self.f_e_21_small(k_s_list)*self.beta_prime)+np.exp(-self.f_e_21_big(k_s_list)*self.beta_prime)
+        Om_tot = Om_12+Om_21
+        P1_eq = Om_21/Om_tot
+        
+        #Interpolation
+        f_p1_eq = interpolate.interp1d(k_s_list, P1_eq)
+        f_om_tot = interpolate.interp1d(k_s_list, Om_tot)
+        
+        return(f_p1_eq,f_om_tot)
+    
     #Dynamic
     
     def evolve(self,f0,t_step):
@@ -158,6 +209,21 @@ class SP_Network:
     def get_m(self):
         c1 = np.cos(self.theta_1*np.pi/180)
         c2 = np.cos(self.theta_2*np.pi/180)
+        return(c1*self.p1+c2*self.p2)
+    
+    def evolve_fast(self,f0,tstep):
+        om_tot = self.f_om_tot(self.k_s)
+        p1_eq = self.f_p1_eq(self.k_s)
+        self.p1 = p1_eq + (self.p1 - p1_eq)*np.exp(-f0*om_tot*tstep)
+        self.p2 = 1 - self.p1
+        return()
+    
+    def get_m_fast(self):
+        #self.theta_1 and self.theta_2 are not up-to-date anymore, we use the interpolation functions
+        theta_1 = self.f_theta_1(self.k_s)
+        theta_2 = self.f_theta_2(self.k_s)
+        c1 = np.cos(theta_1*np.pi/180)
+        c2 = np.cos(theta_2*np.pi/180)
         return(c1*self.p1+c2*self.p2)
 
 # %%
