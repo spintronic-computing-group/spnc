@@ -490,7 +490,7 @@ y_pred_train = net.predict(S)
 y_pred_valid = net.predict(S_valid)
 
 # %%
-Ntest = 2000
+Ntest = 2500
 (u_test,y_test) = NARMA10(Ntest)
 S_test = net.gen_signal_fast(u_test)
 y_pred_test = net.predict(S_test)
