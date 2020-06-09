@@ -265,10 +265,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 1
+k_s_lim = .5
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [1,2,5,10,50]
+beta_prime_list = [10,20,30]
 omega_vs_beta = []
 for beta_prime in beta_prime_list:
     spn.beta_prime = beta_prime
@@ -797,10 +797,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = .5
+k_s_lim = 2
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [9.5,10]
+beta_prime_list = [10,20,30,40,50]
 eb_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp

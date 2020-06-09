@@ -106,7 +106,7 @@ plt.plot(time*1e9,m_t,'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
 plt.title("Response to random input with "+r'$\theta=T$')
-plt.ylabel(r'$m(t)$')
+plt.ylabel(r'$k_\sigma(t) ; m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
 plt.show()
@@ -141,7 +141,7 @@ plt.plot(time*1e9,m_t,'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
 plt.title("Response to random input with "+r'$\theta=T/10$')
-plt.ylabel(r'$m(t)$')
+plt.ylabel(r'$k_\sigma(t) ; m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
 plt.show()
@@ -410,29 +410,35 @@ class Single_Node_Reservoir_NARMA10:
         return(np.arange(spacer*self.tau,(Ns+spacer)*self.tau,self.theta)*1e9)
 
 
+# %% [markdown]
+# ### The task : NARMA10
+
 # %%
 Ntrain = 500
 (u,y) = NARMA10(Ntrain)
 
-net = Single_Node_Reservoir_NARMA10(400,1e-2,8e-2,0.26)
+net = Single_Node_Reservoir_NARMA10(40,1e-2,8e-2,0.26)
 time_u = net.get_time_list_u(u)
 time_y = net.get_time_list_y(y)
 
 # %%
 plt.figure(figsize=(10,6))
-plt.plot(time_u,u,drawstyle='steps-post',label="Input")
-plt.plot(time_y,y,drawstyle='steps-post',label="Desired output")
+plt.plot(time_u[-100:],u[-100:],drawstyle='steps-post',label="Input")
+plt.plot(time_y[-100:],y[-100:],drawstyle='steps-post',label="Desired output")
 plt.xlabel("Time (ns)")
 plt.legend(loc="best")
 plt.show()
 
+# %% [markdown]
+# ### Aspect of the output
+
 # %%
-(J,S) = net.gen_signal_fast(u)
+(J,S) = net.gen_signal(u)
 time_S = net.get_time_list_S(S)
 
 # %%
 plt.figure(figsize=(10,6))
-L = 20
+L = 5
 plt.grid(True)
 plt.plot(time_u[-L:],u[-L:],drawstyle='steps-post',label="Input")
 #plt.plot(time_S[-L*net.Nvirt:],J.flatten()[-L*net.Nvirt:],drawstyle='steps-post',label="Transformed input")
@@ -469,6 +475,9 @@ plt.xlabel(r'$T/\theta$'+" ratio")
 plt.ylabel("Standard deviation of the signal")
 plt.title("40 virtual nodes")
 plt.show()
+
+# %% [markdown]
+# ### Training and fine-tuning
 
 # %%
 Ntrain = 500
@@ -574,8 +583,11 @@ plt.xlim(0,0.9*nbins)
 plt.ylim(0,0.9*nbins)
 plt.show()
 
+# %% [markdown]
+# #### 1. Influence of $T/\theta$
+
 # %%
-T_theta_list = np.logspace(-2,0,3)
+T_theta_list = np.logspace(-2,1,5)
 
 Ntrain = 500
 Nvalid = 200
@@ -585,33 +597,44 @@ Ntest = 200
 (u_valid,y_valid) = NARMA10(Nvalid)
 (u_test,y_test) = NARMA10(Ntest)
 
-NRMSE_train = []
-NRMSE_valid = []
-NRMSE_test = []
+NRMSE_train_list = []
+NRMSE_valid_list = []
+NRMSE_test_list = []
+
+N = 5
 
 for T_t in T_theta_list:
     print(T_t)
-    net = Single_Node_Reservoir_NARMA10(400,T_t,0.1,0.25)
+    NRMSE_train = 0
+    NRMSE_valid = 0
+    NRMSE_test = 0
     
-    (J,S) = net.gen_signal(u)
-    (J_valid,S_valid) = net.gen_signal(u_valid)
-    (J_test,S_test) = net.gen_signal(u_test)
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(400,T_t,8e-2,0.26)
+
+        (J,S) = net.gen_signal_fast(u)
+        (J_valid,S_valid) = net.gen_signal_fast(u_valid)
+        (J_test,S_test) = net.gen_signal_fast(u_test)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+
+        NRMSE_train += NRMSE_list(y,y_pred_train)
+        NRMSE_valid += NRMSE_list(y_valid,y_pred_valid)
+        NRMSE_test += NRMSE_list(y_test,y_pred_test)
     
-    net.train(S,y,S_valid,y_valid)
-    
-    y_pred_train = net.predict(S)
-    y_pred_valid = net.predict(S_valid)
-    y_pred_test = net.predict(S_test)
-    
-    NRMSE_train.append(NRMSE_list(y,y_pred_train))
-    NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
-    NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+    NRMSE_train_list.append(NRMSE_train/N)
+    NRMSE_valid_list.append(NRMSE_valid/N)
+    NRMSE_test_list.append(NRMSE_test/N)
 
 # %%
 plt.figure(figsize=(10,6))
-plt.plot(T_theta_list,NRMSE_train,marker='+',linestyle = '-',label="NRMSE (train)")
-plt.plot(T_theta_list,NRMSE_valid,marker='+',linestyle = '-',label="NRMSE (validation)")
-plt.plot(T_theta_list,NRMSE_test,marker='+',linestyle = '-',label="NRMSE (test)")
+plt.plot(T_theta_list,NRMSE_train_list,marker='+',linestyle = '-',label="NRMSE (train)")
+plt.plot(T_theta_list,NRMSE_valid_list,marker='+',linestyle = '-',label="NRMSE (validation)")
+plt.plot(T_theta_list,NRMSE_test_list,marker='+',linestyle = '-',label="NRMSE (test)")
 plt.grid(True)
 plt.legend(loc="best")
 plt.xlabel(r'$T/\theta$')
@@ -619,6 +642,9 @@ plt.ylabel("NRMSE")
 plt.xscale("log")
 plt.show()
 
+# %% [markdown]
+# #### 2. Is the superparmagnetic network important?
+
 # %%
 Ntrain = 500
 Nvalid = 200
@@ -628,7 +654,7 @@ Ntest = 200
 (u_valid,y_valid) = NARMA10(Nvalid)
 (u_test,y_test) = NARMA10(Ntest)
 
-net = Single_Node_Reservoir_NARMA10(400,1,0.1,0.25)
+net = Single_Node_Reservoir_NARMA10(400,1e-2,8e-2,0.,bias=False)
 
 J = net.gen_signal_without_SPN(u)
 J_valid = net.gen_signal_without_SPN(u_valid)
@@ -643,6 +669,12 @@ y_pred_test = net.predict(J_test)
 print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
 print("NRMSE (validation) = "+str(NRMSE_list(y_valid,y_pred_valid)))
 print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+
+# %% [markdown]
+# $T/\theta$ must be very low! Which means that the "memory" is useless when there is a feedback... The network doesn't work when we use J instead of S (without SPN) which tends to show that the crucial aspect of the SPN in nonlinearity (but not memory).
+
+# %% [markdown]
+# #### 3. Influence of $m_0$
 
 # %%
 m0_theta_list = np.logspace(-1.5,-0.5,5)
@@ -701,7 +733,7 @@ plt.xscale("log")
 plt.show()
 
 # %% [markdown]
-# $T/\theta$ must be very low! Which means that the "memory" is useless when there is a feedback... The network doesn't work when we use J instead of S (without SPN) which tends to show that the crucial aspect of the SPN in nonlinearity (but not memory).
+# #### 4. Influence of $\gamma$
 
 # %%
 gamma_theta_list = np.arange(0.2,0.33,0.02)
@@ -759,6 +791,9 @@ plt.ylabel("NRMSE")
 #plt.xscale("log")
 plt.show()
 
+# %% [markdown]
+# #### 4. Importance of the bias
+
 # %%
 bias_list = [True,False]
 
@@ -806,6 +841,9 @@ for use_bias in bias_list:
 print(NRMSE_train_list)
 print(NRMSE_valid_list)
 print(NRMSE_test_list)
+
+# %% [markdown]
+# #### Influence of $\beta'$
 
 # %%
 beta_prime_list = np.logspace(1,2,5)

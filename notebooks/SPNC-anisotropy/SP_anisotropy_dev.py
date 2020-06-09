@@ -1066,8 +1066,6 @@ plt.show()
 # 2. (done) Create a class for a superparamagnetic network.
 # 3. (done) Look at the influence of $\beta'$, $H'$, $\theta_H$, $K'_\sigma$ and $\phi$ on $\omega$, $p_{1,eq}$, $p_{2,eq}$, $p_{1,eq} - p_{1,eq}$, $m_{eq}$ and $E'_b\beta'$.
 #
-# see Superparamagnet-class notebook
-#
 # ...
 
 # %%
