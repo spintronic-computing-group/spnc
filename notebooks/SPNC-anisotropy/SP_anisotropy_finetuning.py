@@ -666,7 +666,7 @@ plt.show()
 k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [1,2,5,10,50]
+beta_prime_list = [10]
 m_eq_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp
@@ -690,6 +690,9 @@ plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 plt.show()
+
+# %%
+(m_eq_vs_bp[0][275]-m_eq_vs_bp[0][225])/(k_s_list[275]-k_s_list[225])
 
 # %% [markdown]
 # ### 2. Influence of $h$
