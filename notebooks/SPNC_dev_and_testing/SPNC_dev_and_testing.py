@@ -1661,3 +1661,73 @@ print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 # %% [markdown]
 # This is somewhat better, although definitely worse than the low $\beta'$ case. It at least (just) out performs our shift register with feedback.
 # **One important factor might be scaling the narma input to be between -1 and 1 to make use of both sides of the resevoir or biasing it so we only need to deal with the oscilations, not the offset**
+
+# %% [markdown]
+# In fact, The mask puts us between - and +, then we can use m0 and the bias flag to try to deal with things by reducing m0.
+
+# %% [markdown]
+# **low m0, no bias: Theta = 20000000, gamma = 0.2, Nvirt = 40, m0 = 0.00001, beta_prime = 30**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = SPNC_SNR(1, 40, 1, m0=0.00001, mask_sparse=0.5, bias=False)
+params = {'theta': 20000000,'gamma':0.2,'beta_prime':30}
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# **low m0, bias: Theta = 20000000, gamma = 0.2, Nvirt = 40, m0 = 0.00001, beta_prime = 30**
+
+# %%
+# Defining the net
+# potential params : ( Nin, Nvirt, Nout, m0=0.1, mask_sparse=1.0, bias=False, act=None, inv_act=None)
+net = SPNC_SNR(1, 40, 1, m0=0.00001, mask_sparse=0.5, bias=True)
+params = {'theta': 20000000,'gamma':0.2,'beta_prime':30}
+# Running the net
+net.train(utrain, dtrain, uvalid, dvalid, params)
+
+Stest = net.transform(utest, params)
+pred = net.forward(Stest)
+
+plt.plot(dtest[100:200], label='Desired Output')
+plt.plot(pred[100:200], label='Model Output')
+plt.legend(loc='lower left')
+plt.xlabel('time')
+plt.ylabel('NARMA10 output')
+plt.show()
+
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(dtest[:], pred[:], 'o')
+plt.xlabel('Desired Output')
+plt.ylabel('Model Output')
+plt.show()
+
+#Errors
+print('NRMSE is' ,np.sqrt(MSE(pred,dtest))/np.std(dtest))
+print('NMSE is' , (MSE(pred,dtest))/np.power(np.std(dtest),2) )
+print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
+
+# %% [markdown]
+# The bias doesn't help very much as you can get better response with only a bias! Trying to push very small m0 doesn't really help as it just makes everything linear (i.e. we have a shift register with feedback). It would seem at first inspection that higher $\beta'$ is just bad! Could be worth thinking if we could make use of $w$ changes to our advantage.
