@@ -317,9 +317,88 @@ class Single_Node_Reservoir_NARMA10:
         
         return(S[spacer:])
     
+    def gen_signal_fast_2_inputs(self, u, back_input_ratio):
+        Ns = len(u)
+        Nin = int(self.Nvirt*back_input_ratio)
+        if self.use_bias:
+            print("Use bias")
+            S = np.zeros((Ns,self.Nvirt+1))
+        else:
+            S = np.zeros((Ns,self.Nvirt))
+            
+        for k in range(Ns):
+            if k%100==0:
+                print(k)
+            for i in range(Nin):
+                #Input at k-1
+                j = self.M[i]*u[k-1]
+                self.spn.k_s = j + self.gamma*S[k-1,i] #Feedback
+                self.spn.evolve_fast(f0,self.theta)
+                S[k,i] = self.spn.get_m_fast()
+            for i in range(Nin,self.Nvirt):
+                #Input at k
+                j = self.M[i]*u[k]
+                self.spn.k_s = j + self.gamma*S[k-1,i] #Feedback 
+                self.spn.evolve_fast(f0,self.theta)
+                S[k,i] = self.spn.get_m_fast()
+                
+        if self.use_bias:
+            for k in range(Ns):
+                S[k,self.Nvirt] = 1
+        
+        return(S[spacer:])
+    
+    def gen_signal_fast_delayed_feedback(self, u, delay_fb):
+        Ns = len(u)
+        if self.use_bias:
+            print("Use bias")
+            S = np.zeros((Ns,self.Nvirt+1))
+        else:
+            S = np.zeros((Ns,self.Nvirt))
+            
+        for k in range(Ns):
+            if k%100==0:
+                print(k)
+            for i in range(self.Nvirt):
+                j = self.M[i]*u[k]
+                self.spn.k_s = j + self.gamma*S[k-1,i-delay_fb] #Delayed Feedback 
+                self.spn.evolve_fast(f0,self.theta)
+                S[k,i] = self.spn.get_m_fast()
+                
+        if self.use_bias:
+            for k in range(Ns):
+                S[k,self.Nvirt] = 1
+        
+        return(S[spacer:])
+    
+    def gen_signal_delayed_feedback_without_SPN(self, u, delay_fb):
+        Ns = len(u)
+        if self.use_bias:
+            print("Use bias")
+            J = np.zeros((Ns,self.Nvirt+1))
+        else:
+            J = np.zeros((Ns,self.Nvirt))
+            
+        for k in range(Ns):
+            if k%100==0:
+                print(k)
+            for i in range(self.Nvirt):
+                j = self.M[i]*u[k]
+                J[k,i] = j + self.gamma*J[k-1,i-delay_fb] #Delayed Feedback 
+                
+        if self.use_bias:
+            for k in range(Ns):
+                J[k,self.Nvirt] = 1
+        
+        return(J[spacer:])
+    
     def gen_signal_without_SPN(self,u):
         Ns = len(u)
-        J = np.zeros((Ns,self.Nvirt))
+        if self.use_bias:
+            print("Use bias")
+            J = np.zeros((Ns,self.Nvirt+1))
+        else:
+            J = np.zeros((Ns,self.Nvirt))
         
         for k in range(Ns):
             if k%100==0:
@@ -327,7 +406,11 @@ class Single_Node_Reservoir_NARMA10:
             for i in range(self.Nvirt):
                 j = self.M[i]*u[k]
                 J[k,i] = j + self.gamma*J[k-1,i] #J will be useful to test the role of memory and nonlinearity
-                
+        
+        if self.use_bias:
+            for k in range(Ns):
+                J[k,self.Nvirt] = 1
+        
         return(J[spacer:])
     
     def train(self, S, y, S_valid, y_valid):
@@ -352,7 +435,7 @@ class Single_Node_Reservoir_NARMA10:
         self.W = Ridge_regression(S, Y, alpha_opt)
     
     def train_without_SPN(self, J, y, J_valid, y_valid):
-        alphas = np.logspace(-10,-1,10)
+        alphas = np.logspace(-15,0,20)
         alphas[0] = 0.
         
         Ns = J.shape[0]
@@ -478,7 +561,7 @@ Nvalid = 5000
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
 
-net = Single_Node_Reservoir_NARMA10(400,3,1e-2,0.25)
+net = Single_Node_Reservoir_NARMA10(400,5,1e-3,0.3)
 S = net.gen_signal_fast(u)
 S_valid = net.gen_signal_fast(u_valid)
 
@@ -916,8 +999,1010 @@ plt.ylabel("NRMSE")
 plt.xscale("log")
 plt.show()
 
+# %% [markdown]
+# ### With 2 inputs (at $k$ and $k-1$)
+
 # %%
-A=[1,2]
-np.std(A)
+Ntrain = 5000
+Nvalid = 5000
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+
+net = Single_Node_Reservoir_NARMA10(400,3,1e-2,0.25)
+S = net.gen_signal_fast_2_inputs(u, 0.4)
+S_valid = net.gen_signal_fast_2_inputs(u_valid, 0.4)
+
+# %%
+net.train(S,y,S_valid,y_valid)
+
+# %%
+y_pred_train = net.predict(S)
+y_pred_valid = net.predict(S_valid)
+
+# %%
+Ntest = 2500
+(u_test,y_test) = NARMA10(Ntest)
+S_test = net.gen_signal_fast_2_inputs(u_test,0.4)
+y_pred_test = net.predict(S_test)
+
+# %%
+time_y = net.get_time_list_y(y_test)
+plt.figure(figsize=(10,6))
+xmin = 100
+xmax = 200
+plt.plot(time_y[xmin:xmax],y_test[xmin:xmax],drawstyle='steps-post',label="Desired output (test)")
+plt.plot(time_y[xmin:xmax],y_pred_test[xmin:xmax],drawstyle='steps-post',label="Predicted output (test)")
+plt.xlabel("Time (ns)")
+plt.legend(loc="best")
+plt.show()
+
+# %%
+print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y,y_pred_train,'ro')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntrain))
+H, xedges, yedges  = np.histogram2d(y,y_pred_train,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+print("NRMSE (validation) = "+str(NRMSE_list(y_valid,y_pred_valid)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_valid,y_pred_valid,'ro')
+plt.xlabel("Desired output (validation)")
+plt.ylabel("Predicted output (validation)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Nvalid))
+H, xedges, yedges  = np.histogram2d(y_valid,y_pred_valid,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (validation)")
+plt.ylabel("Predicted output (validation)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_test,y_pred_test,'ro')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntest))
+H, xedges, yedges  = np.histogram2d(y_test,y_pred_test,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+T_theta_list = np.logspace(0,1,5)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for T_t in T_theta_list:
+    print(T_t)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,T_t,1e-2,0.25)
+
+        S = net.gen_signal_fast_2_inputs(u,0.5)
+        S_valid = net.gen_signal_fast_2_inputs(u_valid,0.5)
+        S_test = net.gen_signal_fast_2_inputs(u_test,0.5)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+    
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(T_theta_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(T_theta_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(T_theta_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$T/\theta$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+m0_list = np.logspace(-4,-2,5)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for m0 in m0_list:
+    print(m0)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,3,m0,0.25)
+
+        S = net.gen_signal_fast_2_inputs(u,0.5)
+        S_valid = net.gen_signal_fast_2_inputs(u_valid,0.5)
+        S_test = net.gen_signal_fast_2_inputs(u_test,0.5)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(m0_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(m0_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(m0_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$m_0$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+input_ratio_list = np.linspace(0,0.5,6)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for input_ratio in input_ratio_list:
+    print(input_ratio)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,3,1e-2,0.25)
+
+        S = net.gen_signal_fast_2_inputs(u,input_ratio)
+        S_valid = net.gen_signal_fast_2_inputs(u_valid,input_ratio)
+        S_test = net.gen_signal_fast_2_inputs(u_test,input_ratio)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(input_ratio_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(input_ratio_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(input_ratio_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel("Input ratio")
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
+
+# %%
+gamma_list = np.arange(0.1,0.5,0.05)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for gamma in gamma_list:
+    print(gamma)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,3,1e-2,gamma)
+
+        S = net.gen_signal_fast_2_inputs(u,0.4)
+        S_valid = net.gen_signal_fast_2_inputs(u_valid,0.4)
+        S_test = net.gen_signal_fast_2_inputs(u_test,0.4)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(gamma_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(gamma_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(gamma_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$\gamma$')
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
+
+# %% [markdown]
+# ### With delayed feedback
+
+# %%
+Ntrain = 5000
+Nvalid = 5000
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+
+net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,0.25)
+S = net.gen_signal_fast_delayed_feedback(u, 1)
+S_valid = net.gen_signal_fast_delayed_feedback(u_valid, 1)
+
+# %%
+net.train(S,y,S_valid,y_valid)
+
+# %%
+y_pred_train = net.predict(S)
+y_pred_valid = net.predict(S_valid)
+
+# %%
+Ntest = 2500
+(u_test,y_test) = NARMA10(Ntest)
+S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
+y_pred_test = net.predict(S_test)
+
+# %%
+time_y = net.get_time_list_y(y_test)
+plt.figure(figsize=(10,6))
+xmin = 100
+xmax = 200
+plt.plot(time_y[xmin:xmax],y_test[xmin:xmax],drawstyle='steps-post',label="Desired output (test)")
+plt.plot(time_y[xmin:xmax],y_pred_test[xmin:xmax],drawstyle='steps-post',label="Predicted output (test)")
+plt.xlabel("Time (ns)")
+plt.legend(loc="best")
+plt.show()
+
+# %%
+print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y,y_pred_train,'ro')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntrain))
+H, xedges, yedges  = np.histogram2d(y,y_pred_train,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_test,y_pred_test,'ro')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntest))
+H, xedges, yedges  = np.histogram2d(y_test,y_pred_test,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+T_theta_list = np.logspace(0,1,5)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for T_t in T_theta_list:
+    print(T_t)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,T_t,1e-2,0.25)
+
+        S = net.gen_signal_fast_delayed_feedback(u,1)
+        S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
+        S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+    
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(T_theta_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(T_theta_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(T_theta_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$T/\theta$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+m0_list = np.logspace(-4,0,5)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for m0 in m0_list:
+    print(m0)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,1e-2,m0,0.25)
+
+        S = net.gen_signal_fast_delayed_feedback(u,1)
+        S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
+        S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(m0_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(m0_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(m0_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$m_0$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+delay_list = np.arange(1,10,2)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for delay_fb in delay_list:
+    print(delay_fb)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,1e-2,1e-2,0.25)
+
+        S = net.gen_signal_fast_delayed_feedback(u,delay_fb)
+        S_valid = net.gen_signal_fast_delayed_feedback(u_valid,delay_fb)
+        S_test = net.gen_signal_fast_delayed_feedback(u_test,delay_fb)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(delay_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(delay_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(delay_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel("Delay on feedback")
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
+
+# %%
+gamma_list = np.arange(0.1,0.5,0.05)
+
+Ntrain = 500
+Nvalid = 500
+Ntest = 250
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for gamma in gamma_list:
+    print(gamma)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(100,1e-2,1e-2,gamma)
+
+        S = net.gen_signal_fast_delayed_feedback(u,1)
+        S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
+        S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
+
+        net.train(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(gamma_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(gamma_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(gamma_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$\gamma$')
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
+
+# %%
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,.8)
+
+J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+net.train_without_SPN(J,y,J_valid,y_valid)
+
+y_pred_train = net.predict(J)
+y_pred_valid = net.predict(J_valid)
+y_pred_test = net.predict(J_test)
+
+print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
+print("NRMSE (validation) = "+str(NRMSE_list(y_valid,y_pred_valid)))
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+
+# %%
+gamma_list = np.arange(0.6,3,0.1)
+
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for gamma in gamma_list:
+    print(gamma)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,3*1e-2,gamma)
+
+        J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+        J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+        J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+        net.train_without_SPN(J,y,J_valid,y_valid)
+
+        y_pred_train = net.predict(J)
+        y_pred_valid = net.predict(J_valid)
+        y_pred_test = net.predict(J_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(gamma_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(gamma_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(gamma_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$\gamma$')
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
+
+# %%
+print("NRMSE (train) = "+str(NRMSE_list(y,y_pred_train)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y,y_pred_train,'ro')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntrain))
+H, xedges, yedges  = np.histogram2d(y,y_pred_train,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (training)")
+plt.ylabel("Predicted output (training)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+plt.figure(figsize=(12,5))
+plt.subplot(121)
+plt.plot(np.linspace(0,1.0),np.linspace(0,1.0), 'k--' )
+plt.plot(y_test,y_pred_test,'ro')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xlim(0,0.9)
+plt.ylim(0,0.9)
+plt.subplot(122)
+nbins = int(2*np.sqrt(Ntest))
+H, xedges, yedges  = np.histogram2d(y_test,y_pred_test,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Desired output (testing)")
+plt.ylabel("Predicted output (testing)")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
+
+# %%
+m0_list = np.logspace(-4,0,5)
+
+Ntrain = 1500
+Nvalid = 1500
+Ntest = 750
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for m0 in m0_list:
+    print(m0)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,m0,0.8)
+
+        J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+        J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+        J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+        net.train_without_SPN(J,y,J_valid,y_valid)
+
+        y_pred_train = net.predict(J)
+        y_pred_valid = net.predict(J_valid)
+        y_pred_test = net.predict(J_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(m0_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(m0_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(m0_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$m_0$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+T_theta_list = np.logspace(-4,1,5)
+
+Ntrain = 1500
+Nvalid = 1500
+Ntest = 750
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for T_t in T_theta_list:
+    print(T_t)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(400,T_t,1e-2,0.8)
+
+        J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+        J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+        J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+        net.train_without_SPN(J,y,J_valid,y_valid)
+
+        y_pred_train = net.predict(J)
+        y_pred_valid = net.predict(J_valid)
+        y_pred_test = net.predict(J_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+    
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(T_theta_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(T_theta_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(T_theta_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel(r'$T/\theta$')
+plt.ylabel("NRMSE")
+plt.xscale("log")
+plt.show()
+
+# %%
+delay_list = np.arange(1,10)
+
+Ntrain = 1500
+Nvalid = 1500
+Ntest = 750
+
+(u,y) = NARMA10(Ntrain)
+(u_valid,y_valid) = NARMA10(Nvalid)
+(u_test,y_test) = NARMA10(Ntest)
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+
+N = 1
+
+for delay_fb in delay_list:
+    print(delay_fb)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,0.9)
+
+        J = net.gen_signal_delayed_feedback_without_SPN(u,delay_fb)
+        J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,delay_fb)
+        J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,delay_fb)
+
+        net.train_without_SPN(J,y,J_valid,y_valid)
+
+        y_pred_train = net.predict(J)
+        y_pred_valid = net.predict(J_valid)
+        y_pred_test = net.predict(J_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+
+# %%
+plt.figure(figsize=(10,6))
+plt.errorbar(delay_list,NRMSE_train_mean,NRMSE_train_std,linestyle = '--',label="NRMSE (train)")
+plt.errorbar(delay_list,NRMSE_valid_mean,NRMSE_valid_std,linestyle = '--',label="NRMSE (validation)")
+plt.errorbar(delay_list,NRMSE_test_mean,NRMSE_test_std,linestyle = '--',label="NRMSE (test)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.xlabel("Delay on feedback")
+plt.ylabel("NRMSE")
+#plt.xscale("log")
+plt.show()
 
 # %%
