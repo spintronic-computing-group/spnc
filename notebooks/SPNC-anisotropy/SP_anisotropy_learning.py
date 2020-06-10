@@ -1686,6 +1686,9 @@ plt.ylabel("NRMSE")
 #plt.xscale("log")
 plt.show()
 
+# %% [markdown]
+# #### Without the SPN?
+
 # %%
 Ntrain = 5000
 Nvalid = 5000
@@ -2004,5 +2007,8 @@ plt.xlabel("Delay on feedback")
 plt.ylabel("NRMSE")
 #plt.xscale("log")
 plt.show()
+
+# %% [markdown]
+# ### With output feedback
 
 # %%
