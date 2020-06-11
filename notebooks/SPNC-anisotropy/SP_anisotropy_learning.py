@@ -379,12 +379,15 @@ class Single_Node_Reservoir_NARMA10:
         else:
             J = np.zeros((Ns,self.Nvirt))
             
+        # Artificial nonlinearity
+        f = np.tanh
+            
         for k in range(Ns):
             if k%100==0:
                 print(k)
             for i in range(self.Nvirt):
                 j = self.M[i]*u[k]
-                J[k,i] = j + self.gamma*J[k-1,i-delay_fb] #Delayed Feedback 
+                J[k,i] = f(j + self.gamma*J[k-1,i-delay_fb]) #Delayed Feedback 
                 
         if self.use_bias:
             for k in range(Ns):
@@ -1698,7 +1701,7 @@ Ntest = 2500
 (u_valid,y_valid) = NARMA10(Nvalid)
 (u_test,y_test) = NARMA10(Ntest)
 
-net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,.8)
+net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-1,.8)
 
 J = net.gen_signal_delayed_feedback_without_SPN(u,1)
 J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
@@ -1823,7 +1826,7 @@ plt.ylim(0,0.9*nbins)
 plt.show()
 
 # %%
-m0_list = np.logspace(-4,0,5)
+m0_list = np.logspace(-2,0,5)
 
 Ntrain = 1500
 Nvalid = 1500
