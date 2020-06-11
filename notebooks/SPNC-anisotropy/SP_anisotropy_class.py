@@ -37,7 +37,7 @@ def energy(spn,theta):
 
 #Computation of energy barriers
 def calculate_energy_barriers(spn):
-    theta = np.linspace(-180,180,1000)
+    theta = np.linspace(-180,180,10000)
     E = energy(spn,theta)
     
     #Localization of extrema
@@ -133,7 +133,7 @@ def functions_energy_barriers(spn,k_s_lim):
 # %%
 #We define a superparamagnetic network as a class
 class SP_Network:
-    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=2,compute_interpolation=True):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=.5,compute_interpolation=True):
         #Parameters
         self.h = h
         self.theta_H = theta_H

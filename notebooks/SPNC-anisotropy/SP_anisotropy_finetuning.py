@@ -83,7 +83,7 @@ def energy(spn,theta):
 
 #Computation of energy barriers
 def calculate_energy_barriers(spn):
-    theta = np.linspace(-180,180,1000)
+    theta = np.linspace(-180,180,10000)
     E = energy(spn,theta)
     
     #Localization of extrema
@@ -206,9 +206,9 @@ class SP_Network:
 
 # %%
 #Computation
-k_s_lim = 5
+k_s_lim = .1
 spn = SP_Network(0.4,90,0,45,10)
-k_s_list = np.linspace(-k_s_lim,k_s_lim,100)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
 Theta_1 = []
 Theta_2 = []
 E_12_small = []
@@ -247,7 +247,7 @@ plt.show()
 # %%
 plt.figure(figsize = (10,6))
 plt.plot(k_s_list,Theta_1,'g+',label=r'$\theta_1$')
-plt.plot(k_s_list,Theta_2,'r+',label=r'$\theta_2$')
+#plt.plot(k_s_list,Theta_2,'r+',label=r'$\theta_2$')
 plt.legend(loc = "best")
 plt.xlim(-k_s_lim,k_s_lim)
 plt.grid(True)
@@ -403,10 +403,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 1
+k_s_lim = .1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [1,2,5,10,50]
+beta_prime_list = [10]
 p1_vs_bp = []
 p2_vs_bp = []
 for bp in beta_prime_list:
@@ -666,7 +666,7 @@ plt.show()
 k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [10]
+beta_prime_list = [10,20,30,40,50]
 m_eq_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp
@@ -690,6 +690,9 @@ plt.xlim(-k_s_lim,k_s_lim)
 #plt.yscale("log")
 plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
 plt.show()
+
+# %%
+(m_eq_vs_bp[0][499]-m_eq_vs_bp[0][0])/(k_s_list[499]-k_s_list[0])
 
 # %%
 (m_eq_vs_bp[0][275]-m_eq_vs_bp[0][225])/(k_s_list[275]-k_s_list[225])
