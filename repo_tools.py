@@ -36,7 +36,12 @@ def repo_path_finder(searchpath,reponame):
     """
 
     # Search recursivly for the repository
-    repopath = next(searchpath.rglob('**/' + reponame))
+    try:
+        repopath = next(searchpath.rglob('**/' + reponame))
+    except StopIteration:
+        print("No such repository: " + reponame)
+        return
+        
     repopathparent = repopath.parent
 
     # Add parent to path if not already there
