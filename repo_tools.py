@@ -26,6 +26,13 @@ def repo_path_finder(searchpath,reponame):
         path to search
     reponame : str
         the name of the repository to be added
+
+    Examples
+    --------
+    repo_path_finder(Path.home() / "repos",
+                                'machine_learning_library')
+        This will search for the machine_learning_library repo under the
+        directory ~/repos
     """
 
     # Search recursivly for the repository
