@@ -1,29 +1,31 @@
-# Setting up the path to find other repos
+"""
+Tools for working with other local repositories
+
+Functions
+---------
+repo_path_finder(searchpath, reponame)
+    Searches for a repository and adds it and its parent directory to path
+
+"""
+
 import sys
 from pathlib import Path
 
 
-#Some user parameters
-
-# Path to repositories in general
-searchpath = Path.home() / "repos"
-
-# names of repositories to add as a tuple of strings
-reponames = ('machine_learning_library',)
-
-
-# Code
-
 # Fn for finding and adding the repo to the path
-def search_and_add(searchpath,reponame):
+def repo_path_finder(searchpath,reponame):
     """
     Find a particular repository on a search path and adds it to sys.path.
 
     Adds both parent directory and repo directory
     Will use the first match it finds
-    Arguments:
-    searchpath -- path to search as type Path
-    reponame -- the name of the repository to be added as a string
+
+    Parameters
+    ---------
+    searchpath : Path
+        path to search
+    reponame : str
+        the name of the repository to be added
     """
 
     # Search recursivly for the repository
@@ -41,6 +43,3 @@ def search_and_add(searchpath,reponame):
         sys.path.index(str(repopath))
     except ValueError:
         sys.path.append(str(repopath))
-
-# Run the function for all repos to add
-for reponame in reponames: search_and_add(searchpath,reponame)
