@@ -1368,9 +1368,9 @@ Nvalid = 5000
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
 
-net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-1/3.2,0.7/3.2)
-S = net.gen_signal_fast_delayed_feedback(u, 1)
-S_valid = net.gen_signal_fast_delayed_feedback(u_valid, 1)
+net = Single_Node_Reservoir_NARMA10(400,1e-1,7e-2,0.28)
+S = net.gen_signal_fast_delayed_feedback(u, 3)
+S_valid = net.gen_signal_fast_delayed_feedback(u_valid, 3)
 
 # %%
 net.train(S,y,S_valid,y_valid)
@@ -1382,7 +1382,7 @@ y_pred_valid = net.predict(S_valid)
 # %%
 Ntest = 2500
 (u_test,y_test) = NARMA10(Ntest)
-S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
+S_test = net.gen_signal_fast_delayed_feedback(u_test,3)
 y_pred_test = net.predict(S_test)
 
 # %%
@@ -1445,9 +1445,9 @@ plt.show()
 # %%
 T_theta_list = np.logspace(-4,0,5)
 
-Ntrain = 500
-Nvalid = 500
-Ntest = 250
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
 
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
@@ -1460,7 +1460,7 @@ NRMSE_train_std = []
 NRMSE_valid_std = []
 NRMSE_test_std = []
 
-N = 1
+N = 5
 
 for T_t in T_theta_list:
     print(T_t)
@@ -1469,7 +1469,7 @@ for T_t in T_theta_list:
     NRMSE_test = []
     
     for i in range(N):
-        net = Single_Node_Reservoir_NARMA10(100,T_t,1e-2,0.25)
+        net = Single_Node_Reservoir_NARMA10(400,T_t,1e-2,0.25)
 
         S = net.gen_signal_fast_delayed_feedback(u,1)
         S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
@@ -1505,11 +1505,11 @@ plt.xscale("log")
 plt.show()
 
 # %%
-m0_list = np.logspace(-4,0,5)
+m0_list = np.logspace(-2,-0.5,8)
 
-Ntrain = 500
-Nvalid = 500
-Ntest = 250
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
 
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
@@ -1522,7 +1522,7 @@ NRMSE_train_std = []
 NRMSE_valid_std = []
 NRMSE_test_std = []
 
-N = 1
+N = 5
 
 for m0 in m0_list:
     print(m0)
@@ -1531,7 +1531,7 @@ for m0 in m0_list:
     NRMSE_test = []
     
     for i in range(N):
-        net = Single_Node_Reservoir_NARMA10(100,1e-2,m0,0.25)
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,m0,0.25)
 
         S = net.gen_signal_fast_delayed_feedback(u,1)
         S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
@@ -1567,11 +1567,11 @@ plt.xscale("log")
 plt.show()
 
 # %%
-delay_list = np.arange(1,10,2)
+delay_list = np.arange(1,5)
 
-Ntrain = 500
-Nvalid = 500
-Ntest = 250
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
 
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
@@ -1584,7 +1584,7 @@ NRMSE_train_std = []
 NRMSE_valid_std = []
 NRMSE_test_std = []
 
-N = 1
+N = 5
 
 for delay_fb in delay_list:
     print(delay_fb)
@@ -1593,7 +1593,7 @@ for delay_fb in delay_list:
     NRMSE_test = []
     
     for i in range(N):
-        net = Single_Node_Reservoir_NARMA10(100,1e-2,1e-2,0.25)
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,0.25)
 
         S = net.gen_signal_fast_delayed_feedback(u,delay_fb)
         S_valid = net.gen_signal_fast_delayed_feedback(u_valid,delay_fb)
@@ -1629,11 +1629,11 @@ plt.ylabel("NRMSE")
 plt.show()
 
 # %%
-gamma_list = np.arange(0.1,0.5,0.05)
+gamma_list = np.linspace(0.1,0.5,10)
 
-Ntrain = 500
-Nvalid = 500
-Ntest = 250
+Ntrain = 5000
+Nvalid = 5000
+Ntest = 2500
 
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
@@ -1646,7 +1646,7 @@ NRMSE_train_std = []
 NRMSE_valid_std = []
 NRMSE_test_std = []
 
-N = 1
+N = 5
 
 for gamma in gamma_list:
     print(gamma)
@@ -1655,7 +1655,7 @@ for gamma in gamma_list:
     NRMSE_test = []
     
     for i in range(N):
-        net = Single_Node_Reservoir_NARMA10(100,1e-2,1e-2,gamma)
+        net = Single_Node_Reservoir_NARMA10(400,1e-2,1e-2,gamma)
 
         S = net.gen_signal_fast_delayed_feedback(u,1)
         S_valid = net.gen_signal_fast_delayed_feedback(u_valid,1)
