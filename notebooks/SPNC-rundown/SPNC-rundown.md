@@ -30,23 +30,30 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 
 
 ## State of play
+*Items in **bold** are important for a paper.*
 
 **Questions we've answered:**
 - Voltage control is possible
 - We can do NARMA10 task (similar to Appeltant) with field and voltage
 
 **Questions we're working on:**
-- What does a practical device look like?
-- Heat maps (with scaling factor and offset to input) at different $\beta'$
-- Speech recognition task
-- What role does number of virtual nodes play?
+- **What does a practical device look like? There are important questions about timescales and errors.**
+- **Heat maps (with scaling factor and offset to input) at different $\beta'$**
+- **Speech recognition task**
+- Multiple resevoirs
+- How does the mask effect ML? 
+- What role does number of virtual nodes play? (This is related to mask, but also feedback).
+- What is the role of feedback?
 
 **Questions we're interested in considering:**
-- What is the role of feedback?
-- How does the mask effect ML?
 - How can we quantify non-linearity of res (or input function)? How does this work with generic resevoirs?
 - What is the effect of oscilatory inputs?
 - Bring in micromagnetics
+
+## Outlook
+
+- Want to publish simulation paper with suggestion of sensible device
+- Use this as basis for grant application and to drive experiments
 
 ***
 
