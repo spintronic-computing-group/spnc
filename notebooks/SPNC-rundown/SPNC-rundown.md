@@ -119,8 +119,10 @@ with plt.xkcd():
 
 ## Comparison to mumax model so far
 
-
-![basic-system-schematic.PNG](images/basic-system-schematic.PNG)
+```python jupyter={"source_hidden": true}
+from IPython.display import Image
+Image(filename="images/basic-system-schematic.png")
+```
 
 ### Tom's model
 
@@ -337,8 +339,9 @@ def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
     #Plot
     ax.plot(theta, basic_energy(theta,K,Ks,alpha,muHMs,gamma), color='C0')
     #Rescale axes
-    #ax.relim()
-    #ax.autoscale_view()
+    ax.relim()
+    ax.autoscale_view()
+    
 
 
 ```
