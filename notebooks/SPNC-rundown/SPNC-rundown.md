@@ -29,6 +29,35 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 ***
 
 
+## State of play
+*Items in **bold** are important for a paper.*
+
+**Questions we've answered:**
+- Voltage control is possible
+- We can do NARMA10 task (similar to Appeltant) with field and voltage
+
+**Questions we're working on:**
+- **What does a practical device look like? There are important questions about timescales and errors.**
+- **Heat maps (with scaling factor and offset to input) at different $\beta'$**
+- **Speech recognition task**
+- Multiple resevoirs
+- How does the mask effect ML? 
+- What role does number of virtual nodes play? (This is related to mask, but also feedback).
+- What is the role of feedback?
+
+**Questions we're interested in considering:**
+- How can we quantify non-linearity of res (or input function)? How does this work with generic resevoirs?
+- What is the effect of oscilatory inputs?
+- Bring in micromagnetics
+
+## Outlook
+
+- Want to publish simulation paper with suggestion of sensible device
+- Use this as basis for grant application and to drive experiments
+
+***
+
+
 ## A model system
 
 
@@ -90,8 +119,10 @@ with plt.xkcd():
 
 ## Comparison to mumax model so far
 
-
-![basic-system-schematic.PNG](images/basic-system-schematic.PNG)
+```python jupyter={"source_hidden": true}
+from IPython.display import Image
+Image(filename="images/basic-system-schematic.png")
+```
 
 ### Tom's model
 
@@ -308,8 +339,9 @@ def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
     #Plot
     ax.plot(theta, basic_energy(theta,K,Ks,alpha,muHMs,gamma), color='C0')
     #Rescale axes
-    #ax.relim()
-    #ax.autoscale_view()
+    ax.relim()
+    ax.autoscale_view()
+    
 
 
 ```
