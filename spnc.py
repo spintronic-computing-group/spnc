@@ -3,7 +3,8 @@ Superparamgnetic neuromorphic computing module
 
 Functions
 ---------
-...
+rate(f0,ebarrier,temperature)
+    Finds the transition rate based on an energy barrier relative to KbT
 
 """
 
@@ -22,20 +23,14 @@ class spnc_basic:
 
     """
 
-    def __init__(self):
-        self.test = []
+#    def __init__(self,res_type = 'sw'):
+#        self.res_tpye = res_type
 
 
     # Reduced magnetisation for two state system evolving with constant field
     # note: I am using the notation, w12: transition rate from state 1, to state 2
     # w12, w21 must be constant over the tstep!
 
-    # General rate equation
-    def rate(self,f0,ebarrier,temp):
-
-        w = f0*np.exp(-ebarrier/(constants.k*temp))
-
-        return w
 
     def magnetisation(self,w21,w12,m0,tstep):
 
@@ -54,28 +49,57 @@ class spnc_basic:
 
         return w
 
-    def magnetisation_sw(self,beta_prime,h_prime,m0,t_prime_step):
+    def evolve_sw(self,beta_prime,h_prime,m0,t_prime_step):
 
         w21 = self.rate_sw(beta_prime,h_prime,-1)
         w12 = self.rate_sw(beta_prime,h_prime,+1)
 
         return self.magnetisation(w21,w12,m0,t_prime_step)
 
-    def transform_sw(self,h_primes,beta_prime,t_prime):
 
-        time = np.zeros(h_primes.shape[0]+1)
+    def transform_sw(self,h_primes,params,*args,**kwargs):
+
+        # No feedback implemented yet!
+        theta = params['theta']
+        beta_prime = params['beta_prime']
+
+        # Is this the right way round???
+        baserate = self.rate_sw(beta_prime,0, 1)
+        t_prime = theta/baserate
+
         mag = np.zeros(h_primes.shape[0]+1)
-        time[0] = 0
-        mag[0] = 0
 
-        for i in range(len(time)-1):
+        # How would you vectorize this?
+        for idx, h_prime in enumerate(h_primes):
 
-            time[i+1] =  time[i] + t_prime
-            mag[i+1] = self.magnetisation_sw(beta_prime,h_primes[i],mag[i],t_prime)
+            mag[idx+1] = self.evolve_sw(beta_prime,h_prime, mag[idx],t_prime)
 
-        return time, mag
+        return mag[1:]
+
+# General rate equation
+def rate(f0,ebarrier,temperature):
+    """
+    Finds the transition rate based on an energy barrier relative to KbT
+
+    Parameters
+    ---------
+    f0 : float
+        Attempt frequency
+    ebarrier : float
+        height of energy barrier
+    temperature : float
+        Temperature in kelvin
+    """
+
+    w = f0*np.exp(-ebarrier/(constants.k*temperature))
+
+    return w
 
 """ Testing code below """
 
+params ={'theta': 0.2,'beta_prime' : 3}
 basic = spnc_basic()
-basic.transform_sw(np.array([0.4,0.5,0.6]),3,10)
+transform = basic.transform_sw
+x = np.array([0.4,0.5,0.6,-0.5,-.1,0.5,-.4])
+x2 = np.random.rand(1000)
+transform(x2,params)
