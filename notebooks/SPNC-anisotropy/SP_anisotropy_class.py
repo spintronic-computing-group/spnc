@@ -100,7 +100,7 @@ def calculate_energy_barriers(spn):
 #Interpolations to avoid calculating too many times the energy landscape
 def functions_energy_barriers(spn,k_s_lim):
     #Computation on a sample
-    k_s_list = np.linspace(-k_s_lim,k_s_lim,int(50*2*k_s_lim))
+    k_s_list = np.linspace(-k_s_lim,k_s_lim,int(100*2*k_s_lim))
     #Make a copy of the network
     spn_copy = SP_Network(spn.h,spn.theta_H,spn.k_s,spn.phi,spn.beta_prime,compute_interpolation=False)
     Theta_1 = []
@@ -133,7 +133,7 @@ def functions_energy_barriers(spn,k_s_lim):
 # %%
 #We define a superparamagnetic network as a class
 class SP_Network:
-    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=.5,compute_interpolation=True):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True):
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -225,5 +225,9 @@ class SP_Network:
         c1 = np.cos(theta_1*np.pi/180)
         c2 = np.cos(theta_2*np.pi/180)
         return(c1*self.p1+c2*self.p2)
+    
+    def get_f_m_eq(self):
+        f_m = lambda x: self.f_p1_eq(x)*np.cos(self.f_theta_1(x)*np.pi/180)+(1-self.f_p1_eq(x))*np.cos(self.f_theta_2(x)*np.pi/180)
+        return(f_m)
 
 # %%
