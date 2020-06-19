@@ -558,7 +558,7 @@ print(0.005*U*fp0/f_inf)
 # ### Role of memory ($T/\theta$)
 
 # %%
-bp_list = [10]
+bp_list = [10,20,30]
 T_theta_list = np.logspace(-2,1,7)
 
 Ntrain = 1000
@@ -566,8 +566,10 @@ Nvalid = 1000
 Ntest = 500
 
 Nv = 800
-m0 = 7e-2
-gamma = 0.28
+NL = 2e-1
+gamma_fp0 = 0.85
+
+N = 5
 
 NRMSE_train_mean_vs_bp = []
 NRMSE_valid_mean_vs_bp = []
@@ -585,7 +587,16 @@ for bp in bp_list:
     NRMSE_valid_std = []
     NRMSE_test_std = []
 
-    N = 1
+    #m0 and gamma
+    (u,y) = NARMA10(Ntrain)
+    spn = SPN.SP_Network(h,theta_H,k_s_0,phi,bp)
+    f_m = spn.get_f_m_eq()
+    dx = 5e-2
+    fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
+    f_inf = f_m(1)
+    U = max(u)-min(u)
+    m0 = NL*f_inf/(U*fp0)
+    gamma = gamma_fp0/fp0
 
     for T_theta in T_theta_list:
         print(T_theta)
@@ -644,7 +655,7 @@ plt.show()
 # ### Role of nonlinearity ($m_0$)
 
 # %%
-bp_list = [10,30]
+bp_list = [10,20,30]
 NL_list = np.logspace(-2,0,7)
 
 Ntrain = 1000
@@ -654,6 +665,8 @@ Ntest = 500
 Nv = 800
 T_theta = .3
 gamma_fp0 = 0.9
+
+N = 5
 
 NRMSE_train_mean_vs_bp = []
 NRMSE_valid_mean_vs_bp = []
@@ -681,8 +694,6 @@ for bp in bp_list:
     NRMSE_train_std = []
     NRMSE_valid_std = []
     NRMSE_test_std = []
-
-    N = 1
 
     for m0 in m0_list:
         print(m0)
@@ -738,8 +749,8 @@ plt.xscale("log")
 plt.show()
 
 # %%
-bp_list = [10,30]
-gamma_fp0_list = np.linspace(.7,0.95,10)
+bp_list = [10,20,30]
+gamma_fp0_list = np.linspace(.7,0.95,7)
 
 Ntrain = 1000
 Nvalid = 1000
@@ -747,7 +758,9 @@ Ntest = 500
 
 Nv = 800
 T_theta = .3
-NL = 3e-1
+NL = 2e-1
+
+N = 5
 
 NRMSE_train_mean_vs_bp = []
 NRMSE_valid_mean_vs_bp = []
@@ -775,8 +788,6 @@ for bp in bp_list:
     NRMSE_train_std = []
     NRMSE_valid_std = []
     NRMSE_test_std = []
-
-    N = 5
 
     for gamma in gamma_list:
         print(gamma)
@@ -832,17 +843,19 @@ plt.ylabel("NRMSE (test)")
 plt.show()
 
 # %%
-NL_list = np.linspace()
-Offset_list = np.linspace()
+NL_list = [2e-1]
+Offset_list = np.linspace(0,1,6)
 
 Ntrain = 1000
 Nvalid = 1000
 Ntest = 500
 
-Nv = 400
+Nv = 800
 T_theta = .3
-gamma = _
-beta_prime = 10
+gamma_fp0 = .9
+bp = 10
+
+N = 5
 
 NRMSE_train_mean = np.zeros((len(Offset_list),len(NL_list)))
 NRMSE_valid_mean = np.zeros((len(Offset_list),len(NL_list)))
@@ -856,6 +869,7 @@ dx = 5e-2
 fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
 f_inf = f_m(1)
 U = max(u)-min(u)
+gamma = gamma_fp0/fp0
 
 for i in range(len(Offset_list)):
     Offset = Offset_list[i]
@@ -869,9 +883,7 @@ for i in range(len(Offset_list)):
         NRMSE_valid = []
         NRMSE_test = []
 
-        N = 1
-
-        for i in range(N):
+        for k in range(N):
             
             (u,y) = NARMA10(Ntrain)
             (u_valid,y_valid) = NARMA10(Nvalid)
@@ -891,10 +903,19 @@ for i in range(len(Offset_list)):
             NRMSE_train.append(NRMSE_list(y,y_pred_train))
             NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
             NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
-
+        
         NRMSE_train_mean[i,j] = np.mean(NRMSE_train)
         NRMSE_valid_mean[i,j] = np.mean(NRMSE_valid)
         NRMSE_test_mean[i,j] = np.mean(NRMSE_test)
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(Offset_list,NRMSE_test_mean[:,0],linestyle = '--')
+plt.grid(True)
+plt.xlabel("Offset")
+plt.ylabel("NRMSE (test)")
+#plt.xscale("log")
+plt.show()
 
 # %%
 (u,y) = NARMA10(Ntrain)
