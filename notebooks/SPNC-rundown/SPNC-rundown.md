@@ -49,6 +49,7 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 - How can we quantify non-linearity of res (or input function)? How does this work with generic resevoirs?
 - What is the effect of oscilatory inputs?
 - Bring in micromagnetics
+- Look at CHARK framework for charecterising the reservoir
 
 ## Outlook
 
