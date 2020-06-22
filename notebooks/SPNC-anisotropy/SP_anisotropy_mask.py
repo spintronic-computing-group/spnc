@@ -663,6 +663,67 @@ for MT in mask_type_list:
     NRMSE_test_total.append(NRMSE_test)
 
 # %%
+mask_type_list = ["Max_Sequences","Default"]
+
+Nv = 512
+T_theta = .3
+m0 = 1e-1
+gamma = .7
+
+N = 10
+
+Ntrain = 1000
+Nvalid = 1000
+Ntest = 500
+
+NRMSE_train_mean = []
+NRMSE_valid_mean = []
+NRMSE_test_mean = []
+NRMSE_train_std = []
+NRMSE_valid_std = []
+NRMSE_test_std = []
+NRMSE_train_total = []
+NRMSE_valid_total = []
+NRMSE_test_total = []
+
+for MT in mask_type_list:
+    print(MT)
+    NRMSE_train = []
+    NRMSE_valid = []
+    NRMSE_test = []
+    
+    for i in range(N):
+        (u,y) = NARMA10(Ntrain)
+        (u_valid,y_valid) = NARMA10(Nvalid)
+        (u_test,y_test) = NARMA10(Ntest)
+        
+        net = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type=MT)
+
+        S = net.gen_signal_delayed_feedback_without_SPN(u,1)
+        S_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+        S_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+        net.train_without_SPN(S,y,S_valid,y_valid)
+
+        y_pred_train = net.predict(S)
+        y_pred_valid = net.predict(S_valid)
+        y_pred_test = net.predict(S_test)
+        
+        NRMSE_train.append(NRMSE_list(y,y_pred_train))
+        NRMSE_valid.append(NRMSE_list(y_valid,y_pred_valid))
+        NRMSE_test.append(NRMSE_list(y_test,y_pred_test))
+        
+    NRMSE_train_mean.append(np.mean(NRMSE_train))
+    NRMSE_valid_mean.append(np.mean(NRMSE_valid))
+    NRMSE_test_mean.append(np.mean(NRMSE_test))
+    NRMSE_train_std.append(np.std(NRMSE_train,ddof=min(1,N-1)))
+    NRMSE_valid_std.append(np.std(NRMSE_valid,ddof=min(1,N-1)))
+    NRMSE_test_std.append(np.std(NRMSE_test,ddof=min(1,N-1)))
+    NRMSE_train_total.append(NRMSE_train)
+    NRMSE_valid_total.append(NRMSE_valid)
+    NRMSE_test_total.append(NRMSE_test)
+
+# %%
 p = 7
 Nv = 2**p
 net = Single_Node_Reservoir_NARMA10(Nv,.3,1,.28,mask_type="Max_Sequences")
@@ -687,6 +748,14 @@ plt.show()
 
 # %%
 #Nvirt = 512
+plt.figure(figsize=(10,6))
+plt.errorbar(range(len(mask_type_list)),NRMSE_test_mean,NRMSE_test_std,linestyle='')
+plt.xticks(range(len(mask_type_list)),mask_type_list)
+plt.show()
+
+# %%
+#Nvirt = 512
+#Without SPN
 plt.figure(figsize=(10,6))
 plt.errorbar(range(len(mask_type_list)),NRMSE_test_mean,NRMSE_test_std,linestyle='')
 plt.xticks(range(len(mask_type_list)),mask_type_list)

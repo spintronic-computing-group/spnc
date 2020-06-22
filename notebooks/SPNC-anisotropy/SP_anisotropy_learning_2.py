@@ -17,7 +17,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
-import random as rnd
+
 
 import SP_anisotropy_class as SPN
 
