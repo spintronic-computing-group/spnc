@@ -841,3 +841,11 @@ for x in counter_1.keys():
     if x in list_missed:
         list_missed.remove(x)
 print(list_missed)
+
+# %%
+p = 3
+L = [1]*p
+(success,L_final) = build_optimal_list_rec(L,[],p)
+print(L_final)
+
+# %%

@@ -850,12 +850,12 @@ Ntrain = 1000
 Nvalid = 1000
 Ntest = 500
 
-Nv = 800
+Nv = 400
 T_theta = .3
 gamma_fp0 = .9
 bp = 10
 
-N = 5
+N = 3
 
 NRMSE_train_mean = np.zeros((len(Offset_list),len(NL_list)))
 NRMSE_valid_mean = np.zeros((len(Offset_list),len(NL_list)))
@@ -910,7 +910,7 @@ for i in range(len(Offset_list)):
 
 # %%
 plt.figure(figsize=(10,6))
-plt.plot(Offset_list,NRMSE_test_mean[:,0],linestyle = '--')
+plt.errorbar(Offset_list,NRMSE_test_mean[:,0],NRMSE_test_std[:,0],linestyle = '--')
 plt.grid(True)
 plt.xlabel("Offset")
 plt.ylabel("NRMSE (test)")
