@@ -170,7 +170,6 @@ def mask_max_sequences(m0,Nvirt):
         mask[i] = m0*2*(L_final[i]-0.5)
     for i in range(Nvirt-N_L):
         mask[-1-i] = m0*2*(L_final[-1-i]-0.5)
-    print(mask)
     return(mask)
 
 def NRMSE(Y,Y_pred):
@@ -605,7 +604,7 @@ plt.show()
 # %%
 mask_type_list = ["Max_Sequences","Default"]
 
-Nv = 400
+Nv = 512
 T_theta = .3
 m0 = 7e-2
 gamma = .28
@@ -664,6 +663,30 @@ for MT in mask_type_list:
     NRMSE_test_total.append(NRMSE_test)
 
 # %%
+p = 7
+Nv = 2**p
+net = Single_Node_Reservoir_NARMA10(Nv,.3,1,.28,mask_type="Max_Sequences")
+counter = count_seq_net(net,p)
+print(counter.keys())
+print(counter.values())
+print(2**p-len(counter.values()))
+
+# %%
+#Nvirt = 400
+plt.figure(figsize=(10,6))
+plt.errorbar(range(len(mask_type_list)),NRMSE_test_mean,NRMSE_test_std,linestyle='')
+plt.xticks(range(len(mask_type_list)),mask_type_list)
+plt.show()
+
+# %%
+#Nvirt = 128
+plt.figure(figsize=(10,6))
+plt.errorbar(range(len(mask_type_list)),NRMSE_test_mean,NRMSE_test_std,linestyle='')
+plt.xticks(range(len(mask_type_list)),mask_type_list)
+plt.show()
+
+# %%
+#Nvirt = 512
 plt.figure(figsize=(10,6))
 plt.errorbar(range(len(mask_type_list)),NRMSE_test_mean,NRMSE_test_std,linestyle='')
 plt.xticks(range(len(mask_type_list)),mask_type_list)
@@ -775,6 +798,19 @@ def count_seq(mask_type,p,Nvirt,K_switch_max=4):
         mask = mask_NARMA10(1,Nvirt)
     sequences = []
     for i in range(Nvirt-p+1):
+        key = 0
+        for k in range(p):
+            key += ((mask[i+k]+1)/2)*10**(p-k-1)
+        key = int(key)
+        sequences.append(key)
+    counter=collections.Counter(sequences)
+    return(counter)
+
+def count_seq_net(net,p):
+    mask = net.M
+    mask = mask+mask
+    sequences = []
+    for i in range(net.Nvirt):
         key = 0
         for k in range(p):
             key += ((mask[i+k]+1)/2)*10**(p-k-1)

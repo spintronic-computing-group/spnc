@@ -666,7 +666,7 @@ plt.show()
 k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [10,20,30,40,50]
+beta_prime_list = [10]
 m_eq_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp
@@ -692,10 +692,23 @@ plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\bet
 plt.show()
 
 # %%
-(m_eq_vs_bp[0][499]-m_eq_vs_bp[0][0])/(k_s_list[499]-k_s_list[0])
+derivates = []
+for i in range(len(beta_prime_list)):
+    derivates.append((m_eq_vs_bp[i][260]-m_eq_vs_bp[i][240])/(k_s_list[260]-k_s_list[240]))
 
 # %%
-(m_eq_vs_bp[0][275]-m_eq_vs_bp[0][225])/(k_s_list[275]-k_s_list[225])
+plt.figure(figsize=(10,6))
+for i in range(len(beta_prime_list)):
+    beta_prime = beta_prime_list[i]
+    plt.plot(k_s_list*derivates[i]/0.8,np.array(m_eq_vs_bp[i])/0.8,label = r'$\beta^\prime = $'+str(beta_prime))
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.xlim(-3,3)
+#plt.yscale("log")
+#plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+plt.show()
 
 # %% [markdown]
 # ### 2. Influence of $h$

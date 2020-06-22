@@ -749,8 +749,8 @@ plt.xscale("log")
 plt.show()
 
 # %%
-bp_list = [10,20,30]
-gamma_fp0_list = np.linspace(.7,0.95,7)
+bp_list = [10,20]
+gamma_fp0_list = np.linspace(.7,0.95,5)
 
 Ntrain = 1000
 Nvalid = 1000
