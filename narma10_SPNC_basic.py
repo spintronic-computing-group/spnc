@@ -13,9 +13,9 @@ basic = spnc_basic()
 transform = basic.transform_sw
 
 # Net Parameters
-Nvirt = 10
+Nvirt = 100
 m0 = 1
 bias = False
 
 # DO IT
-ml.narma10_SPNC_basic(10000,10000,10,m0, bias, transform, params)
+ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params)
