@@ -14,7 +14,7 @@ This is code for the SPNC project!
 
 ## Updating dependencies
 -  Ideally install new packages with a specific version number so that the proper environment can be reproduced elsewhere, e.g.: `conda install [package]=[version number]`
-- run: `conda env export -f [environment].yml  --from-history` to update the environment file
+- run: `conda env export -f [environment].yml  --from-history` to update the environment file. ***If this does not work, you may need to update te yaml file manually.***
 - If pulling an updated .yml file, then run: `conda env update -f [environment].yml --prune` to update and remove old dependencies
 
 ## Jupyter notebooks
