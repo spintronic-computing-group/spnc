@@ -17,4 +17,5 @@ Nvirt = 10
 m0 = 1
 bias = False
 
+# DO IT
 ml.narma10_SPNC_basic(10000,10000,10,m0, bias, transform, params)
