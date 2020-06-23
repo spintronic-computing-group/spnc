@@ -62,10 +62,9 @@ class spnc_basic:
         # No feedback implemented yet!
         theta = params['theta']
         beta_prime = params['beta_prime']
-        print(np.size(h_primes))
 
-        # Is this the right way round???
-        baserate = self.rate_sw(beta_prime,0, 1)
+        baserate = (self.rate_sw(beta_prime, 0, 1) +
+                    self.rate_sw(beta_prime, 0, -1))
         t_prime = theta/baserate
 
         mag = np.zeros(h_primes.shape[0]+1)
