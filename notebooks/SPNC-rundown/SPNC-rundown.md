@@ -35,11 +35,12 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 **Questions we've answered:**
 - Voltage control is possible
 - We can do NARMA10 task (similar to Appeltant) with field and voltage
+- Can do speech recognition with field (similar to STNO we think)
 
 **Questions we're working on:**
 - **What does a practical device look like? There are important questions about timescales and errors.**
 - **Heat maps (with scaling factor and offset to input) at different $\beta'$**
-- **Speech recognition task**
+- **Speech recognition task for voltage**
 - Multiple resevoirs
 - How does the mask effect ML? 
 - What role does number of virtual nodes play? (This is related to mask, but also feedback).
@@ -339,6 +340,7 @@ def update(K = 5, Ks = 0.0, alpha = 0, muHMs=0.0, gamma = 0.0):
     [l.remove() for l in ax.lines]
     #Plot
     ax.plot(theta, basic_energy(theta,K,Ks,alpha,muHMs,gamma), color='C0')
+    plt.show()
     #Rescale axes
     ax.relim()
     ax.autoscale_view()
