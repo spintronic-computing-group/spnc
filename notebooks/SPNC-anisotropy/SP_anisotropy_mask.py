@@ -917,4 +917,143 @@ L = [1]*p
 (success,L_final) = build_optimal_list_rec(L,[],p)
 print(L_final)
 
+
+# %%
+def get_rank(net):
+    mask = net.M
+    Nv = net.Nvirt
+    Matrix = np.zeros((Nv,Nv))
+    for i in range(Nv):
+        for j in range(Nv):
+            Matrix[i,(i+j)%net.Nvirt] = mask[j]
+    return(np.linalg.matrix_rank(Matrix))
+
+def get_auto_correlation_func(net):
+    mask = net.M
+    Nv = net.Nvirt
+    auto_corr = []
+    for k in range(Nv//2):
+        expectancy = 0
+        for i in range(Nv):
+            expectancy += mask[i]*mask[(i+k)%Nv]
+        expectancy /= Nv
+        auto_corr.append(expectancy)
+    return auto_corr
+
+
+# %%
+Ntrain = 1000
+Nvalid = 1000
+Ntest = 500
+
+Nv = 512
+T_theta = 1e-2
+m0 = 1e-1
+gamma = .7
+
+N = 100
+
+NRMSEs_1 = []
+Ranks_1 = []
+
+for i in range(N):
+    (u,y) = NARMA10(Ntrain)
+    (u_valid,y_valid) = NARMA10(Nvalid)
+    (u_test,y_test) = NARMA10(Ntest)
+
+    net = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Default")
+
+    J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+    J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+    J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+    net.train_without_SPN(J,y,J_valid,y_valid)
+
+    y_pred_test = net.predict(J_test)
+    
+    NRMSE_loc = NRMSE_list(y_test,y_pred_test)
+    rank_loc = get_rank(net)
+    print(NRMSE_loc)
+    print(rank_loc)
+    NRMSEs_1.append(NRMSE_loc)
+    Ranks_1.append(rank_loc)
+
+# %%
+plt.plot(Ranks,NRMSEs,'+')
+plt.show()
+
+# %%
+Ntrain = 1000
+Nvalid = 1000
+Ntest = 500
+
+Nv = 512
+T_theta = 1e-2
+m0 = 1e-1
+gamma = .7
+
+N = 100
+
+NRMSEs_2 = []
+Ranks_2 = []
+
+for i in range(N):
+    (u,y) = NARMA10(Ntrain)
+    (u_valid,y_valid) = NARMA10(Nvalid)
+    (u_test,y_test) = NARMA10(Ntest)
+
+    net = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Max_Sequences")
+
+    J = net.gen_signal_delayed_feedback_without_SPN(u,1)
+    J_valid = net.gen_signal_delayed_feedback_without_SPN(u_valid,1)
+    J_test = net.gen_signal_delayed_feedback_without_SPN(u_test,1)
+
+    net.train_without_SPN(J,y,J_valid,y_valid)
+
+    y_pred_test = net.predict(J_test)
+    
+    NRMSE_loc = NRMSE_list(y_test,y_pred_test)
+    rank_loc = get_rank(net)
+    print(NRMSE_loc)
+    print(rank_loc)
+    NRMSEs_2.append(NRMSE_loc)
+    Ranks_2.append(rank_loc)
+
+# %%
+plt.plot(Ranks,NRMSEs,'+')
+plt.show()
+
+# %%
+plt.plot(Ranks_1,NRMSEs_1,'+')
+plt.plot(Ranks_2,NRMSEs_2,'+')
+plt.show()
+
+# %%
+plt.figure(figsize=(10,6))
+plt.hist(NRMSEs_2,color = "red", edgecolor = "red", alpha=.4,bins = 10,label = "Max_Sequences Mask",density=True)
+plt.hist(NRMSEs_1,color = "green", edgecolor = "green", alpha=.4,bins = 10,label = "Default Mask",density=True)
+plt.legend(loc="best")
+plt.grid(True)
+plt.xlabel("NRMSE (test)")
+plt.ylabel("Density")
+plt.show()
+
+# %%
+Nv = 512
+T_theta = 1e-2
+m0 = 1e-1
+gamma = .7
+
+net1 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Default")
+net2 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Max_Sequences")
+
+auto_corr_1 = get_auto_correlation_func(net1)
+auto_corr_2 = get_auto_correlation_func(net2)
+
+# %%
+plt.figure(figsize=(10,6))
+plt.plot(auto_corr_1,'r-')
+plt.plot(auto_corr_2,'b-')
+plt.show()
+
 # %%
