@@ -1958,4 +1958,176 @@ print('MNRMSE is ',np.sqrt(MSE(pred,dtest))/np.mean(dtest))
 # %% [markdown]
 # Looks worse at first glance, but might be because input is now too big. Maybe rescale in net or just use less feedback.
 
+# %% [markdown]
+# ## Testing out new class for the reservoir
+
+# %% [markdown]
+# When this section was written, these repos were used: <br>
+# SPNC : v0.1.0 <br>
+# machine_learning_library : v0.1.2
+#
+# ---
+
+# %% [markdown]
+# A class has been developed for the basic (field control) case. It now references time in units of the base rate (no field) of the system. So theta = 1 represents a decay of 1/e (no field applied). Some basic testing is shown here to prove it works! <br>
+# ***No feedback has been implement yet***
+
+# %% [markdown]
+# **Clearly if the class has been changed since the initial commit, this may go differently!**
+
+# %%
+# Sort out relative paths
+import sys
+from pathlib import Path
+repodir = Path('../../..').resolve()
+try:
+    sys.path.index(str(repodir))
+except ValueError:
+    sys.path.append(str(repodir))
+
+# imports    
+from SPNC import spnc
+import numpy as np
+from matplotlib import pyplot as plt
+
+def test_plot(beta_prime):
+    plotdensity = 1000
+    h_primes_rise = np.full((plotdensity,1),0.35)
+    h_primes_fall = np.full((plotdensity,1),0)
+    h_primes = np.vstack([h_primes_rise,h_primes_fall])
+    theta = 3 #for each half
+    params = {'theta' : 2*theta/(2*plotdensity), 'beta_prime' : beta_prime}
+    basic = spnc.spnc_basic()
+    mag = basic.transform_sw(h_primes,params)
+    times = np.linspace(0,2*theta,plotdensity*2)
+    plt.plot(times,mag)
+    plt.plot(times,np.full((plotdensity*2,1),1/np.e))
+    plt.plot(times,np.full((plotdensity*2,1),1 - 1/np.e))
+    plt.plot(np.full((plotdensity*2,1),1), np.linspace(0,1,plotdensity*2))
+    plt.plot(np.full((plotdensity*2,1),theta+1), np.linspace(0,1,plotdensity*2))
+    plt.xlabel('t / T_base')
+    plt.ylabel('m')
+
+test_plot(3)
+
+# %% [markdown]
+# Here we can see that the excitation up to the maximum is much faster that (1 - 1/e) in 1 T_base. This is because the rate increases dramatically with field. However, the decay is exactly 1/e in 1 T_base as decay with no field defines the base rate. <br>
+# Our class is working as expected! <br>
+# But, what is the base rate?
+
+# %%
+beta_primes = (3,5,10,15,20,25,30)
+f0 = 10**10
+print('For f0 = ', f0)
+for beta_prime in beta_primes:
+    baserate = (basic.rate_sw(beta_prime, 0, 1) + basic.rate_sw(beta_prime, 0, -1))
+    print('For beta_prime = ', beta_prime, ' : T_base = ', 1/(baserate*f0), 'seconds')
+
+# %% [markdown]
+# It's also worth asking, what's the maximum rate?
+
+# %%
+beta_primes = (3,5,10,15,20,25,30)
+f0 = 10**10
+print('For f0 = ', f0)
+for beta_prime in beta_primes:
+    maxrate = (basic.rate_sw(beta_prime, 1, 1) + basic.rate_sw(beta_prime, 1, -1))
+    print('For beta_prime = ', beta_prime, ' : T_min = ', 1/(maxrate*f0), 'seconds')
+print('1/f0 = ', 1/f0, ' seconds')
+
+# %% [markdown]
+# As we saw before, although the base rate slows *right, right* down, the maximum rate remains the same. It is set as f0!
+
+# %% [markdown]
+# ### Let's do some machine learning!
+
+# %% [markdown]
+# **This depends on both this repos version, and the MLL version!!!**
+
+# %% [markdown]
+# First NARMA10:
+
+# %%
+# Sort out relative paths
+import sys
+from pathlib import Path
+repo = Path('../..').resolve()
+repodir = repo.parent
+try:
+    sys.path.index(str(repodir))
+except ValueError:
+    sys.path.append(str(repodir))
+try:
+    sys.path.index(str(repo))
+except ValueError:
+    sys.path.append(str(repo))
+
+# imports    
+from SPNC import spnc_ml as ml
+from SPNC.spnc import spnc_basic
+
+# NARMA parameters
+Ntrain = 10000
+Ntest = 10000
+
+# Resevoir parameters
+params = {'theta': 0.2,'beta_prime' : 3}
+basic = spnc_basic()
+transform = basic.transform_sw
+
+# Net Parameters
+Nvirt = 400
+m0 = 1
+bias = False
+
+# DO IT
+ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params)
+
+# %% [markdown]
+# Not stunning, but there was no feedback!
+
+# %% [markdown]
+# Now for TI46 (5 speakers):
+
+# %%
+# spoken digit variables
+speakers = ['f1', 'f2', 'f3', 'f4', 'f5']
+
+# Resevoir parameters
+params = {'theta': 0.2,'beta_prime' : 3}
+basic = spnc_basic()
+transform = basic.transform_sw
+
+# net parameters
+Nvirt = 100
+m0 = 1
+bias = True
+
+# DO IT
+ml.spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params)
+
+# %% [markdown]
+# TI46 (all speakers):
+
+# %%
+# spoken digit variables
+speakers = None
+
+# Resevoir parameters
+params = {'theta': 0.2,'beta_prime' : 3}
+basic = spnc_basic()
+transform = basic.transform_sw
+
+# net parameters
+Nvirt = 100
+m0 = 1
+bias = True
+
+# DO IT
+ml.spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params)
+
+# %% [markdown]
+# Not too bad!! <br> 
+# *Note: this is with no optimsation at all, just low beta_prime and the 0.2 * base_time of Appeltant.*
+
 # %%
