@@ -62,6 +62,7 @@ class spnc_basic:
         # No feedback implemented yet!
         theta = params['theta']
         beta_prime = params['beta_prime']
+        print(np.size(h_primes))
 
         # Is this the right way round???
         baserate = self.rate_sw(beta_prime,0, 1)
@@ -94,12 +95,3 @@ def rate(f0,ebarrier,temperature):
     w = f0*np.exp(-ebarrier/(constants.k*temperature))
 
     return w
-
-""" Testing code below """
-
-params ={'theta': 0.2,'beta_prime' : 3}
-basic = spnc_basic()
-transform = basic.transform_sw
-x = np.array([0.4,0.5,0.6,-0.5,-.1,0.5,-.4])
-x2 = np.random.rand(1000)
-transform(x2,params)
