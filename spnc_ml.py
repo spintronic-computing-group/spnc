@@ -27,7 +27,7 @@ from matplotlib import pyplot as plt
 # local repos and search paths. Each repo will be searched on every path
 
 #tuple of Path variables
-searchpaths = (Path.home() / 'repos', )
+searchpaths = (Path.home() / 'repos', Path.home() / 'Desktop' / 'Stage_3A' / 'ML_library')
 #tuple of repos
 repos = ('machine_learning_library',)
 
@@ -268,4 +268,4 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     # np.savetxt('V', np.matmul(net.W.T[:,:-1], SNR.M.M).T)
 
 
-################## THIS LINE IS LEFT INTENTIONALLY COMMENTED ###############
+# ################# THIS LINE IS LEFT INTENTIONALLY COMMENTED ###############

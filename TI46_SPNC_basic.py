@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Run TI46 spoken digit task for the SPNC basic class
 
 import spnc_ml as ml
@@ -19,3 +20,5 @@ bias = True
 
 # DO IT
 ml.spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params)
+
+

@@ -4,8 +4,8 @@ import spnc_ml as ml
 from spnc import spnc_basic
 
 # NARMA parameters
-Ntrain = 10000
-Ntest = 10000
+Ntrain = 1000
+Ntest = 1000
 
 # Resevoir parameters
 params = {'theta': 0.2,'beta_prime' : 3}
@@ -19,3 +19,5 @@ bias = False
 
 # DO IT
 ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params)
+
+
