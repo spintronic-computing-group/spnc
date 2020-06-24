@@ -8,7 +8,7 @@ Ntrain = 1000
 Ntest = 1000
 
 # Net Parameters
-Nvirt = 100
+Nvirt = 400
 m0 = 7e-2
 bias = True
 
