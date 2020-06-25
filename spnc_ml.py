@@ -177,9 +177,10 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     # Pre-processing
     from audio_preprocess import mfcc
     pre_process = mfcc
-
-    x_train = pre_process(train_signal, train_rate, nfft=2048)
-
+    
+    nf = kwargs.get('nfft', 2048)
+    x_train = pre_process(train_signal, train_rate, nfft=nf)
+    
     print(x_train[0].shape)
 
     #Normalise the input into the range 0 - 1
@@ -237,6 +238,8 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     plt.imshow(conf_mat)
     plt.show()
 
+    plt.imshow(net.W)
+    plt.show()
 
     x_test = pre_process(test_signal, test_rate, nfft=2048)
     xn_test = normalise(x_test)
@@ -261,7 +264,7 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
 
 
     plt.imshow(net.W)
-    plt.show
+    plt.show()
 
     # np.savetxt('W', net.W)
     # np.savetxt('M', SNR.M.M)

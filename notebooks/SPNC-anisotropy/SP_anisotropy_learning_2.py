@@ -17,7 +17,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
-
+import random as rnd
 
 import SP_anisotropy_class as SPN
 
@@ -558,14 +558,14 @@ print(0.005*U*fp0/f_inf)
 # ### Role of memory ($T/\theta$)
 
 # %%
-bp_list = [10,20,30]
+bp_list = [10,20]
 T_theta_list = np.logspace(-2,1,7)
 
 Ntrain = 1000
 Nvalid = 1000
 Ntest = 500
 
-Nv = 800
+Nv = 400
 NL = 2e-1
 gamma_fp0 = 0.85
 

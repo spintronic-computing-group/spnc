@@ -330,3 +330,18 @@ class spnc_anisotropy:
             mag[idx] = self.get_m_fast()
 
         return mag
+    
+    def gen_signal_fast_delayed_feedback_wo_SPN(self, K_s,params,*args,**kwargs):
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+        
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+        
+        f = np.tanh
+                
+        for idx, j in enumerate(K_s):
+            mag[idx] = f(j + gamma*mag[(idx-Nvirt-delay_fb)%N])
+
+        return mag
