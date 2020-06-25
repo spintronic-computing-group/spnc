@@ -265,6 +265,10 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
 
     plt.imshow(net.W)
     plt.show()
+    
+    return_accuracy = kwargs.get('return_accuracy', False)
+    if return_accuracy:
+        return(Ncorrect/len(S_test))
 
     # np.savetxt('W', net.W)
     # np.savetxt('M', SNR.M.M)

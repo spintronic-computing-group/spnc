@@ -194,12 +194,12 @@ def functions_energy_barriers(spn,k_s_lim):
         E_21_big.append(e_21_big)
         
     #Interpolation
-    f_theta_1 = interpolate.interp1d(k_s_list, Theta_1)
-    f_theta_2 = interpolate.interp1d(k_s_list, Theta_2)
-    f_e_12_small = interpolate.interp1d(k_s_list, E_12_small)
-    f_e_21_small = interpolate.interp1d(k_s_list, E_21_small)
-    f_e_12_big = interpolate.interp1d(k_s_list, E_12_big)
-    f_e_21_big = interpolate.interp1d(k_s_list, E_21_big)
+    f_theta_1 = interpolate.interp1d(k_s_list, Theta_1, fill_value="extrapolate")
+    f_theta_2 = interpolate.interp1d(k_s_list, Theta_2, fill_value="extrapolate")
+    f_e_12_small = interpolate.interp1d(k_s_list, E_12_small, fill_value="extrapolate")
+    f_e_21_small = interpolate.interp1d(k_s_list, E_21_small, fill_value="extrapolate")
+    f_e_12_big = interpolate.interp1d(k_s_list, E_12_big, fill_value="extrapolate")
+    f_e_21_big = interpolate.interp1d(k_s_list, E_21_big, fill_value="extrapolate")
     
     return(f_theta_1,f_theta_2,f_e_12_small,f_e_21_small,f_e_12_big,f_e_21_big)
 
@@ -268,15 +268,15 @@ class spnc_anisotropy:
     
     def calculate_f_p1_om(self,k_s_lim):
         #Computation on a sample
-        k_s_list = np.linspace(-k_s_lim,k_s_lim,int(50*2*k_s_lim))
+        k_s_list = np.linspace(-k_s_lim,k_s_lim,int(100*2*k_s_lim))
         Om_12 = np.exp(-self.f_e_12_small(k_s_list)*self.beta_prime)+np.exp(-self.f_e_12_big(k_s_list)*self.beta_prime)
         Om_21 = np.exp(-self.f_e_21_small(k_s_list)*self.beta_prime)+np.exp(-self.f_e_21_big(k_s_list)*self.beta_prime)
         Om_tot = Om_12+Om_21
         P1_eq = Om_21/Om_tot
         
         #Interpolation
-        f_p1_eq = interpolate.interp1d(k_s_list, P1_eq)
-        f_om_tot = interpolate.interp1d(k_s_list, Om_tot)
+        f_p1_eq = interpolate.interp1d(k_s_list, P1_eq, fill_value="extrapolate")
+        f_om_tot = interpolate.interp1d(k_s_list, Om_tot, fill_value="extrapolate")
         
         return(f_p1_eq,f_om_tot)
     
@@ -340,6 +340,7 @@ class spnc_anisotropy:
         mag = np.zeros(N)
         
         f = np.tanh
+        #f = lambda x: x
                 
         for idx, j in enumerate(K_s):
             mag[idx] = f(j + gamma*mag[(idx-Nvirt-delay_fb)%N])

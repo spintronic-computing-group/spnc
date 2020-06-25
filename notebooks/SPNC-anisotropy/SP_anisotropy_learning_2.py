@@ -594,7 +594,7 @@ for bp in bp_list:
     dx = 5e-2
     fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
     f_inf = f_m(1)
-    U = max(u)-min(u)
+    U = max(u)
     m0 = NL*f_inf/(U*fp0)
     gamma = gamma_fp0/fp0
 
@@ -684,7 +684,7 @@ for bp in bp_list:
     dx = 5e-2
     fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
     f_inf = f_m(1)
-    U = max(u)-min(u)
+    U = max(u)
     m0_list = NL_list*f_inf/(U*fp0)
     gamma = gamma_fp0/fp0
 
@@ -778,7 +778,7 @@ for bp in bp_list:
     dx = 5e-2
     fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
     f_inf = f_m(1)
-    U = max(u)-min(u)
+    U = max(u)
     m0 = NL*f_inf/(U*fp0)
     gamma_list = gamma_fp0_list/fp0
 
@@ -868,7 +868,7 @@ f_m = spn.get_f_m_eq()
 dx = 5e-2
 fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
 f_inf = f_m(1)
-U = max(u)-min(u)
+U = max(u)
 gamma = gamma_fp0/fp0
 
 for i in range(len(Offset_list)):

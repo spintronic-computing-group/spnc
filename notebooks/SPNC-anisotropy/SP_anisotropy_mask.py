@@ -888,6 +888,21 @@ def count_seq_net(net,p):
     counter=collections.Counter(sequences)
     return(counter)
 
+def count_mult_seq_net(net,p):
+    mask = net.M
+    mask = mask+mask
+    sequences = []
+    for i in range(net.Nvirt):
+        key = 0
+        M = 1
+        for k in range(p):
+            M *= mask[i+k]
+            key += ((M+1)/2)*10**(p-k-1)
+        key = int(key)
+        sequences.append(key)
+    counter=collections.Counter(sequences)
+    return(counter)
+
 
 # %%
 mask_type_1 = "Max_Product"
@@ -925,7 +940,7 @@ def get_rank(net):
     Matrix = np.zeros((Nv,Nv))
     for i in range(Nv):
         for j in range(Nv):
-            Matrix[i,(i+j)%net.Nvirt] = mask[j]
+            Matrix[i,j] = mask[(i+j)%Nv]
     return(np.linalg.matrix_rank(Matrix))
 
 def get_auto_correlation_func(net):
@@ -939,6 +954,17 @@ def get_auto_correlation_func(net):
         expectancy /= Nv
         auto_corr.append(expectancy)
     return auto_corr
+
+def get_mult_rank(net):
+    mask = net.M
+    Nv = net.Nvirt
+    Matrix = np.zeros((Nv,Nv))
+    for i in range(Nv):
+        M = 1
+        for j in range(Nv):
+            M *= mask[(i+j)%Nv]
+            Matrix[i,j] = M
+    return(np.linalg.matrix_rank(Matrix))
 
 
 # %%
@@ -1039,9 +1065,9 @@ plt.ylabel("Density")
 plt.show()
 
 # %%
-Nv = 512
+Nv = 1024
 T_theta = 1e-2
-m0 = 1e-1
+m0 = 1
 gamma = .7
 
 net1 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Default")
@@ -1055,5 +1081,34 @@ plt.figure(figsize=(10,6))
 plt.plot(auto_corr_1,'r-')
 plt.plot(auto_corr_2,'b-')
 plt.show()
+
+# %%
+p = 9
+Nv = 2**p
+T_theta = 1e-2
+m0 = 1
+gamma = .7
+
+net1 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Default")
+net2 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Max_Sequences")
+
+counter_1 = count_seq_net(net1,p)
+counter_2 = count_seq_net(net2,p)
+counter_3 = count_mult_seq_net(net1,p)
+counter_4 = count_mult_seq_net(net2,p)
+
+# %%
+print(2**p-len(counter_1.values()))
+print(2**p-len(counter_2.values()))
+
+# %%
+print(2**p-len(counter_3.values()))
+print(2**p-len(counter_4.values()))
+
+# %%
+print(get_rank(net1))
+print(get_rank(net2))
+print(get_mult_rank(net1))
+print(get_mult_rank(net2))
 
 # %%
