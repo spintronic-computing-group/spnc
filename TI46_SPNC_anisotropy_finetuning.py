@@ -7,7 +7,7 @@ from spnc import spnc_anisotropy
 speakers = ['f1', 'f2', 'f3', 'f4', 'f5'] # blank for all
 
 # Save file
-filename = "accuracy_vs_m0"
+filename = "accuracy_vs_memory"
 
 # Open the save file
 if os.path.exists("../txt_files/"+filename+".txt"):
@@ -16,10 +16,11 @@ if os.path.exists("../txt_files/"+filename+".txt"):
 save_file = open("../txt_files/"+filename+".txt", "a")
 
 # Net Parameters
-Nvirt = 50
-m0_list = np.logspace(-3,-0.5,6)
+Nvirt = 25
+m0 = 1e-1
 bias = True
 
+N = 1
 
 # Resevoir parameters
 h = 0.4
@@ -27,17 +28,18 @@ theta_H = 90
 k_s_0 = 0
 phi = 45
 beta_prime = 10
-params = {'theta': 10,'gamma' : 0,'delay_feedback' : 1,'Nvirt' : Nvirt}
 spn = spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spn.gen_signal_fast_delayed_feedback
 
-acc_test_vs_m0 = []
+theta_list = np.logspace(-1,1,1)
 
-N = 5
+acc_test_vs_memory = []
 
-for m0 in m0_list:
+for theta in theta_list:
     
     acc_test = []
+    
+    params = {'theta': theta,'gamma' : 0,'delay_feedback' : 1,'Nvirt' : Nvirt}
     
     for i in range(N):
 
@@ -50,22 +52,23 @@ for m0 in m0_list:
         
         acc_test.append(accuracy)
     
-    acc_test_vs_m0.append(acc_test)
+    acc_test_vs_memory.append(acc_test)
     
-print(acc_test_vs_m0)
+print(acc_test_vs_memory)
     
 # Save the parameters
 save_file.write(str(Nvirt)+"\n")
-save_file.write(str(params['theta'])+"\n")
+save_file.write(str(m0)+"\n")
+#save_file.write(str(params['theta'])+"\n")
 save_file.write(str(params['gamma'])+"\n")
-save_file.write(str(len(m0_list))+"\n")
+save_file.write(str(len(theta_list))+"\n")
 save_file.write(str(N)+"\n")
-for m0 in m0_list:
-    save_file.write(str(m0)+"\n")
+for theta in theta_list:
+    save_file.write(str(theta)+"\n")
     
 # Save the results
-for k in range(len(m0_list)):
+for k in range(len(theta_list)):
     for i in range(N):
-        save_file.write(str(acc_test_vs_m0[k][i])+"\n")
+        save_file.write(str(acc_test_vs_memory[k][i])+"\n")
     
 save_file.close()

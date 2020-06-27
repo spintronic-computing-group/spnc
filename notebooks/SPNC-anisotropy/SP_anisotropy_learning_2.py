@@ -748,6 +748,9 @@ plt.ylabel("NRMSE (test)")
 plt.xscale("log")
 plt.show()
 
+# %% [markdown]
+# ### Role of feedback ($\gamma$)
+
 # %%
 bp_list = [10,20]
 gamma_fp0_list = np.linspace(.7,0.95,5)
@@ -841,6 +844,9 @@ plt.xlabel(r'$\gamma f^\prime(0)$')
 plt.ylabel("NRMSE (test)")
 #plt.xscale("log")
 plt.show()
+
+# %% [markdown]
+# ### Role of offset
 
 # %%
 NL_list = [2e-1]
@@ -971,5 +977,3 @@ plt.yticks([],[''])
 plt.xlim(0,0.9*nbins)
 plt.ylim(0,0.9*nbins)
 plt.show()
-
-# %%

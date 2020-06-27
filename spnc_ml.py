@@ -33,6 +33,7 @@ repos = ('machine_learning_library',)
 
 
 # Add local modules and paths to local repos
+from deterministic_mask import fixed_seed_mask
 import repo_tools
 repo_tools.repos_path_finder(searchpaths, repos)
 from single_node_res import single_node_reservoir
@@ -193,6 +194,11 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
     SNR = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask:
+        print("Deterministic mask will be used")
+        SNR.M = fixed_seed_mask(Nin, Nvirt, m0)
 
     S_train, J_train = SNR.transform(xn, params)
 
@@ -241,7 +247,7 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     plt.imshow(net.W)
     plt.show()
 
-    x_test = pre_process(test_signal, test_rate, nfft=2048)
+    x_test = pre_process(test_signal, test_rate, nfft=nf)
     xn_test = normalise(x_test)
     S_test, J_test = SNR.transform(xn_test, params)
     z_test = post_process(S_test, Nblocks, plot=False)

@@ -1065,7 +1065,7 @@ plt.ylabel("Density")
 plt.show()
 
 # %%
-Nv = 1024
+Nv = 512
 T_theta = 1e-2
 m0 = 1
 gamma = .7
@@ -1078,8 +1078,12 @@ auto_corr_2 = get_auto_correlation_func(net2)
 
 # %%
 plt.figure(figsize=(10,6))
-plt.plot(auto_corr_1,'r-')
-plt.plot(auto_corr_2,'b-')
+plt.grid(True)
+plt.plot(auto_corr_1,'r-',label="Default")
+plt.plot(auto_corr_2,'b-',label="Max_Sequences")
+plt.legend(loc="best")
+plt.xlabel("Distance between bits")
+plt.ylabel("Autocorrelation")
 plt.show()
 
 # %%
@@ -1110,5 +1114,23 @@ print(get_rank(net1))
 print(get_rank(net2))
 print(get_mult_rank(net1))
 print(get_mult_rank(net2))
+
+# %%
+p = 7
+Nv = 2**p
+T_theta = 1e-2
+m0 = 1
+gamma = .7
+
+net2 = Single_Node_Reservoir_NARMA10(Nv,T_theta,m0,gamma,mask_type="Max_Sequences")
+
+# %%
+mask = []
+
+for m in net2.M:
+    mask.append(int(m))
+
+# %%
+print(mask)
 
 # %%
