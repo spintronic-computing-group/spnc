@@ -142,6 +142,8 @@ From (2) and (1) we can recast the master equation given above, via integration,
 $$ p_i(t) =  \frac{w_{ji}}{w} + \left[p_i(0) - \frac{w_{ji}}{w} \right] \exp{(-wt)} $$
 where $w = w_{12} + w_{21}$. As $ m = M/M_s n V = (P_1 - P_2) $ we get:
 $$ m(t) = \left( \frac{w_{21} - w_{12}}{w} \right) + \left[ m(0) - \left( \frac{w_{21} - w_{12}}{w} \right) \right] \exp{(-wt)} $$
+Which can be rearranged:
+$$ m(t) = \left( \frac{w_{21} - w_{12}}{w} \right) \left[ 1 - \exp{(-wt)} \right] +  m(0) \exp{(-wt)} $$
 For $w_{12} = w_{21}$ (i.e. no field), this reduces to the decay term:
 $$ m(t) = m(0) \exp{(-wt)} $$
 For constant field and m(0) = 0, this reduces to the excitation term:
