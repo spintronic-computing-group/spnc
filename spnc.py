@@ -59,6 +59,34 @@ class spnc_basic:
         return self.magnetisation(w21,w12,m0,t_prime_step)
 
 
+    def plotter_sw(self,beta_prime,h_primes,m0,theta,plotpoints):
+
+        baserate = (self.rate_sw(beta_prime, 0, 1) +
+                    self.rate_sw(beta_prime, 0, -1))
+        timestep = theta/baserate
+
+        loopthetas = np.linspace(0,theta,plotpoints)
+        looptimes = np.linspace(0,timestep,plotpoints)
+
+        fields = np.array([0])
+        thetas = np.array([0])
+        times = np.array([0])
+        mags = np.array([m0])
+
+        for idx, h_prime in enumerate(h_primes):
+
+            loopmags = self.evolve_sw(beta_prime,h_prime,mags[-1],looptimes)
+
+            loopfields = np.full(plotpoints,h_prime)
+
+            fields = np.concatenate([fields,loopfields],axis=0)
+            thetas = np.concatenate([thetas, loopthetas+(theta*idx)],axis=0)
+            times = np.concatenate([times,looptimes+(timestep*idx)],axis=0)
+            mags = np.concatenate([mags,loopmags],axis=0)
+
+
+        return fields, thetas, times, mags
+
     def transform_sw(self,h_primes,params,*args,**kwargs):
 
         # No feedback implemented yet!
