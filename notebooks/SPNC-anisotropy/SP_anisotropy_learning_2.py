@@ -924,15 +924,12 @@ plt.ylabel("NRMSE (test)")
 plt.show()
 
 # %%
-(u,y) = NARMA10(Ntrain)
-spn = SPN.SP_Network(h,theta_H,k_s_0,phi,10)
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,40)
 f_m = spn.get_f_m_eq()
 dx = 5e-2
 fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
 f_inf = f_m(1)
-U = max(u)-min(u)
-print(7e-2*fp0*U/f_inf)
-print(fp0*0.28)
+print(fp0)
 
 # %%
 Ntrain = 1000
@@ -977,3 +974,22 @@ plt.yticks([],[''])
 plt.xlim(0,0.9*nbins)
 plt.ylim(0,0.9*nbins)
 plt.show()
+
+# %%
+beta_prime_list=np.linspace(10,80,10)
+T_list = []
+
+for bp in beta_prime_list:
+    net = Single_Node_Reservoir_NARMA10(100,1e-1,7e-2,0.28,beta_prime=bp)
+    T_list.append(net.T)
+
+# %%
+plt.figure(figsize=(10,6),dpi=200)
+plt.grid(True)
+plt.xlabel(r'$\beta^\prime$')
+plt.ylabel(r'$T$'+" in sec")
+plt.yscale("log")
+plt.plot(beta_prime_list,T_list)
+plt.show()
+
+# %%
