@@ -206,7 +206,7 @@ class SP_Network:
 
 # %%
 #Computation
-k_s_lim = .1
+k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
 Theta_1 = []
@@ -246,8 +246,8 @@ plt.show()
 
 # %%
 plt.figure(figsize = (10,6))
-plt.plot(k_s_list,Theta_1,'g+',label=r'$\theta_1$')
-#plt.plot(k_s_list,Theta_2,'r+',label=r'$\theta_2$')
+plt.plot(k_s_list,Theta_1,'g.',label=r'$\theta_1$')
+plt.plot(k_s_list,Theta_2,'r.',label=r'$\theta_2$')
 plt.legend(loc = "best")
 plt.xlim(-k_s_lim,k_s_lim)
 plt.grid(True)
@@ -265,10 +265,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = .5
+k_s_lim = 1
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [10,20,30]
+beta_prime_list = [10]
 omega_vs_beta = []
 for beta_prime in beta_prime_list:
     spn.beta_prime = beta_prime
@@ -285,7 +285,7 @@ for i in range(len(beta_prime_list)):
     beta_prime = beta_prime_list[i]
     plt.plot(k_s_list,omega_vs_beta[i],label = r'$\beta^\prime = $'+str(beta_prime))
 plt.legend(loc="best")
-plt.grid(True)
+plt.grid(True,which='both')
 plt.xlabel(r'$k_\sigma$')
 plt.ylabel(r'$\omega^\prime$')
 plt.xlim(-k_s_lim,k_s_lim)

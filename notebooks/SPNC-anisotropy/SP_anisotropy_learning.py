@@ -81,11 +81,12 @@ spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 SPN.calculate_energy_barriers(spn)
 T = 1./(spn.get_omega_prime()*f0)
 
-n = 10 #Number of inputs
-N = 100 #Number of steps per input
-theta = T #Duration of each input
+n = 3 #Number of inputs
+N = 1000 #Number of steps per input
+theta = 5*T #Duration of each input
 t_step = theta/N #We take a t_step 100 times smaller than theta
-signal = rnd_signal(n) #Input signal
+#signal = rnd_signal(n) #Input signal
+signal=[-1,1,-1]
 time_signal = np.arange(n)*theta
 time = np.linspace(0,n*theta,n*N)
 
@@ -102,7 +103,7 @@ for i in range(n):
 # %%
 plt.figure(figsize=(10,6))
 plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal")
-plt.plot(time*1e9,m_t,'r-',label="Output")
+plt.plot(time[:2000]*1e9,m_t[:2000],'r-',label="Output")
 plt.grid(True)
 plt.legend(loc="best")
 plt.title("Response to random input with "+r'$\theta=T$')

@@ -107,21 +107,28 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     # Training
     S_train, J_train = snr.transform(x_train,params)
     np.size(S_train)
-    RR.Kfold_train(net,S_train,y_train,10, quiet = True)
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
 
     # Testing
     S_test, J_test = snr.transform(x_test,params)
 
+    spacer = kwargs.get('spacer_NRMSE', 0)
+    print("Spacer NRMSE:"+str(spacer))
     pred = net.forward(S_test)
     np.size(pred)
     error = MSE(pred, y_test)
-    predNRMSE = NRMSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
     print(error, predNRMSE)
 
     plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
     plt.plot(y_test, pred, 'o')
     plt.show()
+    
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
     
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
@@ -155,7 +162,7 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     train_signal, train_label, train_rate, train_speaker = TI46.load_TI20(
         speakers, digits_only=True, train=True)
 
-    def stratified_split( labels, N, seed=None):
+    def stratified_split( labels, N, seed=1234):
         '''
         keys = tuple
         N = int, number of each key for the first split
