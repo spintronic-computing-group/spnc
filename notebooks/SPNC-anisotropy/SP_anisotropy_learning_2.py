@@ -19,11 +19,14 @@ import matplotlib.pyplot as plt
 from scipy import constants
 import random as rnd
 
+from mpl_toolkits.mplot3d import Axes3D
 import SP_anisotropy_class as SPN
 
 #3D plotting
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+
+%matplotlib notebook
 
 # %%
 #Ignore the first 50 elements of the output
@@ -990,6 +993,34 @@ plt.xlabel(r'$\beta^\prime$')
 plt.ylabel(r'$T$'+" in sec")
 plt.yscale("log")
 plt.plot(beta_prime_list,T_list)
+plt.show()
+
+# %%
+beta_prime_list=np.linspace(20,50,20)
+k_s_list = np.linspace(-.5,.5,20)
+T = []
+
+for bp in beta_prime_list:
+    spn = SPN.SP_Network(h,theta_H,k_s_0,phi,bp)
+    T_local = []
+    for k_sigma in k_s_list:
+        spn.k_s=k_sigma
+        SPN.calculate_energy_barriers(spn)
+        T_local.append(1./(spn.get_omega_prime()*f0))
+    T.append(T_local)
+
+# %%
+fig = plt.figure(figsize=(5,4),dpi=200)
+ax = fig.gca(projection='3d')
+X, Y = np.meshgrid(beta_prime_list, k_s_list)
+surf = ax.plot_surface(X, Y, np.log10(np.array(T).T), cmap=cm.bwr, linewidth=1, antialiased=False, shade=True)
+fig.colorbar(surf, shrink=0.5, aspect=10)
+plt.xlabel(r'$\beta^\prime$')
+plt.ylabel(r'$k_\sigma$')
+plt.yticks([-0.5,0,0.5])
+plt.xticks([20,30,40,50])
+ax.set_zlabel(r'$log_{10}(T)$')
+ax.zaxis.set_rotate_label(False) 
 plt.show()
 
 # %%
