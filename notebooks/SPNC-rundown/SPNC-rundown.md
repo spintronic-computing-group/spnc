@@ -35,12 +35,14 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 **Questions we've answered:**
 - Voltage control is possible
 - We can do NARMA10 task (similar to Appeltant) with field and voltage
-- Can do speech recognition with field (similar to STNO we think)
+- Can do speech recognition with field and voltage (similar performance to STNO we think)
 
 **Questions we're working on:**
 - **What does a practical device look like? There are important questions about timescales and errors.**
 - **Heat maps (with scaling factor and offset to input) at different $\beta'$**
 - **Speech recognition task for voltage**
+- **Bring in micromagnetics**
+- **Look at CHARK framework for charecterising the reservoir (IAN)**
 - Multiple resevoirs
 - How does the mask effect ML? 
 - What role does number of virtual nodes play? (This is related to mask, but also feedback).
@@ -49,8 +51,6 @@ Theory of ferromagnetism, Aharoni [ISBN: 0198508093](http://books.google.com/boo
 **Questions we're interested in considering:**
 - How can we quantify non-linearity of res (or input function)? How does this work with generic resevoirs?
 - What is the effect of oscilatory inputs?
-- Bring in micromagnetics
-- Look at CHARK framework for charecterising the reservoir
 
 ## Outlook
 
