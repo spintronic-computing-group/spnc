@@ -4,7 +4,7 @@ import spnc_ml as ml
 from spnc import spnc_anisotropy
 
 # NARMA parameters
-Ntrain = 1000
+Ntrain = 2000
 Ntest = 1000
 
 # Net Parameters
@@ -23,6 +23,6 @@ spn = spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spn.gen_signal_fast_delayed_feedback
 
 # DO IT
-ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params)
+ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params, seed_NARMA=1234,fixed_mask=True)
 
 
