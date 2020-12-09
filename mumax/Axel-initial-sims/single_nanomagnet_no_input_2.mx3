@@ -1,0 +1,51 @@
+//user variables to set cell size
+CellXY:=4
+CellZ:=3
+
+//dimensionless variables
+h_applied:=0.4
+bp:=10
+T_int:=6e-9
+
+//set up the size of the mesh
+SetGridsize(40/CellXY, 40/CellXY, 3/CellZ)
+
+//set the cell size
+SetCellsize(CellXY*1e-9, CellXY*1e-9, CellZ*1e-9)
+
+//set geometry
+SetGeom(cylinder(40e-9,3e-9))
+V:=pi*pow(20e-9,2)*3e-9
+
+//set material parameters (Permalloy)
+alpha = 0.5
+M_S:=860e3
+Msat  = M_S
+Aex   = 13e-12
+K_main:=4.053e3
+Ku1 = K_main
+
+anisU   = vector(1, 0, 0)
+
+//set up the initial magnetisation
+
+m = uniform(-1,0,0)
+
+//set temperature
+
+k_B:=1.38e-23
+Temp = K_main*V/(k_B*bp)
+
+//set external magnetization
+
+B_applied:=h_applied*2*K_main/M_S
+B_ext = vector(0,B_applied,0)
+relax()
+
+//run sim
+
+//MinDt = 1e-10
+//MaxErr=1e-5
+//Autosave(m, 1e-7)
+TableAutoSave(1e-10)
+run(20e-7)
