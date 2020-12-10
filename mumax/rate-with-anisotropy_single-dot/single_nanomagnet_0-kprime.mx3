@@ -36,6 +36,8 @@ K_main:=10*k_B*300/V
 u := ConstVector(1,0,0)
 anisField := Mul( Const(2*K_main/M_S)  , Mul( Dot(u, m), u))
 anisEdens := Mul( Const(-0.5*M_S) , Dot( anisField, m))
+AddFieldTerm(anisField) // promote anisField to an effective field term
+AddEdensTerm(anisEdens) // promote anisEdens to an energy density term
 
 //Set the additional field
 Ku1 = k_applied*K_main
