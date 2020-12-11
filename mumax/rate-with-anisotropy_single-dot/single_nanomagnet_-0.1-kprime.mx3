@@ -4,7 +4,7 @@ N_CellZ:=1
 
 //dimensionless parameter(s)
 h_applied:=0.4
-k_applied:= 0
+k_applied:= -0.1
 
 //temperature
 k_B:=1.38e-23
