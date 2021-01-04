@@ -1,0 +1,74 @@
+//precision of the mesh
+N_CellXY:=10
+N_CellZ:=1
+
+//dimensionless parameter(s)
+h_applied:=0.4
+k_applied:= -0.4
+
+//temperature
+k_B:=1.38e-23
+Outside_Temperature:=300
+
+//geometry
+diam:=40
+thick:=4
+
+//set up the size of the mesh
+SetGridsize(N_CellXY, N_CellXY, N_CellZ)
+
+//set the cell size
+SetCellsize(diam*1e-9/N_CellXY, diam*1e-9/N_CellXY, thick*1e-9/N_CellZ)
+
+//set geometry
+SetGeom(cylinder(diam*1e-9,thick*1e-9))
+V:=pi*pow(diam*1e-9/2,2)*thick*1e-9
+
+//physical parameters (CoFeB)
+alpha = 0.5
+M_S:=1200e3
+Msat = M_S
+Aex = 10e-12
+//K_main is set so that bp=10 for Temp=300
+K_main:=10*k_B*300/V
+
+//Set custom field to be intrinsic anisotropy
+u := ConstVector(1,0,0)
+anisField := Mul( Const(2*K_main/M_S)  , Mul( Dot(u, m), u))
+anisEdens := Mul( Const(-0.5*M_S) , Dot( anisField, m))
+AddFieldTerm(anisField) // promote anisField to an effective field term
+AddEdensTerm(anisEdens) // promote anisEdens to an energy density term
+
+//Set the additional applied anisotropy (from strain)
+Ku1 = k_applied*K_main
+anisU = vector(1, 1, 0)
+
+//set up the initial magnetisation
+m = uniform(-1,0,0)
+
+//set temperature
+Temp = Outside_Temperature
+
+//set external magnetization
+B_applied:=h_applied*2*K_main/M_S
+B_ext = vector(0,B_applied,0)
+
+//Add useful quantities to the data Table
+//User defined inputs (independant quantities)
+TableAddVar(K_applied, "Applied_anisotropy","dimensionless")
+TableAddVar(K_main, "Intrinsic_anisotropy","J/m^3")
+TableAdd(B_ext)
+//Dependant quantities
+TableAdd(MaxAngle)
+TableAdd(Edens_demag)
+TableAdd(Edens_exch)
+TableAdd(Edens_Zeeman)
+TableAdd(Edens_anis)
+TableAdd(Edens_custom)
+TableAdd(Edens_total)
+TableAdd(B_custom)
+
+//run sim
+//Autosave(m, 2e-9) //optionally save images
+TableAutoSave(1e-10)
+run(250e-7)
