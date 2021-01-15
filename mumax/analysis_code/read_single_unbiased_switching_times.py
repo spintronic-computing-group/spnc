@@ -65,18 +65,12 @@ p_not_switching = np.arange(total_switches-1,-1,-1)/total_switches
 def exp_func(t,tau):
     return np.exp(-t/tau)
 
-popt, pcov = curve_fit(exp_func,sorted_switches,p_not_switching)
-print(popt)
-perr = np.sqrt(np.diag(pcov))
-print(perr)
 
 fsz = 20
 plt.figure(figsize=(7,6),dpi=200)
 plt.scatter(sorted_switches,p_not_switching,color='black')
 P_theo2 = ss.expon.pdf(sorted_switches, *P_new)/ss.expon.pdf(0, *P_new)
-plt.plot(sorted_switches,P_theo2,color="green",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau$'+"=74ns)")
-plt.plot(sorted_switches,exp_func(sorted_switches,*popt),color="red",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau$'+"=74ns)")
-#plt.plot(T,P_theo*71.4,color="red",lw=3,linestyle='--',label="Exponential Fit by MLE ("+r'$\tau$'+"=74ns)")
+plt.plot(sorted_switches,P_theo2,color="red",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau$'+"=74ns)")
 
 plt.legend(loc="best",fontsize=fsz)
 plt.ylabel("Probability of not switching",fontsize=fsz)
@@ -100,11 +94,6 @@ for idx, i in np.ndenumerate(number_of_results):
     total_switches_reduced = np.size(sorted_switches_reduced)
     p_not_switching_reduced = np.arange(total_switches_reduced-1,-1,-1)/total_switches_reduced
 
-    popt, pcov = curve_fit(exp_func,sorted_switches_reduced,p_not_switching_reduced)
-    perr = np.sqrt(np.diag(pcov))
-    means[idx] = popt
-    errors[idx] = perr
-
     #alternate take
     tau = ss.expon.fit(switching_times_reduced,floc=0)
     tau = tau[1]
@@ -113,13 +102,6 @@ for idx, i in np.ndenumerate(number_of_results):
     meanspdf[idx]=tau
     errorspdf[idx]=tauerror
 
-plt.figure(figsize=(7,6),dpi=200)
-plt.errorbar(number_of_results, means, yerr =errors)
-plt.ylabel(r'Observation of $\tau$ / ns',fontsize=14)
-plt.xlabel("Number of switches observed",fontsize=14)
-plt.xticks(fontsize=14)
-plt.yticks(fontsize=14)
-plt.show()
 
 plt.figure(figsize=(7,6),dpi=200)
 plt.errorbar(number_of_results, meanspdf, yerr =errorspdf)
@@ -129,15 +111,3 @@ plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
 plt.show()
 
-'''
-#playing with the idea of sampling many means
-noofsamples = 20
-switching_times_limited = switching_times[0:300]
-chunk = int(np.size(switching_times_limited)/noofsamples)
-print(chunk)
-mean = np.zeros(10)
-for i in range(0,noofsamples):
-    mean[i] = np.mean(switching_times_limited[i*chunk:(i+1)*chunk])
-
-print(np.std(mean,ddof=1)/np.sqrt(noofsamples))
-'''
