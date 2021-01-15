@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as ss
-from scipy.optimize import curve_fit
 
 folder_name = 'input'
 
@@ -44,9 +43,16 @@ P_new=(0,P[1])
 T = np.linspace(0,2000,500)
 P_theo = ss.expon.pdf(T, *P_new)
 
+#Find the error
+total_switches = np.size(switching_times)
+error = P[1]/np.sqrt(total_switches)
+
+#display the results
+print('Tau = ' + str(round(P[1])) +' +/- ' + str(int(round(error))) + " ns")
+
 plt.figure(figsize=(7,6),dpi=200)
 plt.hist(switching_times,edgecolor="blue",alpha=.5,bins=20,density=True)
-plt.plot(T,P_theo,color="red",lw=3,linestyle='--',label="Exponential Fit by MLE ("+r'$\tau$'+"=74ns)")
+plt.plot(T,P_theo,color="red",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau = $' + str(round(P[1])) +r'$\pm$' + str(int(round(error))) + "ns)")
 #plt.yscale("log")
 plt.legend(loc="best",fontsize=14)
 plt.ylabel("Density of switching times",fontsize=14)
@@ -57,9 +63,8 @@ plt.yticks(fontsize=14)
 #plt.ylim(1e-6,1e-1)
 plt.show()
 
-# Sort switches and fit that way
+# Sort switches and plot that way
 sorted_switches = np.sort(switching_times)
-total_switches = np.size(sorted_switches)
 p_not_switching = np.arange(total_switches-1,-1,-1)/total_switches
 
 def exp_func(t,tau):
@@ -70,7 +75,7 @@ fsz = 20
 plt.figure(figsize=(7,6),dpi=200)
 plt.scatter(sorted_switches,p_not_switching,color='black')
 P_theo2 = ss.expon.pdf(sorted_switches, *P_new)/ss.expon.pdf(0, *P_new)
-plt.plot(sorted_switches,P_theo2,color="red",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau$'+"=74ns)")
+plt.plot(sorted_switches,P_theo2,color="red",lw=3,linestyle='--',label="Exponential Fit ("+r'$\tau = $' + str(round(P[1])) +r'$\pm$' + str(int(round(error))) + "ns)")
 
 plt.legend(loc="best",fontsize=fsz)
 plt.ylabel("Probability of not switching",fontsize=fsz)
@@ -110,4 +115,3 @@ plt.xlabel("Number of switches observed",fontsize=14)
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
 plt.show()
-
