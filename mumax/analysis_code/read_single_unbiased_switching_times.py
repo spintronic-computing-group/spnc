@@ -3,7 +3,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as ss
 
-folder_name = 'input'
+#Filepath dialog
+import tkinter as tk
+from tkinter import filedialog
+root = tk.Tk()
+root.withdraw()
+folder_name = filedialog.askdirectory(title="Select the folder containing the data table")
+root.update()
+print(folder_name)
 
 #Read the data
 df = pd.read_csv(folder_name+'/table.txt',sep='\t')
