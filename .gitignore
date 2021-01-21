@@ -1,6 +1,9 @@
 ##-----------------------------------------------
 #Project specific .gitignore
 ##-----------------------------------------------
+Ignore any files in input or output folders
+*input/
+*output/
 
 ##---------------------------------------------------
 # Windows default .gitignore
