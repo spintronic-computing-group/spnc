@@ -390,6 +390,60 @@ class spnc_anisotropy:
 
         return mag
 
+    def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
+
+        theta_step = theta/density
+        K_s_expanded = np.zeros(np.size(klist)*density)
+        thetas = np.zeros(np.size(K_s_expanded))
+        idx = 0
+        for k in klist:
+            for i in range(density):
+                K_s_expanded[idx] = k
+                thetas[idx] = (idx+1)*theta_step
+                idx = idx +1
+
+        params['theta'] = theta_step
+
+        mags = self.gen_signal_fast_delayed_feedback(K_s_expanded, params)
+
+        K_s = np.concatenate([np.array([0]),K_s_expanded],axis=0)
+        thetas = np.concatenate([np.array([0]),thetas],axis=0)
+        mags = np.concatenate([np.array([0]),mags],axis=0)
+
+        return K_s, thetas, mags #fields, thetas, times, mags
+
+    # def gen_trace_fast_delayed_feedback(self,K_s,density,params,*args,**kwargs):
+    #     theta_T = params['theta']
+    #     gamma = params['gamma']
+    #     delay_fb = params['delay_feedback']
+    #     Nvirt = params['Nvirt']
+    #
+    #     self.k_s = 0
+    #     T = 1./(self.get_omega_prime()*self.f0)
+    #     timestep = theta*T
+    #
+    #     loopthetas = np.linspace(0,theta,plotpoints)
+    #     looptimes = np.linspace(0,timestep,plotpoints)
+    #
+    #     fields = np.array([0])
+    #     thetas = np.array([0])
+    #     times = np.array([0])
+    #     mags = np.array([m0])
+    #
+    #     for idx, h_prime in enumerate(h_primes):
+    #
+    #         loopmags = self.evolve_sw(beta_prime,h_prime,mags[-1],looptimes)
+    #
+    #         loopfields = np.full(plotpoints,h_prime)
+    #
+    #         fields = np.concatenate([fields,loopfields],axis=0)
+    #         thetas = np.concatenate([thetas, loopthetas+(theta*idx)],axis=0)
+    #         times = np.concatenate([times,looptimes+(timestep*idx)],axis=0)
+    #         mags = np.concatenate([mags,loopmags],axis=0)
+    #
+    #
+    #     return fields, thetas, times, mags
+
     def gen_signal_fast_delayed_feedback_wo_SPN(self, K_s,params,*args,**kwargs):
         gamma = params['gamma']
         delay_fb = params['delay_feedback']
