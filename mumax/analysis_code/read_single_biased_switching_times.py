@@ -166,6 +166,28 @@ plt.ylim(0,1)
 plt.savefig('output/'+'prob_not_switching_downwards.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
+fsz = 10
+figurewidth = 3.37 #inches (single column)
+figureaspect = 1
+figureheight = figurewidth*figureaspect
+plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
+plt.scatter(sorted_switches_upwards,p_not_switching_upwards,s=1.5,color='black')
+plt.scatter(sorted_switches_downwards,p_not_switching_downwards,s=1.5,color='black')
+P_theo2_downwards = ss.expon.pdf(T, *P_new_downwards)/ss.expon.pdf(0, *P_new_downwards)
+plt.plot(T,P_theo2_upwards,color="C0",lw=1.5,alpha=0.8,linestyle='--',
+         label=r'$\tau_{up} = $' + str(round(P_upwards[1])) +r'$\pm$' + str(int(round(error_upwards))) + "ns")
+plt.plot(T,P_theo2_downwards,color="C1",lw=1.5,alpha=0.8,linestyle='--',
+         label=r'$\tau_{down} = $' + str(round(P_downwards[1])) +r'$\pm$' + str(int(round(error_downwards))) + "ns")
+plt.legend(loc="best",fontsize=fsz*0.9)
+plt.ylabel("Probability of not switching",fontsize=fsz)
+plt.xlabel("Time (in ns)",fontsize=fsz)
+plt.xticks(fontsize=fsz)
+plt.yticks(fontsize=fsz)
+plt.xlim(0,1000)
+plt.ylim(0,1)
+plt.savefig('output/'+'prob_not_switching_both.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.show()
+
 # Does mean of time period converge with increasing number of points?
 number_of_results_upwards = np.arange(10,np.size(switching_times_upwards),5)
 means_upwards = np.zeros(np.shape(number_of_results_upwards))
