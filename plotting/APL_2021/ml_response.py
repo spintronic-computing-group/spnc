@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
+"""
+@author: Alexander
 
+This code runs some machine learning and saves the variables for plotting elsewhere
+
+Local Dependancies
+------------------
+machine_learning_library  : v0.1.2
+    This repository will need to be on your path in order to work.
+    This is achieved with repo_tools module and a path find function
+    Add to the searchpath and repos tuples if required
+
+
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
 
 # Sort out relative paths
 import sys
@@ -34,7 +46,7 @@ from NARMA10 import NARMA10
 from sklearn.metrics import classification_report
 
 '''
-NARMA10 plotting
+NARMA10 response
 '''
 
 # NARMA parameters
@@ -43,20 +55,21 @@ Ntest = 1000
 
 # Net Parameters
 Nvirt = 400
-m0 = 7e-2
+m0 = 0.003
 bias = True
 
-# Mist parameters
-seed_NARMA = 1234
+# Misc parameters
+seed_NARMA = None
 fixed_mask = False
+spacer = 50
 
 # Resevoir parameters
 h = 0.4
 theta_H = 90
 k_s_0 = 0
 phi = 45
-beta_prime = 10
-params = {'theta': 10,'gamma' : .28,'delay_feedback' : 1,'Nvirt' : Nvirt}
+beta_prime = 20
+params = {'theta': 0.4,'gamma' : .132,'delay_feedback' : 0,'Nvirt' : Nvirt}
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
 
@@ -86,22 +99,33 @@ net = linear(Nin, Nout, bias = bias)
 S_train, J_train = snr.transform(x_train,params)
 np.size(S_train)
 seed_training = 1234
-RR.Kfold_train(net,S_train,y_train,5, quiet = False)
+RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
 S_test, J_test = snr.transform(x_test,params)
 
-spacer = 0
 print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
 np.size(pred)
-error = MSE(pred, y_test)
-predNRMSE = NRMSE(pred, y_test)
+error = MSE(pred[spacer:], y_test[spacer:])
+predNRMSE = NRMSE(pred[spacer:], y_test[spacer:])
 print(error, predNRMSE)
 
-plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
-plt.plot(y_test, pred, 'o')
-plt.show()
-
-
-
+#Save data for plotting elsewhere
+np.savez('data/NARMA10.npz',
+         Ntrain=Ntrain,
+         Ntest=Ntest,
+         Nvirt = Nvirt,
+         spacer = spacer,
+         x_train = x_train,
+         y_train = y_train,
+         x_test = x_test,
+         y_test = y_test,
+         Nin = Nin,
+         Nout = Nout,
+         S_train = S_train,
+         J_train = J_train,
+         S_test = S_test,
+         J_test = J_test,
+         pred = pred
+         )
