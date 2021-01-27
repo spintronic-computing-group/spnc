@@ -56,7 +56,7 @@ theta_H = 90
 k_s_0 = 0
 phi = 45
 beta_prime = 10
-params = {'theta': 10,'gamma' : .28,'delay_feedback' : 0,'Nvirt' : Nvirt}
+params = {'theta': 10,'gamma' : .28,'delay_feedback' : 1,'Nvirt' : Nvirt}
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
 
@@ -86,7 +86,7 @@ net = linear(Nin, Nout, bias = bias)
 S_train, J_train = snr.transform(x_train,params)
 np.size(S_train)
 seed_training = 1234
-RR.Kfold_train(net,S_train,y_train,10, quiet = True)
+RR.Kfold_train(net,S_train,y_train,5, quiet = False)
 
 # Testing
 S_test, J_test = snr.transform(x_test,params)
@@ -96,7 +96,7 @@ print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
 np.size(pred)
 error = MSE(pred, y_test)
-predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+predNRMSE = NRMSE(pred, y_test)
 print(error, predNRMSE)
 
 plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
