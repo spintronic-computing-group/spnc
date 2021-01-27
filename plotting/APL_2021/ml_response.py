@@ -111,6 +111,10 @@ error = MSE(pred[spacer:], y_test[spacer:])
 predNRMSE = NRMSE(pred[spacer:], y_test[spacer:])
 print(error, predNRMSE)
 
+plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
+plt.plot(y_test[spacer:],pred[spacer:],'o')
+plt.show()
+
 #Save data for plotting elsewhere
 np.savez('data/NARMA10.npz',
          Ntrain=Ntrain,
