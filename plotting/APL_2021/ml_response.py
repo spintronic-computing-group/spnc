@@ -55,7 +55,7 @@ Ntest = 1000
 
 # Net Parameters
 Nvirt = 400
-m0 = 0.003
+m0 = 0.027
 bias = True
 
 # Misc parameters
@@ -69,7 +69,7 @@ theta_H = 90
 k_s_0 = 0
 phi = 45
 beta_prime = 20
-params = {'theta': 0.4,'gamma' : .132,'delay_feedback' : 0,'Nvirt' : Nvirt}
+params = {'theta': 10,'gamma' : 0.132,'delay_feedback' : 1,'Nvirt' : Nvirt}
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
 
