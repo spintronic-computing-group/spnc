@@ -6,7 +6,7 @@ This code runs some machine learning and saves the variables for plotting elsewh
 
 Local Dependancies
 ------------------
-machine_learning_library  : v0.1.3
+machine_learning_library  : v0.1.2
     This repository will need to be on your path in order to work.
     This is achieved with repo_tools module and a path find function
     Add to the searchpath and repos tuples if required
@@ -75,8 +75,7 @@ gamma = 0.132
 delay_feedback = 0
 params = {'theta': theta, 'gamma' : gamma,'delay_feedback' : delay_feedback,'Nvirt' : Nvirt}
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-#transform = spnres.gen_signal_fast_delayed_feedback
-transform = None
+transform = spnres.gen_signal_fast_delayed_feedback
 
 
 # Lets get into it
@@ -104,7 +103,7 @@ net = linear(Nin, Nout, bias = bias)
 S_train, J_train = snr.transform(x_train,params)
 np.size(S_train)
 seed_training = 1234
-RR.Kfold_train(net,S_train,y_train, quiet = False, lmax =5)
+RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
 S_test, J_test = snr.transform(x_test,params)
@@ -121,7 +120,7 @@ plt.plot(y_test[spacer:],pred[spacer:],'o')
 plt.show()
 
 #Save data for plotting elsewhere
-np.savez('data/NARMA10_nores.npz',
+np.savez('data/NARMA10.npz',
          Ntrain=Ntrain,
          Ntest=Ntest,
          Nvirt = Nvirt,
