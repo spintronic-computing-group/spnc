@@ -1,5 +1,5 @@
 //precision of the mesh
-N_CellXY:=23
+N_CellXY:=24
 N_CellZ:=1
 
 //dimensionless parameter(s)
