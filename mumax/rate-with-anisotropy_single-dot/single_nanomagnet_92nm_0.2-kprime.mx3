@@ -1,5 +1,5 @@
 //precision of the mesh
-N_CellXY:=10
+N_CellXY:=23
 N_CellZ:=1
 
 //dimensionless parameter(s)
@@ -11,7 +11,7 @@ k_B:=1.38e-23
 Outside_Temperature:=300
 
 //geometry
-diam:=90
+diam:=92
 thick:=4
 
 //set up the size of the mesh
