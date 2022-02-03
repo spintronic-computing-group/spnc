@@ -86,15 +86,15 @@ figureaspect = 1
 figureheight = figurewidth*figureaspect
 plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
 plt.errorbar(kapplied,1/tauup,yerr=tauuperror/(np.square(tauup)),
-             marker = '.', linestyle = 'none', label = 'Down to up')
+             marker = '.', linestyle = 'none', label = 'Left to right')
 plt.errorbar(kapplied,1/taudown,yerr=taudownerror/(np.square(taudown)),
-             marker = '.', linestyle = 'none',label = 'Up to down')
+             marker = '.', linestyle = 'none',label = 'Right to left')
 plt.plot(ks,om21s*ratecorrection,color='C0')
 plt.plot(ks,om12s*ratecorrection,color='C1')
 #plt.xlim(-0.45,0.45)
 plt.legend()
 plt.ylabel(r'rate ($1/\tau$) / ns$^{-1} $',fontsize=fsz)
-plt.xlabel("Applied anisotropy / KV",fontsize=fsz)
+plt.xlabel(r'$K_{\sigma}/K$',fontsize=fsz)
 plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
 #plt.xlim(0,2000)
@@ -151,11 +151,11 @@ plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
 figureheight = figurewidth*figureaspect
 # plt.plot(ks,eqibs)
 for i, color in enumerate(colors):
-    plt.plot(ks,getmags(ks,betas[i]),label=r'$KV/K_BT = $' + str(betas[i]),color = color)
+    plt.plot(ks,getmags(ks,betas[i]),label=r'$KV/k_BT = $' + str(betas[i]),color = color)
 
 #plt.xlim(-0.45,0.45)
 plt.legend(fontsize=fsz*0.9)
-plt.xlabel(r'Applied anisotropy / KV',fontsize=fsz)
+plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
 plt.ylabel(r'$m_x$',fontsize=fsz)
 plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
@@ -192,11 +192,13 @@ plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
 figureheight = figurewidth*figureaspect
 # plt.plot(ks,eqibs)
 for i, color in enumerate(colors):
-    plt.plot(ks,1/getoms(ks,betas[i],f0),label=r'$KV/K_BT = $' + str(betas[i]),color = color)
+    plt.plot(ks,1/getoms(ks,betas[i],f0),label=r'$KV/k_BT = $' + str(betas[i]),color = color)
 
+#plt.plot(ks,1/getoms(ks,20.198,f0),'--',color = 'k',alpha = 0.8) #20.198 for 1%, 21.818 for 10%
+#plt.plot(ks,1/getoms(ks,19.798,f0),'--',color = 'k',alpha = 0.8) #1% -ve
 #plt.xlim(-0.45,0.45)
 plt.legend(fontsize=fsz*0.8)
-plt.xlabel(r'Applied anisotropy / KV',fontsize=fsz)
+plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
 plt.ylabel(r'Internal timescale / s',fontsize=fsz)
 plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
@@ -207,7 +209,7 @@ plt.savefig('output/'+'timescales.pdf',format='pdf',transparent=True,dpi=1200,bb
 plt.show()
 
 for beta in betas:
-    print('KV/K_BT = ', beta, '   =>    tau0 =', 1/getoms(0,beta,f0), ' s')
+    print('KV/k_BT = ', beta, '   =>    tau0 =', 1/getoms(0,beta,f0), ' s')
 
 '''
 Timescale plot - timescale vs beta
@@ -237,7 +239,7 @@ plt.plot(betas,taus)
 #plt.plot(betas,1/(f0*2*np.exp(-0.36*betas) + f0*2*np.exp(-1.96*betas)))
 #plt.xlim(-0.45,0.45)
 #plt.legend(fontsize=fsz*0.9)
-plt.xlabel(r'Intrinsic anisotropy ($KV$)/ Thermal energy ($K_BT$)',fontsize=fsz)
+plt.xlabel(r'Intrinsic anisotropy ($KV$)/ Thermal energy ($k_BT$)',fontsize=fsz)
 plt.ylabel(r'Base timescale / s',fontsize=fsz)
 plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
@@ -304,13 +306,37 @@ def getanisotropy(k_s,  h = 0.4, theta_H = 90, phi = 45, beta_prime = 10):
     
     return k_tilde, psi
 
-k_s = np.linspace(-10,10,100)
+k_s = np.linspace(-5,5,100)
 k_tildes = np.zeros(np.size(k_s))
 psis = np.zeros(np.size(k_s))
 for idx, k in enumerate(k_s):
     k_tildes[idx], psis[idx] = getanisotropy(k)
     
+fsz = 10
+figurewidth = 3.37 #inches (single column)
+figureaspect = 1
+figureheight = figurewidth*figureaspect
+plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
 plt.plot(k_s,psis)
+plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
+plt.ylabel(r'$\psi$ / deg',fontsize=fsz)
+plt.yticks(fontsize=fsz)
+#plt.legend(fontsize=fsz*0.9)
+plt.savefig('output/'+'ea-rotation.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.show()
+
+fsz = 10
+figurewidth = 3.37 #inches (single column)
+figureaspect = 1
+figureheight = figurewidth*figureaspect
+plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
+plt.plot(k_s,k_tildes)
+plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
+plt.ylabel(r'$\tilde{k}$ ',fontsize=fsz)
+plt.yticks(fontsize=fsz)
+#plt.legend(fontsize=fsz*0.9)
+plt.savefig('output/'+'ea-magnitude.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.show()
 
 
 
@@ -332,16 +358,24 @@ plt.figure(figsize=[figurewidth,figureheight],dpi=1200)
 plt.plot(theta, get_energy(theta,0.),'--',
         color='black', label = 'Input off',alpha = 0.5)
 plt.plot(theta, get_energy(theta,k),
-        color='C3', label = 'Tensile strain',alpha = 0.8)
+        color='C3', label = r'Tensile strain, ${K_{\sigma}}/{K} = 0.2 $',alpha = 0.8)
 plt.plot(theta, get_energy(theta,-k),
-        color='C0', label = 'Compressive strain',alpha = 0.8)
+        color='C0', label = r'Compressive strain, ${K_{\sigma}}/{K} = -0.2$',alpha = 0.8)
 plt.xlabel(r'Magnetisation angle / deg',fontsize=fsz)
-plt.ylabel('Energy / Intrinsic Anisotropy',fontsize=fsz)
+plt.ylabel('Energy / KV',fontsize=fsz)
 plt.xlim([-lower, upper,])
 plt.xticks(np.arange(-lower+30,upper,60), fontsize=fsz)
 plt.yticks(fontsize=fsz)
-plt.legend(fontsize=fsz*0.9)
+plt.legend(fontsize=fsz*0.7)
 plt.savefig('output/'+'energy_plots.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
+
+
+
+
+
+
+
+
 
 
