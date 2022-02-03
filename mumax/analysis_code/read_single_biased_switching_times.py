@@ -175,9 +175,9 @@ plt.scatter(sorted_switches_upwards,p_not_switching_upwards,s=1.5,color='black')
 plt.scatter(sorted_switches_downwards,p_not_switching_downwards,s=1.5,color='black')
 P_theo2_downwards = ss.expon.pdf(T, *P_new_downwards)/ss.expon.pdf(0, *P_new_downwards)
 plt.plot(T,P_theo2_upwards,color="C0",lw=1.5,alpha=0.8,linestyle='--',
-         label=r'$\tau_{up} = $' + str(round(P_upwards[1])) +r'$\pm$' + str(int(round(error_upwards))) + "ns")
+         label=r'$\tau_{21} = $' + str(round(P_upwards[1])) +r'$\pm$' + str(int(round(error_upwards))) + "ns")
 plt.plot(T,P_theo2_downwards,color="C1",lw=1.5,alpha=0.8,linestyle='--',
-         label=r'$\tau_{down} = $' + str(round(P_downwards[1])) +r'$\pm$' + str(int(round(error_downwards))) + "ns")
+         label=r'$\tau_{12} = $' + str(round(P_downwards[1])) +r'$\pm$' + str(int(round(error_downwards))) + "ns")
 plt.legend(loc="best",fontsize=fsz*0.9)
 plt.ylabel("Probability of not switching",fontsize=fsz)
 plt.xlabel("Time / ns",fontsize=fsz)
