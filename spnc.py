@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Superparamgnetic neuromorphic computing module
 
@@ -97,15 +98,15 @@ def rate(f0,ebarrier,temperature):
 
     return w
 
-############
+# ###########
 # SP Network with a control on anisotropy
-    
+
 def k_tilde(spn):
     return(np.sqrt((1+spn.k_s*np.cos(2*spn.phi*np.pi/180))**2+(spn.k_s*np.sin(2*spn.phi*np.pi/180))**2))
 
 def psi(spn):
     return(180*np.arctan2(spn.k_s*np.sin(2*spn.phi*np.pi/180),(1+spn.k_s*np.cos(2*spn.phi*np.pi/180)))/2/np.pi)
-        
+
 def energy(spn,theta):
     return(k_tilde(spn)*np.sin((theta-psi(spn))*np.pi/180)**2-2*spn.h*np.cos((theta-spn.theta_H)*np.pi/180))
 

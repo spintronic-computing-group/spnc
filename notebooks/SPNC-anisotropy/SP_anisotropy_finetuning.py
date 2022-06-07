@@ -130,9 +130,9 @@ def calculate_energy_barriers(spn):
         (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
     
     #Check the condition e_b_min*beta_prime>=3
-    e_b_min = min(e_12_small,e_21_small)
-    if(e_b_min*spn.beta_prime<=3):
-        (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
+    #e_b_min = min(e_12_small,e_21_small)
+    #if(e_b_min*spn.beta_prime<=3):
+    #    (theta_1,theta_2,e_12_big,e_21_big,e_12_small,e_21_small) = (np.nan,np.nan,np.nan,np.nan,np.nan,np.nan)
     
     spn.theta_1 = theta_1
     spn.theta_2 = theta_2
@@ -663,10 +663,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 1
+k_s_lim = .5
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-beta_prime_list = [10]
+beta_prime_list = np.linspace(10,50,5)
 m_eq_vs_bp = []
 for bp in beta_prime_list:
     spn.beta_prime = bp
@@ -678,17 +678,58 @@ for bp in beta_prime_list:
     m_eq_vs_bp.append(m_eq)
 
 # %%
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(8,6),dpi=200)
 for i in range(len(beta_prime_list)):
     beta_prime = beta_prime_list[i]
-    plt.plot(k_s_list,m_eq_vs_bp[i],label = r'$\beta^\prime = $'+str(beta_prime))
-plt.legend(loc="best")
+    plt.plot(k_s_list,m_eq_vs_bp[i],label = r'$\beta^\prime = $'+str(int(beta_prime)))
+plt.legend(loc="best",fontsize=14)
 plt.grid(True)
-plt.xlabel(r'$k_\sigma$')
-plt.ylabel(r'$m_{eq}$')
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel(r'$m_{eq}$',fontsize=14)
 plt.xlim(-k_s_lim,k_s_lim)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
 #plt.yscale("log")
-plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+#plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\beta^\prime$')
+plt.show()
+
+# %%
+#Computation
+k_s_lim = 1
+spn = SP_Network(0.4,90,0,45,10)
+k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
+spn.beta_prime = 10
+m_eq = []
+for k_s in k_s_list:
+    spn.k_s = k_s
+    calculate_energy_barriers(spn)
+    m_eq.append(spn.get_m_eq())
+
+# %%
+plt.figure(figsize=(12,5),dpi=200)
+plt.subplot(121)
+plt.grid(True)
+plt.plot(k_s_list*5,m_eq,'b-',label=r'$y=m_{eq}(\gamma_1 x)$')
+plt.plot(k_s_list,k_s_list,'k--',label=r'$y=x$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.yticks([-1,0,1],fontsize=14)
+plt.xticks([-1,0,1],fontsize=14)
+plt.ylabel(r'$y$',fontsize=14,rotation="horizontal")
+plt.xlabel(r'$x$',fontsize=14)
+plt.title(r'$m_{eq}^{\prime}(0)\gamma<1$',fontsize=15)
+plt.legend(loc="best",fontsize=14)
+plt.subplot(122)
+plt.grid(True)
+plt.plot(k_s_list,m_eq,'b-',label=r'$y=m_{eq}(\gamma_2 x)$')
+plt.plot(k_s_list,k_s_list,'k--',label=r'$y=x$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.yticks([-1,0,1],[])
+plt.xticks([-1,0,1],fontsize=14)
+plt.xlabel(r'$x$',fontsize=14)
+plt.title(r'$m_{eq}^{\prime}(0)\gamma>1$',fontsize=15)
+plt.legend(loc="best",fontsize=14)
 plt.show()
 
 # %%
@@ -715,10 +756,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 1
+k_s_lim = .5
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-h_list = np.logspace(-2,0,5)
+h_list = np.linspace(0,0.5,6)
 m_eq_vs_h = []
 for h in h_list:
     spn.h = h
@@ -730,17 +771,19 @@ for h in h_list:
     m_eq_vs_h.append(m_eq)
 
 # %%
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(8,6),dpi=200)
 for i in range(len(h_list)):
     h = h_list[i]
-    plt.plot(k_s_list,m_eq_vs_h[i],label = r'$h = $'+str(h))
-plt.legend(loc="best")
+    plt.plot(k_s_list,m_eq_vs_h[i],label = r'$h = $'+str(int(1000*h+.5)/1000))
+plt.legend(loc="best",fontsize=14)
 plt.grid(True)
-plt.xlabel(r'$k_\sigma$')
-plt.ylabel(r'$m_{eq}$')
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel(r'$m_{eq}$',fontsize=14)
 plt.xlim(-k_s_lim,k_s_lim)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
 #plt.yscale("log")
-plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+#plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 plt.show()
 
 # %% [markdown]
@@ -781,10 +824,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 1
+k_s_lim = .5
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-phi_list = np.linspace(45,0,5)
+phi_list = np.linspace(90,0,5)
 m_eq_vs_phi = []
 for phi in phi_list:
     spn.phi = phi
@@ -796,17 +839,19 @@ for phi in phi_list:
     m_eq_vs_phi.append(m_eq)
 
 # %%
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(8,6),dpi=200)
 for i in range(len(phi_list)):
     phi = phi_list[i]
-    plt.plot(k_s_list,m_eq_vs_phi[i],label = r'$\phi = $'+str(phi))
-plt.legend(loc="best")
+    plt.plot(k_s_list,m_eq_vs_phi[i],label = r'$\phi = $'+str(int(phi+.5))+"°")
+plt.legend(loc="best",fontsize=14)
 plt.grid(True)
-plt.xlabel(r'$k_\sigma$')
-plt.ylabel(r'$m_{eq}$')
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel(r'$m_{eq}$',fontsize=14)
 plt.xlim(-k_s_lim,k_s_lim)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
 #plt.yscale("log")
-plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
+#plt.title(r'$m_{eq}$' + " as a function of " + r'$k_\sigma$' + " and " + r'$\phi$')
 plt.show()
 
 # %% [markdown]
@@ -850,10 +895,10 @@ plt.show()
 
 # %%
 #Computation
-k_s_lim = 5
+k_s_lim = 2
 spn = SP_Network(0.4,90,0,45,10)
 k_s_list = np.linspace(-k_s_lim,k_s_lim,500)
-h_list = np.logspace(-2,0,5)
+h_list = np.linspace(0.3,0.6,4)
 eb_vs_h = []
 for h in h_list:
     spn.h = h
@@ -865,18 +910,20 @@ for h in h_list:
     eb_vs_h.append(eb)
 
 # %%
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(8,6),dpi=200)
 for i in range(len(h_list)):
     h = h_list[i]
-    plt.plot(k_s_list,eb_vs_h[i],label = r'$h = $'+str(h))
-plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{b,min}\beta^\prime=3$')
-plt.legend(loc="best")
+    plt.plot(k_s_list,eb_vs_h[i],label = r'$h = $'+str(int(10*h+.5)/10))
+plt.axhline(y=3,linestyle='--',color="black",label=r'$e_{min}\beta^\prime=3$')
+plt.legend(loc="best",fontsize=14)
 plt.grid(True)
-plt.xlabel(r'$k_\sigma$')
-plt.ylabel(r'$e_{b,min}\beta^\prime$')
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel(r'$e_{min}\beta^{\prime}$',fontsize=14)
 plt.xlim(-k_s_lim,k_s_lim)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
 #plt.yscale("log")
-plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
+#plt.title(r'$e_{b,min}\beta^\prime$' + " as a function of " + r'$k_\sigma$' + " and " + r'$h$')
 plt.show()
 
 # %% [markdown]
