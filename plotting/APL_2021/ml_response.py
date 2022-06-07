@@ -31,7 +31,7 @@ searchpaths = (Path.home() / 'repos', )
 #tuple of repos
 repos = ('machine_learning_library',)
 
-# local imports    
+# local imports
 from SPNC import spnc
 #ML specific
 from SPNC.deterministic_mask import fixed_seed_mask, max_sequences_mask
@@ -77,6 +77,9 @@ params = {'theta': theta, 'gamma' : gamma,'delay_feedback' : delay_feedback,'Nvi
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
 
+spnreshigher = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime*1.1)
+transformhigher = spnres.gen_signal_fast_delayed_feedback
+
 
 # Lets get into it
 print("seed NARMA: "+str(seed_NARMA))
@@ -97,6 +100,7 @@ Nout = len(np.unique(y_train))
 print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
 snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+snrhigher = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transformhigher)
 net = linear(Nin, Nout, bias = bias)
 
 # Training
@@ -106,7 +110,7 @@ seed_training = 1234
 RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
-S_test, J_test = snr.transform(x_test,params)
+S_test, J_test = snrhigher.transform(x_test,params)
 
 print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
@@ -120,7 +124,7 @@ plt.plot(y_test[spacer:],pred[spacer:],'o')
 plt.show()
 
 #Save data for plotting elsewhere
-np.savez('data/NARMA10.npz',
+np.savez('data/NARMA10-temp.npz',
          Ntrain=Ntrain,
          Ntest=Ntest,
          Nvirt = Nvirt,
