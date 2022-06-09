@@ -50,11 +50,11 @@ NARMA10 response
 '''
 
 # NARMA parameters
-Ntrain = 2000
-Ntest = 1000
+Ntrain = 200
+Ntest = 100
 
 # Net Parameters
-Nvirt = 400
+Nvirt = 40
 m0 = 0.003
 bias = True
 
@@ -77,8 +77,8 @@ params = {'theta': theta, 'gamma' : gamma,'delay_feedback' : delay_feedback,'Nvi
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
 
-spnreshigher = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime*1.1)
-transformhigher = spnres.gen_signal_fast_delayed_feedback
+spnreshigher = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
+transformhigher = spnreshigher.gen_signal_fast_delayed_feedback
 
 
 # Lets get into it
@@ -111,9 +111,14 @@ RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
 S_test, J_test = snrhigher.transform(x_test,params)
+S_testlow, J_testlow = snr.transform(x_test,params)
 
 print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
+predlow = net.forward(S_testlow)
+plt.plot(pred)
+plt.plot(predlow)
+plt.show()
 np.size(pred)
 error = MSE(pred[spacer:], y_test[spacer:])
 predNRMSE = NRMSE(pred[spacer:], y_test[spacer:])
