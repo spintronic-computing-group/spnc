@@ -3,7 +3,7 @@ Machine learning with SPNC resevoirs
 
 Local Dependancies
 ------------------
-machine_learning_library  : v0.1.2
+machine_learning_library  : v0.1.4.dev
     This repository will need to be on your path in order to work.
     This is achieved with repo_tools module and a path find function
     Add to the searchpath and repos tuples if required
@@ -90,7 +90,7 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
 
     snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
     net = linear(Nin, Nout, bias = bias)
-    
+
     fixed_mask = kwargs.get('fixed_mask', False)
     if fixed_mask==True:
         print("Deterministic mask will be used")
@@ -101,7 +101,7 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
         else:
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
-            
+
 
 
     # Training
@@ -125,11 +125,11 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
     plt.plot(y_test, pred, 'o')
     plt.show()
-    
+
     return_outputs = kwargs.get('return_outputs', False)
     if return_outputs:
         return(y_test,pred)
-    
+
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
@@ -201,12 +201,12 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
 
 
     # Pre-processing
-    from audio_preprocess import mfcc
-    pre_process = mfcc
-    
+    from audio_preprocess import mfcc_func
+    pre_process = mfcc_func
+
     nf = kwargs.get('nfft', 2048)
     x_train = pre_process(train_signal, train_rate, nfft=nf)
-    
+
     print(x_train[0].shape)
 
     #Normalise the input into the range 0 - 1
@@ -219,7 +219,7 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
     SNR = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
-    
+
     fixed_mask = kwargs.get('fixed_mask', False)
     if fixed_mask:
         print("Deterministic mask will be used")
@@ -296,7 +296,7 @@ def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
 
     plt.imshow(net.W)
     plt.show()
-    
+
     return_accuracy = kwargs.get('return_accuracy', False)
     if return_accuracy:
         return(Ncorrect/len(S_test))
