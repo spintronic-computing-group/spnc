@@ -41,7 +41,7 @@ phi = 45
 beta_prime = 10
 spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 
-f0 = 1e10
+f0 = 1.4e9
 
 # %%
 spn.k_s = 1
@@ -64,9 +64,74 @@ plt.ylabel(r'$m(t)$')
 plt.xlabel("Time (ns)")
 plt.show()
 
-
 # %% [markdown]
 # Now let's use a random signal as input.
+
+# %%
+h = 0.4
+theta_H = 90
+phi = 45
+beta_prime = 10
+spn = SPN.SP_Network(h,theta_H,0,phi,beta_prime)
+f0 = 1.4e9
+T = 1./(spn.get_omega_prime()*f0)
+t_step = T/50
+time = np.linspace(0,20*T,1000)
+m_t = []
+p1_t = []
+p2_t = []
+t1_t = []
+t2_t = []
+
+k_s_list = [0]*500+[1]*500
+k_s_last = 0
+for i in range(len(k_s_list)):
+    k_s_new = k_s_list[i]
+    spn.k_s = k_s_new
+    if k_s_new!=k_s_last:
+        SPN.calculate_energy_barriers(spn)
+    spn.evolve(f0,t_step)
+    m_t.append(spn.get_m())
+    p1_t.append(spn.p1)
+    p2_t.append(spn.p2)
+    t1_t.append(spn.theta_1)
+    t2_t.append(spn.theta_2)
+
+# %%
+plt.figure(figsize=(14,8),dpi=200)
+plt.subplot(221)
+plt.plot(time*1e9,k_s_list,color="k")
+plt.grid(True)
+plt.ylabel(r'$k_\sigma(t)$',fontsize=14)
+plt.xticks(np.linspace(0,250,6),[])
+plt.yticks(fontsize=14)
+plt.subplot(222)
+plt.plot(time*1e9,t1_t,color="green",linestyle='--',label=r'$\theta_1(t)$')
+plt.plot(time*1e9,t2_t,color="red",linestyle='--',label=r'$\theta_2(t)$')
+plt.grid(True)
+plt.legend(loc="best",fontsize=14)
+plt.ylabel(r'$\theta(t)$'+" (°)",fontsize=14)
+plt.xticks(np.linspace(0,250,6),[])
+plt.yticks(fontsize=14)
+plt.subplot(223)
+plt.plot(time*1e9,p1_t,color="green",label=r'$p_1(t)$')
+plt.plot(time*1e9,p2_t,color="red",label=r'$p_2(t)$')
+plt.grid(True)
+plt.legend(loc="best",fontsize=14)
+plt.ylabel(r'$p(t)$',fontsize=14)
+#plt.xticks(np.linspace(0,250,6),[])
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+plt.xlabel("Time (ns)",fontsize=14)
+plt.subplot(224)
+plt.plot(time*1e9,m_t,color="k")
+plt.grid(True)
+plt.ylabel(r'$m(t)$',fontsize=14)
+plt.xlabel("Time (ns)",fontsize=14)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+plt.show()
+
 
 # %%
 def rnd_signal(n):
@@ -81,13 +146,15 @@ spn = SPN.SP_Network(h,theta_H,k_s_0,phi,beta_prime)
 SPN.calculate_energy_barriers(spn)
 T = 1./(spn.get_omega_prime()*f0)
 
-n = 3 #Number of inputs
+n = 6 #Number of inputs
 N = 1000 #Number of steps per input
-theta = 5*T #Duration of each input
-t_step = theta/N #We take a t_step 100 times smaller than theta
-#signal = rnd_signal(n) #Input signal
-signal=[-1,1,-1]
-time_signal = np.arange(n)*theta
+#theta = 5*T #Duration of each input
+theta = 200e-9/3
+t_step = theta/N #We take a t_step 1000 times smaller than theta
+mask = rnd_signal(int(n/2))
+signal = (0.8*np.array(mask)).tolist()+(0.5*np.array(mask)).tolist()+[0] #Input signal
+#signal=[-1,1,-1]
+time_signal = np.arange(n+1)*theta
 time = np.linspace(0,n*theta,n*N)
 
 m_t = []
@@ -101,14 +168,20 @@ for i in range(n):
         m_t.append(spn.get_m())
 
 # %%
-plt.figure(figsize=(10,6))
-plt.plot(time_signal*1e9,signal,'b-',drawstyle='steps-post',label="Input signal")
-plt.plot(time[:2000]*1e9,m_t[:2000],'r-',label="Output")
+plt.figure(figsize=(8,6),dpi=200)
+plt.plot([0,200,400],[signal[0],signal[3],0],'k--',drawstyle='steps-post',linewidth=1,label=r'$u_k$')
+plt.plot(time_signal*1e9,signal,'g-',drawstyle='steps-post',label=r'$J(t)$')
+plt.plot(time[:n*N]*1e9,m_t[:n*N],'r-',label=r'$m(t)$')
 plt.grid(True)
-plt.legend(loc="best")
-plt.title("Response to random input with "+r'$\theta=T$')
-plt.ylabel(r'$k_\sigma(t) ; m(t)$')
-plt.xlabel("Time (ns)")
+plt.legend(loc="best",fontsize=14)
+plt.ylabel(r'$J(t)$'+" ; "+r'$m(t)$',fontsize=14)
+plt.xlabel("Time (ns)",fontsize=14)
+#plt.xticks(fontsize=14)
+plt.xticks(np.linspace(0,400,7),[0,r'$t_{1,0}$',r'$t_{2,0}$',r'$t_{3,0}$',r'$t_{1,1}$',r'$t_{2,1}$',r'$t_{3,1}$'],fontsize=14)
+plt.yticks(fontsize=14)
+plt.xlim(0,time[-1]*1e9)
+plt.vlines([200],-1,1,linestyle='--')
+plt.ylim(-.95,.95)
 plt.show()
 plt.show()
 
@@ -494,7 +567,7 @@ class Single_Node_Reservoir_NARMA10:
 # ### The task : NARMA10
 
 # %%
-Ntrain = 500
+Ntrain = 21
 (u,y) = NARMA10(Ntrain)
 
 net = Single_Node_Reservoir_NARMA10(40,1e-2,8e-2,0.26)
@@ -502,11 +575,16 @@ time_u = net.get_time_list_u(u)
 time_y = net.get_time_list_y(y)
 
 # %%
-plt.figure(figsize=(10,6))
-plt.plot(time_u[-100:],u[-100:],drawstyle='steps-post',label="Input")
-plt.plot(time_y[-100:],y[-100:],drawstyle='steps-post',label="Desired output")
-plt.xlabel("Time (ns)")
-plt.legend(loc="best")
+plt.figure(figsize=(10,6),dpi=200)
+plt.bar(np.arange(0,len(u[50:]))+50,u[50:],width=0.1,color="green")
+plt.plot(np.arange(0,len(u[50:]))+50,u[50:],label="Input "+r'$u_k$',color="green",marker='o',linestyle='')
+plt.plot(np.arange(0,len(y))+50,y,label="Target output "+r'$\tilde{y}_k$',color="red",marker='o',linestyle='-')
+#plt.plot(y,drawstyle='steps-post',label="Target output "+r'$\tilde{y}_k$',color="red",marker='s')
+plt.xlabel(r'$k$',fontsize=14)
+plt.xticks(np.arange(0,len(y),5)+50,fontsize=14)
+plt.xlim(49.5,70.5)
+plt.yticks(fontsize=14)
+plt.legend(loc="best",fontsize=14)
 plt.show()
 
 # %% [markdown]

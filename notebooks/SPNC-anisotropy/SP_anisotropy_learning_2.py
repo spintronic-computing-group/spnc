@@ -16,17 +16,19 @@
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 from scipy import constants
 import random as rnd
+from matplotlib import font_manager
 
 from mpl_toolkits.mplot3d import Axes3D
 import SP_anisotropy_class as SPN
 
 #3D plotting
-from matplotlib import cm
+from matplotlib import cm, colors
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-%matplotlib notebook
+%matplotlib inline
 
 # %%
 #Ignore the first 50 elements of the output
@@ -927,7 +929,7 @@ plt.ylabel("NRMSE (test)")
 plt.show()
 
 # %%
-spn = SPN.SP_Network(h,theta_H,k_s_0,phi,40)
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,20)
 f_m = spn.get_f_m_eq()
 dx = 5e-2
 fp0 = (f_m(dx/2)-f_m(-dx/2))/(dx)
@@ -941,19 +943,34 @@ Nvalid = 1000
 (u,y) = NARMA10(Ntrain)
 (u_valid,y_valid) = NARMA10(Nvalid)
 
-net = Single_Node_Reservoir_NARMA10(1600,1e-1,7e-2,0.28)
-S = net.gen_signal_fast_delayed_feedback(u, 3)
-S_valid = net.gen_signal_fast_delayed_feedback(u_valid, 3)
+net = Single_Node_Reservoir_NARMA10(400,1e-1,0.027,0.132, beta_prime = 20)
+S = net.gen_signal_fast_delayed_feedback(u, 1)
+S_valid = net.gen_signal_fast_delayed_feedback(u_valid, 1)
 
 net.train(S,y,S_valid,y_valid)
 
 y_pred_train = net.predict(S)
 y_pred_valid = net.predict(S_valid)
 
-Ntest = 500
+Ntest = 1000
 (u_test,y_test) = NARMA10(Ntest)
-S_test = net.gen_signal_fast_delayed_feedback(u_test,3)
+S_test = net.gen_signal_fast_delayed_feedback(u_test,1)
 y_pred_test = net.predict(S_test)
+
+# %%
+print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
+plt.figure(figsize=(6,6))
+nbins = int(2*np.sqrt(Ntest))
+H, xedges, yedges  = np.histogram2d(y_test,y_pred_test,bins = nbins,range=[[0, 1], [0, 1]])
+H = H.T
+plt.imshow(H,origin='low',cmap='inferno')
+plt.xlabel("Target Output")
+plt.ylabel("Reservoir's Output")
+plt.xticks([],[''])
+plt.yticks([],[''])
+plt.xlim(0,0.9*nbins)
+plt.ylim(0,0.9*nbins)
+plt.show()
 
 # %%
 print("NRMSE (test) = "+str(NRMSE_list(y_test,y_pred_test)))
@@ -996,8 +1013,8 @@ plt.plot(beta_prime_list,T_list)
 plt.show()
 
 # %%
-beta_prime_list=np.linspace(20,50,20)
-k_s_list = np.linspace(-.5,.5,20)
+beta_prime_list=np.linspace(20,50,4)
+k_s_list = np.linspace(-.5,.5,200)
 T = []
 
 for bp in beta_prime_list:
@@ -1021,6 +1038,45 @@ plt.yticks([-0.5,0,0.5])
 plt.xticks([20,30,40,50])
 ax.set_zlabel(r'$log_{10}(T)$')
 ax.zaxis.set_rotate_label(False) 
+plt.show()
+
+# %%
+X, Y = np.meshgrid(k_s_list,beta_prime_list)
+fig, ax = plt.subplots(figsize=(7,6),dpi=200)
+#cs = ax.contourf(X, Y, T, locator=ticker.LogLocator(), cmap=cm.plasma)
+lev_exp = np.arange(np.floor(np.log10(np.min(T))),np.ceil(np.log10(np.max(T))),.05)
+levs = np.power(10, lev_exp)
+cs = ax.contourf(X, Y, T, levs, norm=colors.LogNorm(), cmap=cm.bwr)
+cbar = fig.colorbar(cs,ticks=[10**(-i) for i in range(8,0,-1)],label='Internal Timescale (in sec)')
+cbar.ax.tick_params(labelsize=14)
+ax = cbar.ax
+text = ax.yaxis.label
+font = font_manager.FontProperties(size=14)
+text.set_font_properties(font)
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel(r'$\beta^\prime$',rotation='horizontal',fontsize=14)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+plt.show()
+
+# %%
+spn = SPN.SP_Network(h,theta_H,k_s_0,phi,20)
+SPN.calculate_energy_barriers(spn)
+print(1./(spn.get_omega_prime()*f0))
+
+# %%
+plt.figure(figsize=(8,6),dpi=200)
+plt.grid(True)
+plt.yscale("log")
+colors = ["darkturquoise","green","orange","red"]
+for i in range(len(beta_prime_list)):
+    plt.plot(k_s_list,T[i],label = r'$\beta^\prime=$'+str(int(beta_prime_list[i])),color=colors[3-i])
+plt.legend(loc='best',fontsize=14)
+plt.xlabel(r'$k_\sigma$',fontsize=14)
+plt.ylabel("Internal Timescale (in sec)",fontsize=14)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+plt.xlim(-.5,.5)
 plt.show()
 
 # %%

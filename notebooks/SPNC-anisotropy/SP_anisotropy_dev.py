@@ -40,7 +40,7 @@ K = 1
 V = 1
 mu_0 = 1
 M_S = 2
-H = 0.4
+H = 0.
 H_K = 2*K/(mu_0*M_S)
 
 
@@ -55,7 +55,7 @@ def energy(theta,theta_H):
 
 # %% jupyter={"outputs_hidden": false}
 theta = np.linspace(-180,180,100)
-theta_H = 30
+theta_H = 90
 E = energy(theta,theta_H)
 
 # %% jupyter={"outputs_hidden": false}
@@ -664,7 +664,7 @@ mu_0 = 1
 M_S = 2
 H = 0.4 #H<0.5 so that there should always be two minima
 H_K = 2*K/(mu_0*M_S)
-phi = 22.5 #intermediate between 0 and 90
+phi = 45 #intermediate between 0 and 90
 theta_H = 90 #Non-linearities are the greatest when theta_H=90
 
 
@@ -702,20 +702,49 @@ def energy_ani(theta,K_sigma):
 
 
 # %% jupyter={"outputs_hidden": true}
-theta = np.linspace(-180,180,100)
+theta = np.linspace(-90,270,200)
 K_sigma = 1
 E = energy_ani(theta,K_sigma)
 
 # %% jupyter={"outputs_hidden": false}
-plt.figure(figsize = (10,6))
-plt.plot(theta, E, label = r'$K_\sigma = $'+str(K_sigma))
-plt.grid(True)
-plt.xlim(-180,180)
-plt.legend(loc="best")
-plt.xlabel(r'$\theta$')
-plt.ylabel('Energy')
-plt.title("Energy landscape")
+plt.figure(figsize = (8,6), dpi=200)
+plt.plot(theta, E, label = r'$K_\sigma = $'+str(K_sigma),color="blue")
+#plt.grid(True)
+plt.xlim(-90,270)
+#plt.legend(loc="best")
+plt.xlabel(r'$\theta$'+" in °",fontsize=14)
+plt.ylabel("Normalized Energy",fontsize=14)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+#plt.title("Energy landscape")
 plt.show()
+
+# %%
+theta = np.linspace(-90,270,200)
+K_sigma = 0
+H = 0.4
+E_w_h = energy_ani(theta,K_sigma)
+H = 0
+E_wo_h = energy_ani(theta,K_sigma)
+
+# %%
+plt.figure(figsize = (8,6), dpi=200)
+plt.plot(theta, E_w_h, label = r'$h=0.4$',color="k")
+plt.plot(theta, E_wo_h, 'k--', label = r'$h=0$')
+#plt.grid(True)
+plt.xlim(-90,270)
+plt.legend(loc="best",fontsize=14)
+plt.xlabel(r'$\theta$'+" in °",fontsize=14)
+plt.ylabel("Normalized Energy",fontsize=14)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+#plt.title("Energy landscape")
+plt.show()
+
+# %%
+
+# %%
+plt.polar(theta*np.pi/180,E)
 
 
 # %% [markdown]
