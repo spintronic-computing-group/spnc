@@ -33,7 +33,7 @@ searchpaths = (Path.home() / 'repos', )
 #tuple of repos
 repos = ('machine_learning_library',)
 
-# local imports    
+# local imports
 from SPNC import spnc
 
 
@@ -54,10 +54,12 @@ basetimeerror = np.sqrt(2*(6**2))
 baserate = 1/basetime
 baserateerror = basetimeerror/(np.square(basetime))
 
+print('Mumax switching time vs k kapplied:')
 plt.errorbar(kapplied,tauup,yerr=tauuperror,label = 'upwards')
 plt.errorbar(kapplied,taudown,yerr=taudownerror,label = 'downwards')
 plt.show()
 
+print('Mumax rates vs k kapplied:')
 plt.errorbar(kapplied,1/tauup,yerr=tauuperror/(np.square(tauup)), label = 'upwards')
 plt.errorbar(kapplied,1/taudown,yerr=taudownerror/(np.square(taudown)),label = 'downwards')
 plt.show()
@@ -79,7 +81,7 @@ oms = res.f_om_tot(ks)
 om21s = p1s*oms
 om12s = oms - om21s
 
-
+print('analytical and mumax rates vs k applied with base rate matched:')
 fsz = 10
 figurewidth = 3.37 #inches (single column)
 figureaspect = 1
@@ -125,17 +127,17 @@ Magnetisation plots
 
 def getmags(ks,beta):
     res = spnc.spnc_anisotropy(0.4, 90, 0, 45, beta,f0=1.4e9)
-    
-    
+
+
     p1s = res.f_p1_eq(ks)
     p2s = 1 - p1s
     #oms = res.f_om_tot(ks)
-    
+
     #om21s = p1s*oms
     #om12s = oms - om21s
-    
+
     #equibs = (om21s-om12s)/oms
-    
+
     mags = np.cos(res.f_theta_1(ks)*np.pi/180)*p1s + np.cos(res.f_theta_2(ks)*np.pi/180)*p2s
     return mags
 
@@ -171,12 +173,12 @@ Timescale plots
 
 def getoms(ks,beta,f0):
     res = spnc.spnc_anisotropy(0.4, 90, 0, 45, beta,f0=f0)
-    
-    
+
+
     p1s = res.f_p1_eq(ks)
     p2s = 1 - p1s
     oms = res.f_om_tot(ks)*f0
-    
+
     return oms
 
 betas = np.array([10,20,30,50])
@@ -299,11 +301,11 @@ plt.show()
 
 # Reservoir properties for anisotropy axis plot
 def getanisotropy(k_s,  h = 0.4, theta_H = 90, phi = 45, beta_prime = 10):
-   
+
     spn = spnc.spnc_anisotropy(h, theta_H, k_s, phi, beta_prime, compute_interpolation=False)
     k_tilde = spnc.k_tilde(spn)
     psi = spnc.psi(spn)
-    
+
     return k_tilde, psi
 
 k_s = np.linspace(-5,5,100)
@@ -311,7 +313,7 @@ k_tildes = np.zeros(np.size(k_s))
 psis = np.zeros(np.size(k_s))
 for idx, k in enumerate(k_s):
     k_tildes[idx], psis[idx] = getanisotropy(k)
-    
+
 fsz = 10
 figurewidth = 3.37 #inches (single column)
 figureaspect = 1
@@ -344,7 +346,7 @@ plt.show()
 def get_energy(theta, k_s,  h = 0.4, theta_H = 90, phi = 45, beta_prime = 10):
     spn = spnc.spnc_anisotropy(h, theta_H, k_s, phi, beta_prime, compute_interpolation=False)
     return spnc.energy(spn,theta)
-    
+
 k = 0.2
 lower = 90
 upper = 180 + (180-lower)
@@ -369,13 +371,3 @@ plt.yticks(fontsize=fsz)
 plt.legend(fontsize=fsz*0.7)
 plt.savefig('output/'+'energy_plots.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
-
-
-
-
-
-
-
-
-
-
