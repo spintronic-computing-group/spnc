@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Superparamgnetic neuromorphic computing module
 
@@ -125,7 +126,7 @@ def rate(f0,ebarrier,temperature):
 
     return w
 
-############
+# ###########
 # SP Network with a control on anisotropy
 """ Externals function definitions for the spnc_anisotropy class
 
