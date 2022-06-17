@@ -50,11 +50,11 @@ NARMA10 response
 '''
 
 # NARMA parameters
-Ntrain = 200
-Ntest = 100
+Ntrain = 100
+Ntest = 50
 
 # Net Parameters
-Nvirt = 40
+Nvirt = 5
 m0 = 0.003
 bias = True
 
@@ -100,7 +100,6 @@ Nout = len(np.unique(y_train))
 print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
 snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
-snrhigher = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transformhigher)
 net = linear(Nin, Nout, bias = bias)
 
 # Training
@@ -110,26 +109,37 @@ seed_training = 1234
 RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
-S_test, J_test = snrhigher.transform(x_test,params)
-S_testlow, J_testlow = snr.transform(x_test,params)
+S_test, J_test = snr.transform(x_test,params)
+#test with the other transform...
+snr.res = transformhigher
+S_test_higher, J_test_higher = snr.transform(x_test,params)
+
 
 print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
-predlow = net.forward(S_testlow)
+pred_higher = net.forward(S_test_higher)
 plt.plot(pred)
-plt.plot(predlow)
+plt.plot(pred_higher)
 plt.show()
 np.size(pred)
 error = MSE(pred[spacer:], y_test[spacer:])
 predNRMSE = NRMSE(pred[spacer:], y_test[spacer:])
-print(error, predNRMSE)
+print('Error and NRMSE for normal testing', error, predNRMSE)
+
+error_higher = MSE(pred_higher[spacer:], y_test[spacer:])
+predNRMSE_higher = NRMSE(pred_higher[spacer:], y_test[spacer:])
+print('Error and NRMSE for higher temp testing', error_higher, predNRMSE_higher)
 
 plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
 plt.plot(y_test[spacer:],pred[spacer:],'o')
 plt.show()
 
+plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
+plt.plot(y_test[spacer:],pred_higher[spacer:],'o')
+plt.show()
+
 #Save data for plotting elsewhere
-np.savez('data/NARMA10-temp.npz',
+np.savez('plotting/APL_2021/data/NARMA10-temp.npz',
          Ntrain=Ntrain,
          Ntest=Ntest,
          Nvirt = Nvirt,
