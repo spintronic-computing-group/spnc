@@ -21,7 +21,7 @@ from pathlib import Path
 # Sort out relative paths
 import sys
 from pathlib import Path
-repodir = Path('../../..').resolve()
+repodir = Path('..').resolve()
 try:
     sys.path.index(str(repodir))
 except ValueError:
@@ -35,6 +35,8 @@ repos = ('machine_learning_library',)
 
 # local imports
 from SPNC import spnc
+
+outputdir = 'plotting/APL_2021/output/'
 
 
 
@@ -101,7 +103,7 @@ plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
 #plt.xlim(0,2000)
 #plt.ylim(0,1)
-plt.savefig('output/'+'rates.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'rates.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 
@@ -163,7 +165,7 @@ plt.xticks(fontsize=fsz)
 plt.yticks(fontsize=fsz)
 #plt.xlim(0,2000)
 #plt.ylim(0,1)
-plt.savefig('output/'+'eq_mags.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'eq_mags.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 
@@ -207,7 +209,7 @@ plt.yticks(fontsize=fsz)
 plt.yscale('log')
 #plt.xlim(0,2000)
 #plt.ylim(0,1)
-plt.savefig('output/'+'timescales.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'timescales.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 for beta in betas:
@@ -248,7 +250,7 @@ plt.yticks(fontsize=fsz)
 plt.yscale('log')
 #plt.xlim(0,2000)
 #plt.ylim(0,1)
-plt.savefig('output/'+'base_timescale.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'base_timescale.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 '''
@@ -295,7 +297,7 @@ plt.legend(fontsize=fsz*0.8)
 #plt.yscale('log')
 #plt.xlim(0,2000)
 #plt.ylim(0,1)
-plt.savefig('output/'+'reservoir_response.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'reservoir_response.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 
@@ -324,7 +326,7 @@ plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
 plt.ylabel(r'$\psi$ / deg',fontsize=fsz)
 plt.yticks(fontsize=fsz)
 #plt.legend(fontsize=fsz*0.9)
-plt.savefig('output/'+'ea-rotation.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'ea-rotation.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 fsz = 10
@@ -337,7 +339,7 @@ plt.xlabel(r'$K_{\sigma} / K$',fontsize=fsz)
 plt.ylabel(r'$\tilde{k}$ ',fontsize=fsz)
 plt.yticks(fontsize=fsz)
 #plt.legend(fontsize=fsz*0.9)
-plt.savefig('output/'+'ea-magnitude.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'ea-magnitude.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()
 
 
@@ -369,5 +371,5 @@ plt.xlim([-lower, upper,])
 plt.xticks(np.arange(-lower+30,upper,60), fontsize=fsz)
 plt.yticks(fontsize=fsz)
 plt.legend(fontsize=fsz*0.7)
-plt.savefig('output/'+'energy_plots.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
+plt.savefig(outputdir+'energy_plots.pdf',format='pdf',transparent=True,dpi=1200,bbox_inches='tight')
 plt.show()

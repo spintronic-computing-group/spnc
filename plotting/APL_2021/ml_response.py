@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 # Sort out relative paths
 import sys
 from pathlib import Path
-repodir = Path('../../..').resolve()
+repodir = Path('..').resolve()
 try:
     sys.path.index(str(repodir))
 except ValueError:
