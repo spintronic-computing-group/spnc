@@ -17,6 +17,11 @@ This is code for the SPNC project!
 - run: `conda env export -f [environment].yml  --from-history` to update the environment file. ***If this does not work, you may need to update te yaml file manually.***
 - If pulling an updated .yml file, then run: `conda env update -f [environment].yml --prune` to update and remove old dependencies
 
+## Running the code
+- All code should be run from the root directory of the project in order to properly resolve paths e.g.
+    ``` python plotting/APL_2021/reservoir_response.py ```
+- This might need updating in legacy files (before this snippet was added in GIT)
+
 ## Jupyter notebooks
 - jupytext has been used to store python notebooks as text files for better version control.
 - Matching .ipynb files may exist and if so should update the text files when saved.
