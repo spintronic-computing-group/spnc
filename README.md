@@ -20,7 +20,7 @@ This is code for the SPNC project!
 
 ## Precommit git hooks
 - This repo uses git hooks via pre-commit to enable common practice across users/development environments
-- To use these pre commits, they need to be installed. Activate the env and run: ```pre-commit install```. You'll need to do this on each dev machine.
+- To use these pre commits, they need to be installed. Activate the env and run: ```pre-commit install```. You'll need to do this on each dev machine. They are installed based on commands in ".pre-commit-config.yaml"
 - hooks are only run on commited files. To run on all files use ```pre-commit run --all-files```
 
 
