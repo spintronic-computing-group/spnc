@@ -32,13 +32,11 @@ This is code for the SPNC project!
 ## Jupyter notebooks
 - jupytext has been used to store python notebooks as text files for better version control.
 - Matching .ipynb files may exist and if so should update the text files when saved or committed
-- If .ipynb files don't exist (not stored in git) you can rebuild each of the notebooks using the command: `jupytext --to notebook [notebook].[extension]`
-- Then, updating the notebooks should update the text files
+- If .ipynb files don't exist (not stored in git) you can rebuild each of the notebooks using the command: `jupytext --to notebook [notebook].[extension]` NB: This is good if you don't want to version the notebook. Consider adding the created .ipynb file to .gitignore so as to not accidently commit it. If you do want to version the notebook along with the text file, you should use the sync commands like those below. Additionaly, you could use the sync commands if you don't want to version, but you want to make changes in the notebook and sync them back to the text file (or use VScode as below...).
 - If only the notebook files exist, then *probably* jupytext wasn't used for them.
 - If you want to link a new notebook to a text file (or visa versa) you will need to make this happen...
 - In jupyter this is avaliable in drop down menus, otherwise this can be done from the command line...
-- Running ```jupytext --to py:percent [notebook].ipynb``` will convert the notebook to a linked .py file in the double percent format.
-- Likewise ```jupytext --to markdown [notebook].ipynb``` will produce a linked markdown file
+- Running (in activated env) ``` jupytext --set-formats [formats] --sync [notebook].ipynb ``` where ```[formats]``` could be, for example, ``` ipynb,py:percent ``` or ``` ipynb,md ``` will create a new text file and link it the notebook. Similar commands can be used to link in the other direction.
 - After this the git hooks (see section on precommit git hooks) will ensure the linked files are synced based on timestamp (Jupyter Lab will handle this as well on save if used)
 - .ipynb versions should only be versioned in git if the outputs want to be versioned (e.g. code acting as documentation or discovery). Use the .gitignore file to exclude particular .ipynb if they're used for viewing, but not versioned (i.e. outputs reproduced every time). NB: If you do this, then updates to a notebook version of the file **will not be synced back by pre-commit**.
 
