@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # %% [markdown]
 # # Superparamagnetic Network - Machine Learning Testing
 
