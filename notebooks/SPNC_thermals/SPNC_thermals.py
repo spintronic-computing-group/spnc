@@ -73,6 +73,10 @@ from sklearn.metrics import classification_report
 NARMA10 response
 '''
 
+figurewidth = 3.37*2.5
+figureaspect = 2/3
+figureheight = figurewidth*figureaspect
+
 # NARMA parameters
 Ntrain = 100
 Ntest = 50
@@ -83,26 +87,25 @@ m0 = 0.003
 bias = True
 
 # Misc parameters
-seed_NARMA = None
+seed_NARMA = 1234
 fixed_mask = False
 spacer = 5
-
-# Resevoir parameters
-h = 0.4
-theta_H = 90
-k_s_0 = 0
-phi = 45
-beta_prime = 20
 
 theta = 0.4
 gamma = 0.132
 delay_feedback = 0
 params = {'theta': theta, 'gamma' : gamma,'delay_feedback' : delay_feedback,'Nvirt' : Nvirt}
-spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transform = spnres.gen_signal_fast_delayed_feedback
 
-spnreshigher = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transformhigher = spnreshigher.gen_signal_fast_delayed_feedback
+
+def get_res(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
+    transform = res.gen_signal_fast_delayed_feedback
+
+    return res, transform
+
+base_beta_prime = 20
+spnres, transform = get_res(beta_prime=base_beta_prime)
+spnreshigher, transformhigher = get_res(beta_prime=base_beta_prime)
 
 # %% [markdown]
 # Data and net setup
@@ -111,6 +114,27 @@ transformhigher = spnreshigher.gen_signal_fast_delayed_feedback
 # Lets get into it
 print("seed NARMA: "+str(seed_NARMA))
 u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+
+fig, ax = plt.subplots(1,figsize=[figurewidth,figureheight])
+ax.plot(u)
+ax.plot(d)
+ax.legend(['Narma10 Input','Narma10 Output'])
+ax.set_title('Narma10 data')
+
+transform_1 = get_res(beta_prime=base_beta_prime)[1]
+transform_2 = get_res(beta_prime=base_beta_prime)[1]
+
+transformed_1 = transform_1(u,params)
+transformed_2 = transform_2(u,params)
+
+fig,ax = plt.subplots(2,figsize=[figurewidth,figureheight])
+ax[0].plot(transformed_1)
+ax[0].plot(transformed_2,linestyle='dashed')
+ax[0].set_title('Transformed input (mask then res)')
+ax[0].legend(['Transformed data 1','Transformed data 2'])
+ax[0].set_ylabel('Output')
+ax[1].plot(transformed_1-transformed_2)
+ax[1].set_ylabel('Difference')
 
 x_train = u[:Ntrain]
 y_train = d[:Ntrain]
@@ -168,3 +192,5 @@ plt.show()
 plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
 plt.plot(y_test[spacer:],pred_higher[spacer:],'o')
 plt.show()
+
+# %%
