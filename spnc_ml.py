@@ -26,8 +26,10 @@ from matplotlib import pyplot as plt
 
 # local repos and search paths. Each repo will be searched on every path
 
-#tuple of Path variables
-searchpaths = (Path.home() / 'repos', Path.home() / 'Desktop' / 'Stage_3A' / 'ML_library')
+#tuple of Path variables 
+searchpaths = (
+    Path(r'C:\\icloud\\iCloudDrive\\Desktop\\Code')  # 添加你本地的路径
+)
 #tuple of repos
 repos = ('machine_learning_library',)
 
