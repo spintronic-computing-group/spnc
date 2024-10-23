@@ -28,7 +28,8 @@ from matplotlib import pyplot as plt
 
 #tuple of Path variables 
 searchpaths = (
-    Path(r'C:\\icloud\\iCloudDrive\\Desktop\\Code')  # 添加你本地的路径
+    Path(r'C:\\icloud\\iCloudDrive\\Desktop\\Code'),  
+    
 )
 #tuple of repos
 repos = ('machine_learning_library',)
@@ -116,7 +117,7 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     # Testing
     S_test, J_test = snr.transform(x_test,params)
 
-    spacer = kwargs.get('spacer_NRMSE', 0)
+    spacer = kwargs.get('spacer_NRMSE', 0) # avoid the problem of dividing by zero
     print("Spacer NRMSE:"+str(spacer))
     pred = net.forward(S_test)
     np.size(pred)
