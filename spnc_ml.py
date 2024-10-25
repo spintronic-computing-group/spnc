@@ -39,7 +39,7 @@ repos = ('machine_learning_library',)
 from deterministic_mask import fixed_seed_mask, max_sequences_mask
 import repo_tools
 repo_tools.repos_path_finder(searchpaths, repos)
-from single_node_res import single_node_reservoir
+from single_node_res import single_node_reservoir, heterogenous_reservoir
 import ridge_regression as RR
 from linear_layer import *
 from mask import binary_mask
@@ -136,6 +136,97 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
+    
+
+# create a new function for the narma10 task that use heterogenous reservoirs
+def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,m0, bias,
+                       transform,params,*args,**kwargs):
+    """
+    perform the NARMA10 task with a given heterogenous resevoir
+
+    Parameters
+    ----------
+    Ntrain : int
+        Number of samples to train
+    Ntest : int
+        Number of sampels to test
+    Nvirt : int
+        Number of virtual nodes for the heterogenous resevoir
+    m0 : float
+        input scaling, no scaling for value of 1
+    bias : bool
+        True - use bias, False - don't
+    transform : function or class method
+        transforms a 1D numpy array through the heterogenous resevoir
+    params : dict
+        parameters for the heterogenous resevoir
+    """
+
+    seed_NARMA = kwargs.get('seed_NARMA', None)
+    print("seed NARMA: "+str(seed_NARMA))
+    u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+
+    x_train = u[:Ntrain]
+    y_train = d[:Ntrain]
+    x_test = u[Ntrain:]
+    y_test = d[Ntrain:]
+
+    print("Samples for training: ", len(x_train))
+    print("Samples for test: ", len(x_test))
+
+    # Net setup
+    Nin = x_train[0].shape[-1]
+    Nout = len(np.unique(y_train))
+
+    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+    # create a heterogenous reservoir
+    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    net = linear(Nin, Nout, bias = bias)
+
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask==True:
+        print("Deterministic mask will be used")
+        seed_mask = kwargs.get('seed_mask', 1234)
+        if seed_mask>=0:
+            print(seed_mask)
+            snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        else:
+            print("Max_sequences mask will be used")
+            snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+
+
+    # Training
+    S_train, J_train = snr.transform(x_train,params)
+    np.size(S_train)
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
+
+
+    # Testing
+    S_test, J_test = snr.transform(x_test,params)
+
+    spacer = kwargs.get('spacer_NRMSE', 0) # avoid the problem of dividing by zero
+    print("Spacer NRMSE:"+str(spacer))
+    pred = net.forward(S_test)
+    np.size(pred)
+    error = MSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+    print(error, predNRMSE)
+
+    plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+    plt.plot(y_test, pred, 'o')
+    plt.show()
+
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
+
+    return_NRMSE = kwargs.get('return_NRMSE', False)
+    if return_NRMSE:
+        return(predNRMSE)
+
 
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     """
