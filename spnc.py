@@ -460,3 +460,43 @@ class spnc_anisotropy:
             mag[idx] = f(j + gamma*mag[(idx-Nvirt-delay_fb)%N])
 
         return mag
+
+
+    # add some of functions for heterogenous reservoirs
+    '''
+    beta_ref: the beta value at reference(training) temperature
+
+    omega_ref: the omega value at reference(training) temperature
+    '''
+    def get_omega_ref(self, beta_ref):
+        ref = spnc_anisotropy(0.4, 90, 0, 45, beta_ref)
+        omega_ref = ref.get_omega_prime()
+
+        return(omega_ref)
+    
+    
+    def gen_signal_fast_delayed_feedback_varing_temp(self, K_s, params, beta_ref,*args,**kwargs):
+        # make sure the observation time is the same at different temperatures
+        omega_ref = self.get_omega_ref(beta_ref)
+        delta = omega_ref / (self.get_omega_prime())
+
+        theta_T = params['theta']
+        self.k_s = 0
+
+        T = 1./(self.get_omega_prime()* delta *self.f0)
+
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            self.evolve_fast(self.f0,theta)
+            mag[idx] = self.get_m_fast()
+
+        return mag
