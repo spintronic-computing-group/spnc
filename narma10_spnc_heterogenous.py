@@ -39,4 +39,4 @@ weights = [0.3,0.4,0.3]  # weights 长度应与 deltabeta_list 匹配
 
 # DO IT
 
-(y_test,y_pred)=ml.spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref, deltabeta_list,h,theta,m0,step,beta_left,beta_right,*weights, bias = bias,params = params,seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+beta_primes_temp, nrmse_temp =ml.spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref, deltabeta_list,h,theta,m0,step,beta_left,beta_right,*weights, bias = bias,params = params,seed_NARMA=1234)
