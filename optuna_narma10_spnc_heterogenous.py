@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from spnc_ml import spnc_narma10_heterogenous
 
-def objective(trial: optuna.Trial, hyperparameter_ranges:  all_pred_and_dtest, all_temp_and_nrmse) -> tuple[float, float]:
+def objective(trial: optuna.Trial, hyperparameter_ranges: dict,temp_params: dict,bias = bias, params = params) -> tuple[float, float]:
 
     # pick up the hyperparameters from the dictionary
 
@@ -45,7 +45,20 @@ def objective(trial: optuna.Trial, hyperparameter_ranges:  all_pred_and_dtest, a
         weights[min_index] = round(weights[min_index] + diff, 3)
     assert np.isclose(sum(weights), 1.0, atol=1e-3)
 
+    # pick up parameters from the dictionary
+
+    beta_prime = temp_params['beta_prime']
+    beta_ref = temp_params['beta_ref']
+    step = temp_params['step']
+    beta_left = temp_params['beta_left']
+    beta_right = temp_params['beta_right']
+
     # run in the range of temperature
 
-    beta_prime, nrmse = spnc_narma10_heterogenous(Ntrain, Ntest, Nvirt, gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0, step, beta_left, beta_right, *weights, bias=bias, params=params, seed_NARMA=1234)
+    beta_prime, nrmse = spnc_narma10_heterogenous(1, 2000, Nvirt, gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0, step, beta_left, beta_right, *weights, bias=bias, params=params, seed_NARMA=1234)
+
+    model_performance = np.mean(nrmse)
+    thermal_stability = np.std(nrmse)
+
+    return float(model_performance), float(thermal_stability)
 
