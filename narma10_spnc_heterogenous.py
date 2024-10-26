@@ -6,6 +6,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+
+from single_node_heterogenous_reservoir import single_node_heterogenous_reservoir
+
 # NARMA parameters
 Ntrain = 2000
 Ntest = 1000
@@ -22,8 +26,25 @@ k_s_0 = 0
 phi = 45
 beta_prime = 20
 params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
-spn = spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transform = spn.gen_signal_fast_delayed_feedback_varing_temp
+
+
+gamma = 0.113
+beta_ref = 20
+deltabeta_list = [0.1, 0.2, 0.3]
+theta = 0.3
+step = 1
+beta_left = 18.9
+beta_right = 21.1
+weights = [0.3,0.4,0.3]  # weights 长度应与 deltabeta_list 匹配
+
+
+print("deltabeta_list:", deltabeta_list, "Type:", type(deltabeta_list))
+
+
 
 # DO IT
-(y_test,y_pred)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transform, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+'''
+adjust the code, here we don't need transform.
+'''
+
+(y_test,y_pred)=ml.spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref, deltabeta_list,h,theta,m0,step,beta_left,beta_right,*weights, bias = bias,params = params,seed_NARMA=1234,fixed_mask=True, return_outputs=True)
