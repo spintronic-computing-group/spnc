@@ -23,6 +23,7 @@ phi = 45
 beta_prime = 20
 params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
 spn = spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
+
 transform = spn.gen_signal_fast_delayed_feedback
 
 # DO IT
