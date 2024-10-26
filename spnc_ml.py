@@ -22,6 +22,8 @@ spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs)
 from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
+from tqdm import tqdm
+from single_node_heterogenous_reservoir import single_node_heterogenous_reservoir
 
 
 # local repos and search paths. Each repo will be searched on every path
@@ -39,7 +41,7 @@ repos = ('machine_learning_library',)
 from deterministic_mask import fixed_seed_mask, max_sequences_mask
 import repo_tools
 repo_tools.repos_path_finder(searchpaths, repos)
-from single_node_res import single_node_reservoir, heterogenous_reservoir
+from single_node_res import single_node_reservoir
 import ridge_regression as RR
 from linear_layer import *
 from mask import binary_mask
@@ -139,8 +141,8 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     
 
 # create a new function for the narma10 task that use heterogenous reservoirs
-def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,m0, bias,
-                       transform,params,*args,**kwargs):
+def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,deltabeta_list,h,theta,m0,step,beta_left,beta_right,*weights,bias
+                       ,params,**kwargs):
     """
     perform the NARMA10 task with a given heterogenous resevoir
 
@@ -160,7 +162,17 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,m0, bias,
         transforms a 1D numpy array through the heterogenous resevoir
     params : dict
         parameters for the heterogenous resevoir
+
+    adjust it by comparing with the wide_temperature_testing.py
     """
+
+    # params = {
+    #     'theta': theta,
+    #     'gamma': gamma,
+    #     'beta_prime': beta_prime,
+    #     'delay_feedback': 0,
+    #     'Nvirt': Nvirt
+    # }
 
     seed_NARMA = kwargs.get('seed_NARMA', None)
     print("seed NARMA: "+str(seed_NARMA))
@@ -178,11 +190,16 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,m0, bias,
     Nin = x_train[0].shape[-1]
     Nout = len(np.unique(y_train))
 
+    # not sure if the shape of input is suitable for the heterogenous resevoir
+
     print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
     # create a heterogenous reservoir
-    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    snr = single_node_heterogenous_reservoir(Nin, Nvirt, Nout,gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0)
+    print('snr_beta_prime:', snr.beta_prime)
+    # print('Mask matrix M_initial:', snr.M.M)
     net = linear(Nin, Nout, bias = bias)
+    # print('net_w_initial',net.W)
 
     fixed_mask = kwargs.get('fixed_mask', False)
     if fixed_mask==True:
@@ -194,30 +211,56 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,m0, bias,
         else:
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
+    # print('Mask matrix M_after:', snr.M.M)
 
+    # save the trained mask matrix
+    trained_mask = snr.M
 
 
     # Training
-    S_train, J_train = snr.transform(x_train,params)
+    S_train, J_train = snr.transform(x_train,params,beta_ref, *weights)
     np.size(S_train)
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
+    # print('net_w_aftertrain',net.W)
+
+    # set the testing temperature range
+    start_beta_prime = beta_prime
+    step_beta_prime = step
+
+    left_sequence = np.arange(start_beta_prime, beta_left, -step_beta_prime)[1:]  
+    right_sequence = np.arange(start_beta_prime, beta_right + step_beta_prime, step_beta_prime) 
+    beta_prime_list = np.sort(np.concatenate((left_sequence, right_sequence)))
+
+    beta_primes_temp = []
+    nrmse_temp = []
 
 
-    # Testing
-    S_test, J_test = snr.transform(x_test,params)
+    # Testing in a wide temperature range
+    for i in tqdm(beta_prime_list, desc="Processing beta_prime"):
+        params['beta_prime'] = i
+        print("beta_prime in single_node_heterogenous_reservoir:", i)
+        snr_test = single_node_heterogenous_reservoir(Nin, Nvirt,Nout, gamma, i, beta_ref, deltabeta_list,h, theta, m0)
+        print('snr_test_beta_prime:', snr_test.beta_prime)
+        snr_test.M = trained_mask
+        # print('Mask matrix M_test:', snr_test.M.M)
+        S_test, J_test = snr_test.transform(x_test,params,beta_ref, *weights)
+        spacer = kwargs.get('spacer_NRMSE', 0) # avoid the problem of dividing by zero
+        print("Spacer NRMSE:"+str(spacer))
+        pred = net.forward(S_test)
+        # print('net_w_test',net.W)
+        np.size(pred)
+        error = MSE(pred, y_test)
+        predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+        print(error, predNRMSE)
 
-    spacer = kwargs.get('spacer_NRMSE', 0) # avoid the problem of dividing by zero
-    print("Spacer NRMSE:"+str(spacer))
-    pred = net.forward(S_test)
-    np.size(pred)
-    error = MSE(pred, y_test)
-    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
-    print(error, predNRMSE)
+        plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+        plt.plot(y_test, pred, 'o')
+        plt.show()
 
-    plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
-    plt.plot(y_test, pred, 'o')
-    plt.show()
+        beta_primes_temp.append(i)
+        nrmse_temp.append(predNRMSE)
+
 
     return_outputs = kwargs.get('return_outputs', False)
     if return_outputs:
