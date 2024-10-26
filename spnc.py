@@ -484,6 +484,7 @@ class spnc_anisotropy:
         self.k_s = 0
 
         T = 1./(self.get_omega_prime()* delta *self.f0)
+        print( 't in test:', T)
 
         gamma = params['gamma']
         delay_fb = params['delay_feedback']
