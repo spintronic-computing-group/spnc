@@ -261,14 +261,15 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
         beta_primes_temp.append(i)
         nrmse_temp.append(predNRMSE)
 
+    return beta_primes_temp, nrmse_temp
 
-    return_outputs = kwargs.get('return_outputs', False)
-    if return_outputs:
-        return(y_test,pred)
+    # return_outputs = kwargs.get('return_outputs', False)
+    # if return_outputs:
+    #     return(y_test,pred)
 
-    return_NRMSE = kwargs.get('return_NRMSE', False)
-    if return_NRMSE:
-        return(predNRMSE)
+    # return_NRMSE = kwargs.get('return_NRMSE', False)
+    # if return_NRMSE:
+    #     return(predNRMSE)
 
 
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
