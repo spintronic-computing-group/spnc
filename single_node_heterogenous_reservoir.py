@@ -45,7 +45,6 @@ class single_node_heterogenous_reservoir:
         self.beta_prime = beta_prime
         self.beta_ref = beta_ref   
         self.M = binary_mask(Nin, Nvirt, m0, dilution, identity)
-        
         self.ravel_order = ravel_order
 
 
