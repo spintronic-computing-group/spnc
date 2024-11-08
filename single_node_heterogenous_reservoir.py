@@ -20,14 +20,6 @@ class binary_mask:
         if identity:
             self.M =np.eye(Nin)
 
-        # # for mask comparison
-        # print('Mask shape: ', self.M)
-
-        # # save mask matrix
-        # save_path = r'C:\icloud\iCloudDrive\Desktop\Code\Uniform-Reservoir\mask_matrix.npy'
-        # np.save(save_path, self.M)
-        # print(f'Mask matrix saved at {save_path}')
-
     def apply(self, x):
         if x.dtype == object:
             J = np.copy(x)
@@ -39,9 +31,10 @@ class binary_mask:
 
 
 class single_node_heterogenous_reservoir:
+
     def __init__(self, Nin, Nvirt, Nout, gamma, beta_prime, beta_ref, delta_betas, h, theta, m0=0.003, dilution = 1.0, identity = False, ravel_order = 'c',**kwargs):
-        print("delta_betas in single_node_heterogenous_reservoir:", delta_betas, "Type:", type(delta_betas))
-        self.Nvirt = Nvirt
+
+        self.Nvirt = Nvirt  
         self.beta_prime = beta_prime
         self.beta_ref = beta_ref   
         self.M = binary_mask(Nin, Nvirt, m0, dilution, identity)
@@ -51,21 +44,13 @@ class single_node_heterogenous_reservoir:
         # Initialize multiple spnc_anisotropy instances
         self.anisotropy_instances = [spnc_anisotropy(h, 90, 0, 45, beta_prime + delta) for delta in delta_betas]
 
-        for idx, instance in enumerate(self.anisotropy_instances):
-            print(f"Anisotropy instance {idx + 1} parameters:")
-            print(f"h: {instance.h}, beta_prime: {instance.beta_prime},theta_H: {instance.theta_H},")
-
     def transform(self, x, params, beta_ref, *weights, force_compute=False, nthreads=1):
-
-        print("beta_ref in single_node_heterogenous_reservoir:", beta_ref, "Type:", type(beta_ref))
-        print(f"Input x shape: {x.shape}")
-        print(f"Mask matrix M shape: {self.M.shape if hasattr(self.M, 'shape') else 'unknown'}")
 
         """
         Transform function supporting multiple instances and weight combination.
 
         """
-
+        
         assert len(weights) == len(self.anisotropy_instances), "Weight count should match the number of instances"
 
 
@@ -73,10 +58,10 @@ class single_node_heterogenous_reservoir:
         if "Nthreads" in params.keys():
             Nthreads = params["Nthreads"]
 
-        print('Using Nthreads = ', Nthreads)
+
 
         J = self.M.apply(x)
-        print(f"Initial J shape: {J.shape if hasattr(J, 'shape') else 'object array'}")
+
 
         if J.dtype == object:
             J_1d = np.copy(J)
@@ -102,19 +87,17 @@ class single_node_heterogenous_reservoir:
 
                 params["thread_alloc"] = split_sizes
 
-        # S_1d_avarage = np.zeros((len(x) * self.Nvirt, 1))
+    
+
+        S_1d_avarage = np.zeros(len(J_1d))
+
+
         for i, (instance, weight) in enumerate(zip(self.anisotropy_instances, weights)):
-             # Check shapes for debugging
-            
-            mags_instance = instance.gen_signal_fast_delayed_feedback_varing_temp(J_1d, params, beta_ref)
-            print('shape of j_1d:', J_1d.shape)
-            # weight = float(weight)
-            print('weight',weight)
-            print('type of weight',type(weight))
-            print(f"Instance {i} - mags_instance shape: {mags_instance.shape}, weight: {weight}")
-            S_1d_avarage  = mags_instance * weight
-            
-            print(f"S_1d_avarage shape before addition: {S_1d_avarage.shape}")
+
+            mag = instance.gen_signal_fast_delayed_feedback_varing_temp(J_1d, params, beta_ref)* weight
+
+            S_1d_avarage += mag
+
             
 
         if J.dtype == object:
@@ -131,6 +114,5 @@ class single_node_heterogenous_reservoir:
         else:
             S = S_1d_avarage.reshape(J.shape, order=self.ravel_order) if self.ravel_order is not None else np.copy(S_flat)
 
-        # print("Final output S in alex:", S)
 
         return S, J
