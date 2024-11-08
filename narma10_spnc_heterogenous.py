@@ -29,7 +29,7 @@ params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
 
 gamma = 0.113
 beta_ref = 20
-deltabeta_list = [0.1, 0.2, 0.3]
+deltabeta_list = [0.0, 0.0, 0.0]
 theta = 0.3
 step = 1
 beta_left = 18.9
