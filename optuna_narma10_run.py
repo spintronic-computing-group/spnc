@@ -1,5 +1,6 @@
 
-from optuna_narma10_study import create_study, run_study
+from optuna_narma10_study import create_study
+from optuna_narma10_spnc_heterogenous import objective
 
 
 
@@ -11,18 +12,19 @@ if __name__ == "__main__":
     bias = True
 
     hyperparameter_ranges = {
-        'Nvirt': (300, 400),
-        'gamma': (0.038, 0.05),    
-        'h': (0.43, 0.48),
-        'm0': (0.002, 0.003),
-        'theta': (0.23, 0.25),
-        'num_instances': (2, 3),        
+        'Nvirt': (400, 450),
+        'gamma': (0.111, 0.112),    
+        'h': (0.39, 0.41),
+        'm0': (0.003, 0.0031),
+        'theta': (0.3, 0.301),
+        'num_instances': (1, 2),        
         'deltabeta_range': (-5.0, 5.0), 
         'weight_range': (0.0, 1.0)      
     }
 
-    Ntrain = 1
-    Ntest = 2000
+    Ntrain = 2000
+    Ntest = 1000
+
     temp_params = {
         'beta_prime': 35,    # 初始 beta_prime
         'beta_ref': 35,     # 常量 beta_cons
@@ -33,7 +35,10 @@ if __name__ == "__main__":
 
     # Create a list to collect all the trials
     
-
     study = create_study()
 
-    all_pred_and_Stest, best_beta, best_nrmse = run_study(study, hyperparameter_ranges,  temp_params, n_trials=50)
+    study.optimize(
+        lambda trial:objective(trial, hyperparameter_ranges,  temp_params,True, params),
+        n_trials=2
+    )
+
