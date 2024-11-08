@@ -1,7 +1,7 @@
 import optuna
 import threading
 from optuna.samplers import TPESampler
-from optuna_narma10_spnc_heterogenous import objective  
+from optuna_narma10_objective import objective  
 from optuna_dashboard import run_dashboard
 
 import matplotlib.pyplot as plt
