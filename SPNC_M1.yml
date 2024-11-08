@@ -1,0 +1,25 @@
+name: SPNC_M1
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - matplotlib
+  - jupytext
+  - spyder
+  - python
+  - numpy
+  - notebook
+  - scikit-learn
+  - jupyterlab
+  - pandas
+  - scipy
+  - ipykernel
+  - nodejs
+  - ipywidgets
+  - ipympl
+  - jupyter_console
+  - pre_commit
+  - pip
+  - pip:
+    - python_speech_features
+prefix: /opt/miniconda3/envs/SPNC
