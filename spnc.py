@@ -481,12 +481,14 @@ class spnc_anisotropy:
         delta = omega_ref / (self.get_omega_prime())
 
         theta_T = params['theta']
+        print('theta_T in test:', theta_T)
         self.k_s = 0
 
         T = 1./(self.get_omega_prime()* delta *self.f0)
-        print( 't in test:', T)
+        print('t in test:', T)
 
         gamma = params['gamma']
+        print('gamma in test:', gamma)
         delay_fb = params['delay_feedback']
         Nvirt = params['Nvirt']
 
