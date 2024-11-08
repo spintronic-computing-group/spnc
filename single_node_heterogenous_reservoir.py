@@ -75,7 +75,7 @@ class single_node_heterogenous_reservoir:
                 J_1d = np.expand_dims(np.ravel(J, order=self.ravel_order), axis = -1)
             else:
                 J_1d = np.copy(J)
-        print(f"Final J_1d shape: {J_1d.shape}")
+        
         if Nthreads > 1:
             if J.dtype == object:
                 split_sizes = []
