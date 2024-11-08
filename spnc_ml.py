@@ -29,12 +29,20 @@ from single_node_heterogenous_reservoir import single_node_heterogenous_reservoi
 # local repos and search paths. Each repo will be searched on every path
 
 #tuple of Path variables 
-searchpaths = (
-    Path(r'C:\\Users\\Chen\\Desktop\\Repository'), 
-    
-)
-#tuple of repos
-repos = ('machine_learning_library',)
+import os 
+
+#tuple of Path variables 
+if os.name == 'nt':  # Windows
+    searchpaths = (
+        Path(r'C:\\Users\\Chen\\Desktop\\Repository'),
+    )
+else:  # macOS or other Unix-like systems
+    searchpaths = (
+        Path(r'/Users/vvvps/Documents/repository'),
+    )
+
+# tuple of repos
+repos = ('machine_learning_library', 'machine_learning_library')
 
 
 # Add local modules and paths to local repos
