@@ -15,7 +15,7 @@ Ntrain = 2000
 Ntest = 1000
 
 # Net Parameters
-Nvirt = 400
+Nvirt = 30
 m0 = 0.003
 bias = True
 
@@ -29,12 +29,12 @@ params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
 
 gamma = 0.113
 beta_ref = 20
-deltabeta_list = [0.0, 0.0, 0.0]
+deltabeta_list = [0.1, 0.2, 0.3]
 theta = 0.3
 step = 1
 beta_left = 18.9
 beta_right = 21.1
-weights = [0.3,0.4,0.3]  # weights 长度应与 deltabeta_list 匹配
+weights = [0.3,0.3,0.3]  # weights 长度应与 deltabeta_list 匹配
 
 
 # DO IT
