@@ -29,7 +29,7 @@ class binary_mask:
         # print(f'Mask matrix saved at {save_path}')
 
     def apply(self, x):
-        if x.dtype == np.object:
+        if x.dtype == object:
             J = np.copy(x)
             for i,xi in enumerate(x):
                 J[i] = np.matmul(xi, self.M.T)
