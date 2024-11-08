@@ -34,15 +34,23 @@ class single_node_heterogenous_reservoir:
 
     def __init__(self, Nin, Nvirt, Nout, gamma, beta_prime, beta_ref, delta_betas, h, theta, m0=0.003, dilution = 1.0, identity = False, ravel_order = 'c',**kwargs):
 
-        self.Nvirt = Nvirt  
+        self.Nvirt = Nvirt
+        print('check the Nvirt:', self.Nvirt)
         self.beta_prime = beta_prime
         self.beta_ref = beta_ref   
+        self.m0 = m0   
+        print('check the m0:', self.m0)
         self.M = binary_mask(Nin, Nvirt, m0, dilution, identity)
         self.ravel_order = ravel_order
 
 
         # Initialize multiple spnc_anisotropy instances
         self.anisotropy_instances = [spnc_anisotropy(h, 90, 0, 45, beta_prime + delta) for delta in delta_betas]
+
+        # check the parameters of the anisotropy instances
+        for idx, instance in enumerate(self.anisotropy_instances):
+            print(f"Anisotropy instance {idx + 1} parameters:")
+            print(f"h: {instance.h}, beta_prime: {instance.beta_prime},theta_H: {instance.theta_H},")
 
     def transform(self, x, params, beta_ref, *weights, force_compute=False, nthreads=1):
 
@@ -52,6 +60,7 @@ class single_node_heterogenous_reservoir:
         """
         
         assert len(weights) == len(self.anisotropy_instances), "Weight count should match the number of instances"
+        print('check the weights:', weights)
 
 
         Nthreads = 1
