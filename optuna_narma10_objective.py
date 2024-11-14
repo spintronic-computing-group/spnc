@@ -23,21 +23,21 @@ def objective(trial: optuna.Trial, Ntrain, Ntest, hyperparameter_ranges: dict,te
         Nvirt = trial.suggest_int('Nvirt', Nvirt_min, Nvirt_max)
         # print(f"Nvirt: {Nvirt}")
         gamma = trial.suggest_float('gamma', gamma_min, gamma_max)
-        # print(f"gamma: {gamma}")
+        #print(f"gamma: {gamma}")
         h = trial.suggest_float('h', h_min, h_max)
-        # print(f"h: {h}")
+        #print(f"h: {h}")
         m0 = trial.suggest_float('m0', m0_min, m0_max)
-        # print(f"m0: {m0}")
+        #print(f"m0: {m0}")
         theta = trial.suggest_float('theta', theta_min, theta_max)
-        # print(f"theta: {theta}")
+        #print(f"theta: {theta}")
 
         # set the number and proportion of heterogenous reservoir
         num_instances = trial.suggest_int('num_instances', num_instances_min, num_instances_max)
-        # print(f"num_instances: {num_instances}")
+        #print(f"num_instances: {num_instances}")
         deltabeta_list = [trial.suggest_float(f'deltabeta{i+1}', deltabeta_min, deltabeta_max) for i in range(num_instances)]
-        # print(f"deltabeta_list: {deltabeta_list}")
+        #print(f"deltabeta_list: {deltabeta_list}")
         weights = [trial.suggest_float(f'weight_{i}', weight_min, weight_max) for i in range(num_instances)]
-        # print(f"weights: {weights}")
+        #print(f"weights: {weights}")
 
 
 
@@ -77,8 +77,5 @@ def objective(trial: optuna.Trial, Ntrain, Ntest, hyperparameter_ranges: dict,te
 
     except FloatingPointError as e:
         print(f"FloatingPointError encountered: {e}")
-        return float('inf')  # 或者返回一个合理的默认值
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return float('inf')  # 或者返回一个合理的默认值
+        return float('inf'), float('inf')  # 返回两个值
 
