@@ -27,7 +27,7 @@ from matplotlib import pyplot as plt
 # local repos and search paths. Each repo will be searched on every path
 
 #tuple of Path variables
-searchpaths = (Path.home() / 'repos', Path.home() / 'Desktop' / 'Stage_3A' / 'ML_library')
+searchpaths = Path(r'C:\\Users\\Chen\\Desktop\\Repository'),
 #tuple of repos
 repos = ('machine_learning_library',)
 
