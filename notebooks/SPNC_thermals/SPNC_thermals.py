@@ -711,7 +711,10 @@ print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
 print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
 
 # %% [markdown]
-# #### MORE STUFF TO SORT
+# #### Digging into differences between fast and slow
+
+# %% [markdown]
+# Looking beyond just the differences in ml performance
 
 # %%
 import numpy as np
@@ -871,6 +874,18 @@ spnf, transformf = get_resf(h,theta_H,k_s_0,phi,beta_prime)
 k_s = (np.random.random(50)-0.5)*k_s_mag
 
 params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : 400}
+
+def get_ress(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
+    transform = res.gen_signal_slow_delayed_feedback
+
+    return res, transform
+
+def get_resf(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
+    transform = res.gen_signal_fast_delayed_feedback
+
+    return res, transform
 
 spns, transforms = get_ress(h,theta_H,k_s_0,phi,beta_prime)
 
@@ -1237,3 +1252,66 @@ print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
 spac = 50
 print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
 print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
+
+# %% [markdown]
+# Results look different from what Chen showed.
+
+# %% [markdown]
+# ### Now testing adding noise
+
+# %% [markdown]
+# Set up imports and some functions
+
+# %%
+"""
+Import handeling and Dependancy info
+
+Local Dependancies
+------------------
+machine_learning_library  : v0.1.2
+    This repository will need to be on your path in order to work.
+    This is achieved with repo_tools module and a path find function
+    Add to the searchpath and repos tuples if required
+
+
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Sort out relative paths
+import sys
+from pathlib import Path
+repodir = Path('..').resolve()
+try:
+    sys.path.index(str(repodir))
+except ValueError:
+    sys.path.append(str(repodir))
+
+#tuple of Path variables
+searchpaths = (Path.home() / 'repos', )
+#tuple of repos
+repos = ('machine_learning_library',)
+
+# local imports
+from SPNC import spnc
+#ML specific
+from SPNC.deterministic_mask import fixed_seed_mask, max_sequences_mask
+import SPNC.repo_tools
+SPNC.repo_tools.repos_path_finder(searchpaths, repos) #find ml library
+from single_node_res import single_node_reservoir
+import ridge_regression as RR
+from linear_layer import *
+from mask import binary_mask
+from utility import *
+from NARMA10 import NARMA10
+from sklearn.metrics import classification_report
+
+def NRMSE(Y,Y_pred):
+    var = np.var(Y)
+    return np.sqrt(np.square(Y_pred-Y).mean()/var)
+
+def NRMSE_list(y,y_pred):
+    Y = np.array(y)
+    Y_pred = np.array(y_pred)
+    return(NRMSE(Y,Y_pred))
