@@ -202,13 +202,13 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
 
     fixed_mask = kwargs.get('fixed_mask', False)
     if fixed_mask==True:
-        print("Deterministic mask will be used")
+        # print("Deterministic mask will be used")
         seed_mask = kwargs.get('seed_mask', 1234)
         if seed_mask>=0:
-            print(seed_mask)
+            # print(seed_mask)
             snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
         else:
-            print("Max_sequences mask will be used")
+            # print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
     # save the trained mask matrix
@@ -244,13 +244,13 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
         
         S_test, J_test = snr_test.transform(x_test,params,beta_ref, *weights)
         spacer = kwargs.get('spacer_NRMSE', 0) # avoid the problem of dividing by zero
-        print("Spacer NRMSE:"+str(spacer))
+        # print("Spacer NRMSE:"+str(spacer))
         pred = net.forward(S_test)
         
         np.size(pred)
         error = MSE(pred, y_test)
         predNRMSE = NRMSE(pred, y_test, spacer=spacer)
-        print(error, predNRMSE)
+        # print(error, predNRMSE)
 
         # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
         # plt.plot(y_test, pred, 'o')
