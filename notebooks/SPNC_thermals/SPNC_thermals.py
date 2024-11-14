@@ -1197,3 +1197,43 @@ plt.plot(y_test[spacer:], predf[spacer:], 'o')
 
 # DO IT
 (y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True,spacer_NRMSE = spacer)
+
+# %% [markdown]
+# ### From Chen
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 400
+m0 = 0.003
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 20
+params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=True)
+transforms = spn.gen_signal_slow_delayed_feedback
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
+print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
+
+# %%
+spac = 50
+print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
+print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
