@@ -228,7 +228,8 @@ def calculate_energy_barriers(spn):
 #Interpolations to avoid calculating too many times the energy landscape
 def functions_energy_barriers(spn,k_s_lim):
     #Computation on a sample
-    k_s_list = np.linspace(-k_s_lim,k_s_lim,int(100*2*k_s_lim))
+    interpdensity = spn.interdensity
+    k_s_list = np.linspace(-k_s_lim,k_s_lim,int(interpdensity*2*k_s_lim))
     #Make a copy of the network
     spn_copy = spnc_anisotropy(spn.h,spn.theta_H,spn.k_s,spn.phi,spn.beta_prime,compute_interpolation=False)
     Theta_1 = []
@@ -273,7 +274,10 @@ class spnc_anisotropy:
 
     """
 
-    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10,**kwargs):
+        #Meta parameters
+        self.interdensity = kwargs.get('interdensity',100)
+
         #Parameters
         self.h = h
         self.theta_H = theta_H
