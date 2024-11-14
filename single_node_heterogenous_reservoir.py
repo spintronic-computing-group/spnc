@@ -42,8 +42,7 @@ class single_node_heterogenous_reservoir:
         # print('check the m0:', self.m0)
         self.M = binary_mask(Nin, Nvirt, m0, dilution, identity)
         self.ravel_order = ravel_order
-
-
+        
         # Initialize multiple spnc_anisotropy instances
         self.anisotropy_instances = [spnc_anisotropy(h, 90, 0, 45, beta_prime + delta) for delta in delta_betas]
 
