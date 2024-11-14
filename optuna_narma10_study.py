@@ -43,11 +43,6 @@ def create_study():
     return study
 
 
-
-
-
-
-
 # this is a advance function which can get the complex result
 # def run_study(study, hyperparameter_ranges, temp_params, n_trials=50):
 #     all_temp_and_nrmse = []
