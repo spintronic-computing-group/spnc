@@ -2,13 +2,22 @@
 from optuna_narma10_study import create_study
 from optuna_narma10_objective import objective
 import optuna
+from optuna_narma10_callback import callback
+
+
+'''
+Try to add the function of callback to this version.
+
+The purpose of callback is to control the termination of the study under certain conditions.
+
+'''
 
 
 
 if __name__ == "__main__":
 
     hyperparameter_ranges = {
-    'Nvirt': (50, 400),
+    'Nvirt': (50,400),
     'gamma': (0.05, 0.2),    
     'h': (0.3, 0.5),
     'm0': (0.002, 0.004),
@@ -26,7 +35,7 @@ if __name__ == "__main__":
     temp_params = {
         'beta_prime': 20,    # initial beta_prime
         'beta_ref': 20,     # reference beta_cons
-        'step': 1.5,       # beta_prime step
+        'step': 0.55,       # beta_prime step
         'beta_left': 18.9,  # left beta_prime range
         'beta_right': 21.1  # right beta_prime range
     }
@@ -39,7 +48,7 @@ if __name__ == "__main__":
 
     study.optimize(
     lambda trial:objective(trial, Ntrain, Ntest, hyperparameter_ranges,  temp_params,True),
-    n_trials=50
+    n_trials=None, callbacks=[callback]
     )
 
 
