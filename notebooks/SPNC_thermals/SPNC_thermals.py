@@ -409,95 +409,57 @@ plt.show()
 # %% [markdown]
 # We've seen some difference in performance between the fast and slow evolver. This is trying to explore the origin.
 
-# %%
-import spnc_ml as ml
-
-# NARMA parameters
-Ntrain = 2000
-Ntest = 1000
-
-# Net Parameters
-Nvirt = 400
-m0 = 1e-2
-bias = True
-
-# Resevoir parameters
-h = 0.4
-theta_H = 90
-k_s_0 = 0
-phi = 45
-beta_prime = 10
-params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
-spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transforms = spn.gen_signal_slow_delayed_feedback
-transformf = spn.gen_signal_fast_delayed_feedback
-
-# DO IT
-(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
-
-# DO IT
-(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+# %% [markdown]
+# #### Set up imports
 
 # %%
-import spnc_ml as ml
+"""
+Import handeling and Dependancy info
 
-# NARMA parameters
-Ntrain = 2000
-Ntest = 1000
-
-# Net Parameters
-Nvirt = 400
-m0 = 1e-2
-bias = True
-
-# Resevoir parameters
-h = 0.4
-theta_H = 90
-k_s_0 = 0
-phi = 45
-beta_prime = 10
-params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+Local Dependancies
+------------------
+machine_learning_library  : v0.1.2
+    This repository will need to be on your path in order to work.
+    This is achieved with repo_tools module and a path find function
+    Add to the searchpath and repos tuples if required
 
 
-spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transforms = spn.gen_signal_slow_delayed_feedback
+"""
 
-# DO IT
-(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Sort out relative paths
+import sys
+from pathlib import Path
+repodir = Path('..').resolve()
+try:
+    sys.path.index(str(repodir))
+except ValueError:
+    sys.path.append(str(repodir))
+
+#tuple of Path variables
+searchpaths = (Path.home() / 'repos', )
+#tuple of repos
+repos = ('machine_learning_library',)
+
+# local imports
+from SPNC import spnc
+#ML specific
+from SPNC.deterministic_mask import fixed_seed_mask, max_sequences_mask
+import SPNC.repo_tools
+SPNC.repo_tools.repos_path_finder(searchpaths, repos) #find ml library
+from single_node_res import single_node_reservoir
+import ridge_regression as RR
+from linear_layer import *
+from mask import binary_mask
+from utility import *
+from NARMA10 import NARMA10
+from sklearn.metrics import classification_report
 
 
-spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transformf = spn.gen_signal_fast_delayed_feedback
-
-# DO IT
-(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
-
-# %%
-# NARMA parameters
-Ntrain = 2000
-Ntest = 1000
-
-# Net Parameters
-Nvirt = 400
-m0 = 1e-2
-bias = True
-
-# Resevoir parameters
-h = 0.4
-theta_H = 90
-k_s_0 = 0
-phi = 45
-beta_prime = 10
-params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
-spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transformf = spn.gen_signal_fast_delayed_feedback
-
-# DO IT
-(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
-
-spac = 50
-NRMSE_list(y_test_f[spac:],y_pred_f[spac:])
-
+# %% [markdown]
+# Set up some required code/functions
 
 # %%
 def NRMSE(Y,Y_pred):
@@ -509,6 +471,84 @@ def NRMSE_list(y,y_pred):
     Y_pred = np.array(y_pred)
     return(NRMSE(Y,Y_pred))
 
+
+# %% [markdown]
+# Initalise both transforms from one reservoir and then run the two models one after another without any restart.
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 40
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=False)
+transforms = spn.gen_signal_slow_delayed_feedback
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# %% [markdown]
+# Transform from new reservoir in between runs (no restart)
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 40
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+
+
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=False)
+transforms = spn.gen_signal_slow_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+spac = 50
+NRMSE_list(y_test_f[spac:],y_pred_f[spac:])
+
+
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=False)
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+spac = 50
+NRMSE_list(y_test_f[spac:],y_pred_f[spac:])
+
+# %% [markdown]
+# Look at some of the data
 
 # %%
 spac = 50
@@ -531,6 +571,147 @@ plt.plot(y_pred_s[spac:spac+window]-y_pred_f[spac:spac+window])
 
 print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
 print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
+
+# %% [markdown]
+# ##### Repeat above, but with restart on...
+
+# %% [markdown]
+# Initalise before
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 40
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=True)
+transforms = spn.gen_signal_slow_delayed_feedback
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# %% [markdown]
+# Initalise between
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 40
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+
+
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=True)
+transforms = spn.gen_signal_slow_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+spac = 50
+NRMSE_list(y_test_f[spac:],y_pred_f[spac:])
+
+
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=True)
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+spac = 50
+NRMSE_list(y_test_f[spac:],y_pred_f[spac:])
+
+# %% [markdown]
+# ##### More virtual nodes
+
+# %% [markdown]
+# Initalise before, use restart
+
+# %%
+import spnc_ml as ml
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 400
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
+spn = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=True)
+transforms = spn.gen_signal_slow_delayed_feedback
+transformf = spn.gen_signal_fast_delayed_feedback
+
+# DO IT
+(y_test_s,y_pred_s)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transforms, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# DO IT
+(y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True)
+
+# %% [markdown]
+# Check NRMSE with spacer
+
+# %%
+spac = 50
+window = 100
+
+plt.figure()
+plt.plot(y_test_s[spac:spac+window])
+plt.plot(y_pred_s[spac:spac+window])
+
+plt.figure()
+plt.plot(y_test_f[spac:spac+window])
+plt.plot(y_pred_f[spac:spac+window])
+
+plt.figure()
+plt.plot(y_pred_s[spac:spac+window])
+plt.plot(y_pred_f[spac:spac+window])
+
+plt.figure()
+plt.plot(y_pred_s[spac:spac+window]-y_pred_f[spac:spac+window])
+
+print(NRMSE_list(y_test_s[spac:],y_pred_s[spac:]))
+print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
+
+# %% [markdown]
+# #### MORE STUFF TO SORT
 
 # %%
 import numpy as np
