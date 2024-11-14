@@ -1,18 +1,19 @@
 
 from optuna_narma10_study import create_study
 from optuna_narma10_objective import objective
+import optuna
 
 
 
 if __name__ == "__main__":
 
     hyperparameter_ranges = {
-    'Nvirt': (50, 100),
-    'gamma': (0.11, 0.12),    
-    'h': (0.35, 0.45),
-    'm0': (0.003, 0.0035),
-    'theta': (0.28, 0.35),
-    'num_instances': (3, 7),        
+    'Nvirt': (100, 400),
+    'gamma': (0.05, 0.2),    
+    'h': (0.3, 0.5),
+    'm0': (0.002, 0.004),
+    'theta': (0.2, 0.4),
+    'num_instances': (2, 7),        
     'deltabeta_range': (-5.0, 5.0), 
     'weight_range': (0.0, 1.0)      
     }
@@ -27,19 +28,25 @@ if __name__ == "__main__":
     Ntest = 1000
 
     temp_params = {
-        'beta_prime': 20,    # 初始 beta_prime
-        'beta_ref': 20,     # 常量 beta_cons
-        'step': 1,       # beta_prime 步长
-        'beta_left': 18.9,  # 左侧 beta_prime 范围
-        'beta_right': 21.1  # 右侧 beta_prime 范围
+        'beta_prime': 20,    # initial beta_prime
+        'beta_ref': 20,     # reference beta_cons
+        'step': 0.3667,       # beta_prime step
+        'beta_left': 18.9,  # left beta_prime range
+        'beta_right': 21.1  # right beta_prime range
     }
 
     # Create a list to collect all the trials
     
-    study = create_study()
+    # study = create_study()
+
+
+    study_name = 'MOO_test_30'
+    storage_name = "sqlite:///db.sqlite3"
+    study = optuna.load_study(study_name=study_name, storage=storage_name)
 
     study.optimize(
-        lambda trial:objective(trial, Ntrain, Ntest, hyperparameter_ranges,  temp_params,True),
-        n_trials=100
+    lambda trial:objective(trial, Ntrain, Ntest, hyperparameter_ranges,  temp_params,True),
+    n_trials=200
     )
+
 
