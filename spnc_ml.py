@@ -175,7 +175,7 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
     """
 
     seed_NARMA = kwargs.get('seed_NARMA', None)
-    print("seed NARMA: "+str(seed_NARMA))
+    # print("seed NARMA: "+str(seed_NARMA))
     u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
 
     x_train = u[:Ntrain]
@@ -192,7 +192,7 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
 
     # not sure if the shape of input is suitable for the heterogenous resevoir
 
-    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+    # print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
 
     # create a heterogenous reservoir
     snr = single_node_heterogenous_reservoir(Nin, Nvirt, Nout,gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0)
@@ -252,9 +252,9 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
         predNRMSE = NRMSE(pred, y_test, spacer=spacer)
         print(error, predNRMSE)
 
-        plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
-        plt.plot(y_test, pred, 'o')
-        plt.show()
+        # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+        # plt.plot(y_test, pred, 'o')
+        # plt.show()
 
         beta_primes_temp.append(i)
         nrmse_temp.append(predNRMSE)
