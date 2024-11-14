@@ -31,7 +31,7 @@ searchpaths = (Path.home() / 'repos', )
 #tuple of repos
 repos = ('machine_learning_library',)
 
-# local imports
+# local imports    
 from SPNC import spnc
 #ML specific
 from SPNC.deterministic_mask import fixed_seed_mask, max_sequences_mask
@@ -50,11 +50,11 @@ NARMA10 response
 '''
 
 # NARMA parameters
-Ntrain = 100
-Ntest = 50
+Ntrain = 2000
+Ntest = 1000
 
 # Net Parameters
-Nvirt = 5
+Nvirt = 400
 m0 = 0.003
 bias = True
 
@@ -76,9 +76,6 @@ delay_feedback = 0
 params = {'theta': theta, 'gamma' : gamma,'delay_feedback' : delay_feedback,'Nvirt' : Nvirt}
 spnres = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 transform = spnres.gen_signal_fast_delayed_feedback
-
-spnreshigher = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
-transformhigher = spnreshigher.gen_signal_fast_delayed_feedback
 
 
 # Lets get into it
@@ -110,36 +107,20 @@ RR.Kfold_train(net,S_train,y_train,10, quiet = False)
 
 # Testing
 S_test, J_test = snr.transform(x_test,params)
-#test with the other transform...
-snr.res = transformhigher
-S_test_higher, J_test_higher = snr.transform(x_test,params)
-
 
 print("Spacer NRMSE:"+str(spacer))
 pred = net.forward(S_test)
-pred_higher = net.forward(S_test_higher)
-plt.plot(pred)
-plt.plot(pred_higher)
-plt.show()
 np.size(pred)
 error = MSE(pred[spacer:], y_test[spacer:])
 predNRMSE = NRMSE(pred[spacer:], y_test[spacer:])
-print('Error and NRMSE for normal testing', error, predNRMSE)
-
-error_higher = MSE(pred_higher[spacer:], y_test[spacer:])
-predNRMSE_higher = NRMSE(pred_higher[spacer:], y_test[spacer:])
-print('Error and NRMSE for higher temp testing', error_higher, predNRMSE_higher)
+print(error, predNRMSE)
 
 plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
 plt.plot(y_test[spacer:],pred[spacer:],'o')
 plt.show()
 
-plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0),'k--')
-plt.plot(y_test[spacer:],pred_higher[spacer:],'o')
-plt.show()
-
 #Save data for plotting elsewhere
-np.savez('plotting/APL_2021/data/NARMA10-temp.npz',
+np.savez('data/NARMA10.npz',
          Ntrain=Ntrain,
          Ntest=Ntest,
          Nvirt = Nvirt,
