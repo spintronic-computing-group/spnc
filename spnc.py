@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 from scipy import constants
 from scipy.signal import argrelextrema
 from scipy import interpolate
+import copy
 
 
 class spnc_basic:
@@ -273,7 +274,13 @@ class spnc_anisotropy:
 
     """
 
-    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10,**kwargs):
+        # Meta parameters
+        self.interdensity = kwargs.get('interdensity',100)
+        self.restart = kwargs.get('restart',True)
+        Primep1 = kwargs.get('primep1', False) 
+        p1 = kwargs.get('p1', None)            
+        initialize = kwargs.get('initialize', False) 
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -292,6 +299,59 @@ class spnc_anisotropy:
         self.f0 = f0
         self.p1 = self.get_p1_eq()
         self.p2 = self.get_p2_eq()
+        #Interpolations to fasten the code
+        if compute_interpolation:
+            (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
+            (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
+        #Set the prime p1
+        if Primep1:
+            self.p1 = p1 if p1 is not None else np.random.rand()
+        else:
+            self.p1 = self.get_p1_eq()
+        self.p2 = 1 - self.p1
+        # save the initial values
+        self._initial_state = copy.deepcopy(self.__dict__)
+        # Initialize
+        if initialize:
+            self.initialize()
+
+        # Initialisation
+    def initialize(self):
+
+        # print("Initializing...")
+        # print("Current state before initializing:", self.__dict__['p1'])
+        # print("Initial state p1:", self._initial_state['p1'])
+        
+        # 1. save a copy of the initial state
+        initial_state_copy = copy.deepcopy(self._initial_state)
+
+        # print("Initial state:", initial_state_copy)
+        
+        # 2. update the current state with the initial state
+        self.__dict__.update(initial_state_copy)
+        
+        # print("After initializing - current dict p1:", self.__dict__['p1'])
+        # print("After initializing - initial state p1:", self._initial_state['p1'])
+        # print('finished initializing..')
+
+    def minirestart(self,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+        #Parameters
+        self.k_s = 0
+
+        #Computed
+        self.e_12_small = np.nan
+        self.e_21_small = np.nan
+        self.e_12_big = np.nan
+        self.e_21_big = np.nan
+        self.theta_1 = np.nan
+        self.theta_2 = np.nan
+
+        #Dynamic
+        calculate_energy_barriers(self)
+        self.f0 = f0
+        self.p1 = self.get_p1_eq()
+        self.p2 = self.get_p2_eq()
+
         #Interpolations to fasten the code
         if compute_interpolation:
             (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
@@ -371,7 +431,13 @@ class spnc_anisotropy:
         f_m = lambda x: self.f_p1_eq(x)*np.cos(self.f_theta_1(x)*np.pi/180)+(1-self.f_p1_eq(x))*np.cos(self.f_theta_2(x)*np.pi/180)
         return(f_m)
 
-    def gen_signal_fast_delayed_feedback(self, K_s,params,*args,**kwargs):
+    '''
+    add the noise function here
+
+    here, the len(input) is chosen as the metrics for judging the phase of machine learning, and to decide if adding noise will be carried out
+
+    '''
+    def gen_signal_fast_delayed_feedback(self, K_s,params, initialize = initialize, *args,**kwargs):
         theta_T = params['theta']
         self.k_s = 0
         T = 1./(self.get_omega_prime()*self.f0)
@@ -379,18 +445,110 @@ class spnc_anisotropy:
         delay_fb = params['delay_feedback']
         Nvirt = params['Nvirt']
 
+        # noise parameters
+
+        noise_enable = params.get('noise_enable', 'none')
+        noise_std = params.get('noise_std', 0.0)
+        test_samples = params.get('test_samples', 1000)
+        train_samples = params.get('train_samples', 2000)
+
+        
+
+        # check automatically the current phase of the machine learning
+
+        phase = 'train' if len(K_s) == train_samples else 'test'
+
         theta = theta_T*T
 
         N = K_s.shape[0]
         mag = np.zeros(N)
 
+        # determine if the noise will be added
+
+        add_noise = (noise_enable == 'both') or \
+                    (noise_enable == 'train' and phase == 'train') or \
+                    (noise_enable == 'test' and phase == 'test')
+        
         for idx, j in enumerate(K_s):
             self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
             self.evolve_fast(self.f0,theta)
             mag[idx] = self.get_m_fast()
 
-        return mag
+            if add_noise:
+                mag[idx] += np.random.normal(0.0001, noise_std)
 
+        if initialize:
+            self.initialize()
+            print('initialized')
+        else:
+            print('skip initialization')
+
+        if self.restart:
+            self.minirestart()
+            print('restarted')
+        else:
+            print('skip restarting..')
+
+        return mag
+    
+    def gen_signal_slow_delayed_feedback(self, K_s, params, initialize = initialize, *args,**kwargs):  
+        theta_T = params['theta']
+        
+        self.k_s = 0
+        
+        T = 1./(self.get_omega_prime() *self.f0)
+
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+         # noise parameters
+
+        noise_enable = params.get('noise_enable', 'none')
+        noise_std = params.get('noise_std', 0.0)
+        test_samples = params.get('test_samples', 1000)
+        train_samples = params.get('train_samples', 2000)
+
+        # check automatically the current phase of the machine learning
+
+        phase = 'train' if len(K_s) == train_samples else 'test'
+    
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        # determine if the noise will be added
+
+        add_noise = (noise_enable == 'both') or \
+                    (noise_enable == 'train' and phase == 'train') or \
+                    (noise_enable == 'test' and phase == 'test')
+        
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            self.get_energy_barriers()
+            self.evolve(self.f0,theta) # update the p1 and p2
+            mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+
+            if add_noise:
+                mag[idx] += np.random.normal(0.0001, noise_std)
+            
+
+        if initialize:
+            self.initialize()
+            print('initialized')
+        else:
+            print('skip initializing..')
+
+        if self.restart:
+            self.minirestart()
+            print('restarted')
+        else:
+            print('skip restarting..')
+
+        return mag
+    
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
 
         theta_step = theta/density
