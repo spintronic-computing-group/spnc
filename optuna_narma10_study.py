@@ -3,6 +3,7 @@ import threading
 from optuna.samplers import TPESampler
 from optuna_narma10_objective import objective  
 from optuna_dashboard import run_dashboard
+import optunahub
 
 import matplotlib.pyplot as plt
 
@@ -26,11 +27,13 @@ def create_study():
             # if the study does not exist, break the loop
             print(f"Study '{new_study_name}' doesn't exist,  create it。")
             break
-            
+    
+    module = optunahub.load_module(package="samplers/auto_sampler")
+
     # set up the object of the study
     study = optuna.create_study(
         # set the samplers
-        sampler=TPESampler(),
+        sampler=module.AutoSampler(),
         # set the direction of the objectives
         directions=["minimize", "minimize"],  
         storage=storage,
