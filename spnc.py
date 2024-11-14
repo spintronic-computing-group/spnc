@@ -277,6 +277,7 @@ class spnc_anisotropy:
     def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10,**kwargs):
         #Meta parameters
         self.interdensity = kwargs.get('interdensity',100)
+        self.restart = kwargs.get('restart',True)
 
         #Parameters
         self.h = h
@@ -284,6 +285,27 @@ class spnc_anisotropy:
         self.k_s = k_s
         self.phi = phi
         self.beta_prime = beta_prime
+        #Computed
+        self.e_12_small = np.nan
+        self.e_21_small = np.nan
+        self.e_12_big = np.nan
+        self.e_21_big = np.nan
+        self.theta_1 = np.nan
+        self.theta_2 = np.nan
+        #Dynamic
+        calculate_energy_barriers(self)
+        self.f0 = f0
+        self.p1 = self.get_p1_eq()
+        self.p2 = self.get_p2_eq()
+        #Interpolations to fasten the code
+        if compute_interpolation:
+            (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
+            (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
+
+    def minirestart(self,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+
+        #Parameters
+        self.k_s = 0
         #Computed
         self.e_12_small = np.nan
         self.e_21_small = np.nan
@@ -393,6 +415,11 @@ class spnc_anisotropy:
             self.evolve_fast(self.f0,theta)
             mag[idx] = self.get_m_fast()
 
+        if self.restart:
+            self.minirestart()
+
+        return mag
+    
         return mag
 
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
