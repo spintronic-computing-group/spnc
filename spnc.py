@@ -456,12 +456,24 @@ class spnc_anisotropy:
                 mag[idx] = self.get_m()+rng.normal(noise_mean,noise_std,1)
             else:
                 mag[idx] = self.get_m()
+
+        # if self.noise:
+        #     noise_mean = params.get('noise_mean',0.0001)
+        #     noise_std = params.get('noise_std',0.00013)
+        #     noise_seed = params.get('noise_seed',None)
+
+        #     rng = np.random.default_rng(seed=noise_seed)
+        #     noise = rng.normal(noise_mean,noise_std,N)
+        #     for idx in range(N):
+        #         mag[idx] = mag[idx] + noise[idx]
+
         
         if self.restart:
             self.minirestart()
 
         print('gen_signal_slow_delayed_feedback finished:')
         print('p1 is',self.p1,'& ks is',self.k_s)
+
         return mag
 
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
