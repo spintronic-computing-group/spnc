@@ -1214,7 +1214,10 @@ plt.plot(y_test[spacer:], predf[spacer:], 'o')
 (y_test_f,y_pred_f)=ml.spnc_narma10(Ntrain, Ntest, Nvirt, m0, bias, transformf, params, seed_NARMA=1234,fixed_mask=True, return_outputs=True,spacer_NRMSE = spacer)
 
 # %% [markdown]
-# ### From Chen
+# ### Testing results using this code base vs Chen's
+
+# %% [markdown]
+# Testing vs results Chen tabulated
 
 # %%
 import spnc_ml as ml
@@ -1257,7 +1260,7 @@ print(NRMSE_list(y_test_f[spac:],y_pred_f[spac:]))
 # Results look different from what Chen showed.
 
 # %% [markdown]
-# ### Now testing adding noise
+# #### Now testing adding noise
 
 # %% [markdown]
 # Set up imports and some functions
@@ -1307,11 +1310,242 @@ from utility import *
 from NARMA10 import NARMA10
 from sklearn.metrics import classification_report
 
-def NRMSE(Y,Y_pred):
-    var = np.var(Y)
-    return np.sqrt(np.square(Y_pred-Y).mean()/var)
+# %%
 
-def NRMSE_list(y,y_pred):
-    Y = np.array(y)
-    Y_pred = np.array(y_pred)
-    return(NRMSE(Y,Y_pred))
+#tuple of Path variables
+searchpaths = (Path.home() / 'repos', Path.home() / 'Desktop' / 'Stage_3A' / 'ML_library')
+#tuple of repos
+repos = ('machine_learning_library',)
+
+
+# Add local modules and paths to local repos
+from deterministic_mask import fixed_seed_mask, max_sequences_mask
+import repo_tools
+repo_tools.repos_path_finder(searchpaths, repos)
+from single_node_res import single_node_reservoir
+import ridge_regression as RR
+from linear_layer import *
+from mask import binary_mask
+from utility import *
+from NARMA10 import NARMA10
+from datasets.load_TI46_digits import *
+import datasets.load_TI46 as TI46
+from sklearn.metrics import classification_report
+
+# %% [markdown]
+# Parameters and reservoirs
+
+# %%
+# Other params
+seed = 1234
+calcdistro = True
+
+# NARMA parameters
+Ntrain = 2000
+Ntest = 1000
+
+# Net Parameters
+Nvirt = 400
+m0 = 1e-2
+bias = True
+
+# Resevoir parameters
+restart = True
+h = 0.4
+theta_H = 90
+k_s_0 = 0
+phi = 45
+beta_prime = 10
+params = {'theta': 1/3,
+          'gamma' : .25,
+          'delay_feedback' : 0,
+          'Nvirt' : Nvirt,
+          'noise_mean' : 0.0001,
+          'noise_std' : 0.00013,
+          'noise_seed' : seed}
+
+def get_ress(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20,restart=restart):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=restart)
+    transform = res.gen_signal_slow_delayed_feedback
+
+    return res, transform
+
+def get_ressn(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20,restart=restart):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,
+                               restart=restart,noise=True)
+    transform = res.gen_signal_slow_delayed_feedback
+
+    return res, transform
+
+def get_resf(h=0.4,theta_H=90,k_s_0=0,phi=45,beta_prime=20,restart=restart):
+    res = spnc.spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime,restart=restart)
+    transform = res.gen_signal_fast_delayed_feedback
+
+    return res, transform
+
+spns, transforms = get_ress(h,theta_H,k_s_0,phi,beta_prime)
+
+spnsn, transformsn = get_ressn(h,theta_H,k_s_0,phi,beta_prime)
+
+spnf, transformf = get_resf(h,theta_H,k_s_0,phi,beta_prime)
+
+seed_NARMA=seed
+seed_mask = seed
+seed_training =seed
+fixed_mask=True
+return_outputs=True
+
+# %% [markdown]
+# Narma data and net parameters
+
+# %%
+print("seed NARMA: "+str(seed_NARMA))
+u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+
+x_train = u[:Ntrain]
+y_train = d[:Ntrain]
+x_test = u[Ntrain:]
+y_test = d[Ntrain:]
+
+print("Samples for training: ", len(x_train))
+print("Samples for test: ", len(x_test))
+
+# Net setup
+Nin = x_train[0].shape[-1]
+Nout = len(np.unique(y_train))
+
+print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+# %% [markdown]
+# Make nets and SNRs
+
+# %%
+snrs = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transforms)
+nets = linear(Nin, Nout, bias = bias)
+
+snrsn = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transformsn)
+netsn = linear(Nin, Nout, bias = bias)
+
+snrf = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transformf)
+netf = linear(Nin, Nout, bias = bias)
+
+if fixed_mask==True:
+    print("Deterministic mask will be used")
+    if seed_mask>=0:
+        print(seed_mask)
+        snrs.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        snrsn.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        snrf.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+    else:
+        print("Max_sequences mask will be used")
+        snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+# %% [markdown]
+# Training the "not noisy" reservoirs
+
+# %%
+# Training
+S_trains, J_trains = snrs.transform(x_train,params)
+np.size(S_trains)
+RR.Kfold_train(nets,S_trains,y_train,10, quiet = False, seed_training=seed_training)
+
+# Training
+S_trainf, J_trainf = snrf.transform(x_train,params)
+np.size(S_trainf)
+RR.Kfold_train(netf,S_trainf,y_train,10, quiet = False, seed_training=seed_training)
+
+# %% [markdown]
+# Find the noise between the two
+
+# %%
+S_trains_1d = np.expand_dims(np.ravel(S_trains, order='C'), axis = -1)
+S_trainf_1d = np.expand_dims(np.ravel(S_trainf, order='C'), axis = -1)
+diff = S_trains_1d - S_trainf_1d
+plt.figure()
+plt.plot(S_trains_1d[100:200])
+plt.plot(S_trainf_1d[100:200])
+plt.figure()
+plt.plot(diff[100:200])
+gsmean = np.mean(diff[:Nvirt])
+gsstd = np.std(diff[:Nvirt],ddof=1)
+
+print('mean :',gsmean,'& std :',gsstd)
+
+# %% [markdown]
+# Now train the noisy reservoir with noise like the difference here (currently using Chen's parameters)
+
+# %%
+# Training
+if calcdistro:
+    params['noise_std'] = gsstd
+    params['noise_mean'] = gsmean
+S_trainsn, J_trainsn = snrsn.transform(x_train,params)
+np.size(S_trainsn)
+RR.Kfold_train(nets,S_trainsn,y_train,10, quiet = False, seed_training=seed_training)
+
+# %% [markdown]
+# Testing
+
+# %%
+
+
+ # Testing
+S_tests, J_tests = snrs.transform(x_test,params)
+S_testsn, J_testsn = snrsn.transform(x_test,params)
+S_testf, J_testf = snrf.transform(x_test,params)
+
+preds = nets.forward(S_tests)
+predsn = nets.forward(S_testsn)
+predf = netf.forward(S_testf)
+
+
+
+# %% [markdown]
+# Set spacer / spacer nrmse
+
+# %%
+spacer = 50
+
+print("Spacer NRMSE:"+str(spacer))
+
+# %% [markdown]
+# Plotting
+
+# %%
+
+predNRMSEs = NRMSE(preds, y_test, spacer=spacer)
+print('predNRMSEs', predNRMSEs)
+
+predNRMSEsn = NRMSE(predsn, y_test, spacer=spacer)
+print('predNRMSEsn', predNRMSEsn)
+
+predNRMSEf = NRMSE(predf, y_test, spacer=spacer)
+print('predNRMSEf', predNRMSEf)
+
+plt.figure()
+plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+plt.plot(y_test[spacer:], preds[spacer:], 'o')
+
+plt.figure()
+plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+plt.plot(y_test[spacer:], predsn[spacer:], 'o')
+
+plt.figure()
+plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+plt.plot(y_test[spacer:], predf[spacer:], 'o')
+
+plt.figure()
+plt.plot(y_test[spacer:spacer+100])
+plt.plot(preds[spacer:spacer+100])
+
+plt.figure()
+plt.plot(y_test[spacer:spacer+100])
+plt.plot(predsn[spacer:spacer+100])
+
+plt.figure()
+plt.plot(y_test[spacer:spacer+100])
+plt.plot(predf[spacer:spacer+100])
+
+# %%
+
+# %%
