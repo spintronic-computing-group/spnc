@@ -442,6 +442,12 @@ class spnc_anisotropy:
 
         print('gen_signal_slow_delayed_feedback called:')
         print('p1 is',self.p1,'& ks is',self.k_s)
+
+        # if self.primep1:
+
+        # if self.warmup:
+
+
         if self.noise:
             noise_seed = params.get('noise_seed',None)
             rng = np.random.default_rng(seed=noise_seed)
