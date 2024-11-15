@@ -489,6 +489,11 @@ class spnc_anisotropy:
         else:
             print('skip restarting..')
 
+        if add_noise:
+            print('noisy output')
+        else:
+            print('noise-free output')
+
         return mag
     
     def gen_signal_slow_delayed_feedback(self, K_s, params, initialize = initialize, *args,**kwargs):  
@@ -546,6 +551,12 @@ class spnc_anisotropy:
             print('restarted')
         else:
             print('skip restarting..')
+
+        if add_noise:
+            print('noisy output')
+        else:
+            print('noise-free output')
+        
 
         return mag
     
