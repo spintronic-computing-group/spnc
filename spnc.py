@@ -278,6 +278,7 @@ class spnc_anisotropy:
         #Meta parameters
         self.interdensity = kwargs.get('interdensity',100)
         self.restart = kwargs.get('restart',True)
+        self.noise = kwargs.get('noise',False)
 
         #Parameters
         self.h = h
@@ -441,11 +442,20 @@ class spnc_anisotropy:
 
         print('gen_signal_slow_delayed_feedback called:')
         print('p1 is',self.p1,'& ks is',self.k_s)
+        if self.noise:
+            noise_seed = params.get('noise_seed',None)
+            rng = np.random.default_rng(seed=noise_seed)
+            noise_mean = params.get('noise_mean',0.0001)
+            noise_std = params.get('noise_std',0.00013)
+
         for idx, j in enumerate(K_s):
             self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
             calculate_energy_barriers(self)
             self.evolve(self.f0,theta)
-            mag[idx] = self.get_m()
+            if self.noise:
+                mag[idx] = self.get_m()+rng.normal(noise_mean,noise_std,1)
+            else:
+                mag[idx] = self.get_m()
         
         if self.restart:
             self.minirestart()
