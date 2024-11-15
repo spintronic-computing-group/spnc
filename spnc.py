@@ -410,6 +410,9 @@ class spnc_anisotropy:
         N = K_s.shape[0]
         mag = np.zeros(N)
 
+        print('gen_signal_fast_delayed_feedback called:')
+        print('p1 is',self.p1,'& ks is',self.k_s)
+
         for idx, j in enumerate(K_s):
             self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
             self.evolve_fast(self.f0,theta)
@@ -417,6 +420,9 @@ class spnc_anisotropy:
 
         if self.restart:
             self.minirestart()
+
+        print('gen_signal_fast_delayed_feedback finished:')
+        print('p1 is',self.p1,'& ks is',self.k_s)
 
         return mag
     
@@ -433,6 +439,8 @@ class spnc_anisotropy:
         N = K_s.shape[0]
         mag = np.zeros(N)
 
+        print('gen_signal_slow_delayed_feedback called:')
+        print('p1 is',self.p1,'& ks is',self.k_s)
         for idx, j in enumerate(K_s):
             self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
             calculate_energy_barriers(self)
@@ -442,6 +450,8 @@ class spnc_anisotropy:
         if self.restart:
             self.minirestart()
 
+        print('gen_signal_slow_delayed_feedback finished:')
+        print('p1 is',self.p1,'& ks is',self.k_s)
         return mag
 
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
