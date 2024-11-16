@@ -258,6 +258,9 @@ def functions_energy_barriers(spn,k_s_lim):
 
     return(f_theta_1,f_theta_2,f_e_12_small,f_e_21_small,f_e_12_big,f_e_21_big)
 
+import datetime
+import traceback
+
 class spnc_anisotropy:
     """
     Simulate a SP netwotk with a control on anisotropy
@@ -278,9 +281,29 @@ class spnc_anisotropy:
         # Meta parameters
         self.interdensity = kwargs.get('interdensity',100)
         self.restart = kwargs.get('restart',True)
-        Primep1 = kwargs.get('primep1', False) 
+        Primep1 = kwargs.get('Primep1', False) 
         p1 = kwargs.get('p1', None)            
         initialize = kwargs.get('initialize', False) 
+
+        #check
+
+    # 获取当前时间
+        current_time = datetime.datetime.now().strftime("%H:%M:%S.%f")
+        
+        # 获取调用栈信息
+        stack = traceback.extract_stack()
+        caller = stack[-2]  # -2 是因为 -1 是当前函数
+        
+        # 打印详细信息
+        print(f"\n=== Parameter Passing at {current_time} ===")
+        print(f"Called from: {caller.filename}, line {caller.lineno}")
+        print(f"interdensity: {kwargs.get('interdensity',100)}")
+        print(f"restart: {kwargs.get('restart',True)}")
+        print(f"Primep1: {kwargs.get('Primep1',False)}")
+        print(f"p1: {kwargs.get('p1',None)}")
+        print(f"initialize: {kwargs.get('initialize',False)}")
+        print("=====================================\n")
+        
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -303,12 +326,7 @@ class spnc_anisotropy:
         if compute_interpolation:
             (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
             (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
-        #Set the prime p1
-        if Primep1:
-            self.p1 = p1 if p1 is not None else np.random.rand()
-        else:
-            self.p1 = self.get_p1_eq()
-        self.p2 = 1 - self.p1
+
         # save the initial values
         self._initial_state = copy.deepcopy(self.__dict__)
         # Initialize
@@ -438,6 +456,7 @@ class spnc_anisotropy:
 
     '''
     def gen_signal_fast_delayed_feedback(self, K_s,params, initialize = initialize, *args,**kwargs):
+        print('model p1:', self.p1)
         theta_T = params['theta']
         self.k_s = 0
         T = 1./(self.get_omega_prime()*self.f0)
@@ -496,7 +515,8 @@ class spnc_anisotropy:
 
         return mag
     
-    def gen_signal_slow_delayed_feedback(self, K_s, params, initialize = initialize, *args,**kwargs):  
+    def gen_signal_slow_delayed_feedback(self, K_s, params, initialize = initialize, *args,**kwargs):
+        print('model p1:', self.p1)  
         theta_T = params['theta']
         
         self.k_s = 0
