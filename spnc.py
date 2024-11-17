@@ -430,155 +430,234 @@ class spnc_anisotropy:
 
     here, the len(input) is chosen as the metrics for judging the phase of machine learning, and to decide if adding noise will be carried out
 
+    17/11/24 by chen
+
+    develop a new judge function to determine the phase of machine learning
+
     '''
     def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
 
-
-        if self.Primep1 is not None:
-            self.p1 = self.Primep1
-        
-
-        self.p2 = 1 - self.p1
-
-        print('p1 in fast:', self.p1)
-
-        theta_T = params['theta']
-        self.k_s = 0
-        T = 1./(self.get_omega_prime()*self.f0)
-        gamma = params['gamma']
-        delay_fb = params['delay_feedback']
-        Nvirt = params['Nvirt']
-
-        # noise parameters
-
-        noise_enable = params.get('noise_enable', 'none')
-        noise_std = params.get('noise_std', 0.0)
+        # determine the phase of machine learning
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
-
-    
-        # check automatically the current phase of the machine learning
-
-        print('len(K_s):', len(K_s))
-        print('train_samples:', train_samples)
         phase = 'train' if len(K_s) == train_samples else 'test'
+        print('current phase:', phase)
 
-        theta = theta_T*T
+        if phase == 'train':
+            if self.Primep1 is not None:
+                self.p1 = self.Primep1
+            self.p2 = 1 - self.p1
 
-        N = K_s.shape[0]
-        mag = np.zeros(N)
+            print('p1 in train & fast:', self.p1)
 
-        # determine if the noise will be added
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
 
-        add_noise = (noise_enable == 'both') or \
-                    (noise_enable == 'train' and phase == 'train') or \
-                    (noise_enable == 'test' and phase == 'test')
+            # noise parameters
+
+            noise_enable = params.get('noise_enable', 'none')
+            noise_std = params.get('noise_std', 0.0)
         
-        for idx, j in enumerate(K_s):
-            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-            self.evolve_fast(self.f0,theta)
-            mag[idx] = self.get_m_fast()
+            theta = theta_T*T
 
-            if add_noise:
-                mag[idx] += np.random.normal(0.0001, noise_std)
+            N = K_s.shape[0]
+            mag = np.zeros(N)
 
-        # if initialize:
-        #     self.initialize()
-        #     print('initialized')
-        # else:
-        #     print('skip initialization')
+            # determine if the noise will be added
 
-        if self.restart:
-            self.minirestart()
-            print('restarted')
+            add_noise = (noise_enable == 'both') or (noise_enable == 'train')
+
+            print('noisy training output') if add_noise else print('noise-free training output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+                if add_noise:
+                    mag[idx] += np.random.normal(0.0001, noise_std)
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initialization')
+
+            if self.restart:
+                self.minirestart()
+                print('restarted')
+            else:
+                print('skip restarting..')
+
         else:
-            print('skip restarting..')
+            print('p1 in test & fast:', self.p1)
 
-        if add_noise:
-            print('noisy output')
-        else:
-            print('noise-free output')
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            # noise parameters
+
+            noise_enable = params.get('noise_enable', 'none')
+            noise_std = params.get('noise_std', 0.0)
+        
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            # determine if the noise will be added
+
+            add_noise = (noise_enable == 'both') or (noise_enable == 'test')
+
+            print('noisy testing output') if add_noise else print('noise-free testing output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+                if add_noise:
+                    mag[idx] += np.random.normal(0.0001, noise_std)
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initialization')
+
+            if self.restart:
+                self.minirestart()
+                print('restarted')
+            else:
+                print('skip restarting..')
+        
 
         return mag
     
     def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
-        if self.Primep1 is not None:
-            self.p1 = self.Primep1
-        
 
-        self.p2 = 1 - self.p1
-        print('p1 in slow:', self.p1)
-
-        theta_T = params['theta']
-        
-        self.k_s = 0
-        
-        T = 1./(self.get_omega_prime() *self.f0)
-
-        gamma = params['gamma']
-        delay_fb = params['delay_feedback']
-        Nvirt = params['Nvirt']
-
-         # noise parameters
-
-        noise_enable = params.get('noise_enable', 'none')
-        noise_seed = params.get('noise_seed', None)
-        print('noise_seed:', noise_seed)
-        rng = np.random.default_rng(noise_seed)
-        noise_mean = params.get('noise_mean', 0.0001)
-        print('noise_mean:', noise_mean)
-        noise_std = params.get('noise_std', 0.0)
+        # determine the phase of machine learning
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
-        # check automatically the current phase of the machine learning
-
-        print('len(K_s):', len(K_s))
-        print('train_samples:', train_samples)
         phase = 'train' if len(K_s) == train_samples else 'test'
+        print('current phase:', phase)
 
-        theta = theta_T*T
+        if phase == 'train':
+            if self.Primep1 is not None:
+                self.p1 = self.Primep1
+            self.p2 = 1 - self.p1
 
-        N = K_s.shape[0]
-        mag = np.zeros(N)
+            print('p1 in train & slow:', self.p1)
 
-        # determine if the noise will be added
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
 
-        add_noise = (noise_enable == 'both') or \
-                    (noise_enable == 'train' and phase == 'train') or \
-                    (noise_enable == 'test' and phase == 'test')
-        
+            # noise parameters
+            noise_enable = params.get('noise_enable', 'none')
+            noise_seed = params.get('noise_seed', None)
+            print('noise_seed:', noise_seed)
+            rng = np.random.default_rng(noise_seed)
+            noise_mean = params.get('noise_mean', 0.0001)
+            print('noise_mean:', noise_mean)
+            noise_std = params.get('noise_std', 0.0)
 
-        for idx, j in enumerate(K_s):
-            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-            calculate_energy_barriers(self)
-            self.evolve(self.f0,theta) # update the p1 and p2
-            if add_noise:
-                mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            # determine if the noise will be added
+
+            add_noise = (noise_enable == 'both') or (noise_enable == 'train')
+            print('noisy training output') if add_noise else print('noise-free training output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                calculate_energy_barriers(self)
+                self.evolve(self.f0,theta) # update the p1 and p2
+                if add_noise:
+                    mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+                else:
+                    mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initializing..')
+
+            if self.restart:
+                self.minirestart()
+                print('restarted')
             else:
-                mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+                print('skip restarting..')
+
+        else:
+            print('p1 in test & slow:', self.p1)
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            # noise parameters
+            noise_enable = params.get('noise_enable', 'none')
+            noise_seed = params.get('noise_seed', None)
+            print('noise_seed:', noise_seed)
+            rng = np.random.default_rng(noise_seed)
+            noise_mean = params.get('noise_mean', 0.0001)
+            print('noise_mean:', noise_mean)
+            noise_std = params.get('noise_std', 0.0)
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            # determine if the noise will be added
+
+            add_noise = (noise_enable == 'both') or (noise_enable == 'test')
+            print('noisy testing output') if add_noise else print('noise-free testing output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                calculate_energy_barriers(self)
+                self.evolve(self.f0,theta) # update the p1 and p2
+                if add_noise:
+                    mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+                else:
+                    mag[idx] = self.get_m()
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initializing..')
             
-
-        # if initialize:
-        #     self.initialize()
-        #     print('initialized')
-        # else:
-        #     print('skip initializing..')
-
-        if self.restart:
-            self.minirestart()
-            print('restarted')
-        else:
-            print('skip restarting..')
-
-        if add_noise:
-            print('noisy output')
-        else:
-            print('noise-free output')
-        
+            if self.restart:
+                self.minirestart()
+                print('restarted')
+            else:
+                print('skip restarting..')
 
         return mag
+        
     
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
 
