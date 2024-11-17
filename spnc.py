@@ -258,9 +258,6 @@ def functions_energy_barriers(spn,k_s_lim):
 
     return(f_theta_1,f_theta_2,f_e_12_small,f_e_21_small,f_e_12_big,f_e_21_big)
 
-import datetime
-import traceback
-
 class spnc_anisotropy:
     """
     Simulate a SP netwotk with a control on anisotropy
@@ -281,29 +278,8 @@ class spnc_anisotropy:
         # Meta parameters
         self.interdensity = kwargs.get('interdensity',100)
         self.restart = kwargs.get('restart',True)
-        Primep1 = kwargs.get('Primep1', False) 
-        p1 = kwargs.get('p1', None)            
-        initialize = kwargs.get('initialize', False) 
-
-        #check
-
-    # 获取当前时间
-        current_time = datetime.datetime.now().strftime("%H:%M:%S.%f")
-        
-        # 获取调用栈信息
-        stack = traceback.extract_stack()
-        caller = stack[-2]  # -2 是因为 -1 是当前函数
-        
-        # 打印详细信息
-        print(f"\n=== Parameter Passing at {current_time} ===")
-        print(f"Called from: {caller.filename}, line {caller.lineno}")
-        print(f"interdensity: {kwargs.get('interdensity',100)}")
-        print(f"restart: {kwargs.get('restart',True)}")
-        print(f"Primep1: {kwargs.get('Primep1',False)}")
-        print(f"p1: {kwargs.get('p1',None)}")
-        print(f"initialize: {kwargs.get('initialize',False)}")
-        print("=====================================\n")
-        
+        self.Primep1 = kwargs.get('Primep1', None)             
+        # initialize = kwargs.get('initialize', False) 
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -326,27 +302,27 @@ class spnc_anisotropy:
         if compute_interpolation:
             (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
             (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
-
+    
         # save the initial values
-        self._initial_state = copy.deepcopy(self.__dict__)
+        # self._initial_state = copy.deepcopy(self.__dict__)
         # Initialize
-        if initialize:
-            self.initialize()
+        # if initialize:
+            # self.initialize()
 
         # Initialisation
-    def initialize(self):
+    # def initialize(self):
 
         # print("Initializing...")
         # print("Current state before initializing:", self.__dict__['p1'])
         # print("Initial state p1:", self._initial_state['p1'])
         
         # 1. save a copy of the initial state
-        initial_state_copy = copy.deepcopy(self._initial_state)
+        # initial_state_copy = copy.deepcopy(self._initial_state)
 
         # print("Initial state:", initial_state_copy)
         
         # 2. update the current state with the initial state
-        self.__dict__.update(initial_state_copy)
+        # self.__dict__.update(initial_state_copy)
         
         # print("After initializing - current dict p1:", self.__dict__['p1'])
         # print("After initializing - initial state p1:", self._initial_state['p1'])
@@ -455,8 +431,17 @@ class spnc_anisotropy:
     here, the len(input) is chosen as the metrics for judging the phase of machine learning, and to decide if adding noise will be carried out
 
     '''
-    def gen_signal_fast_delayed_feedback(self, K_s,params, initialize = initialize, *args,**kwargs):
-        print('model p1:', self.p1)
+    def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
+
+
+        if self.Primep1 is not None:
+            self.p1 = self.Primep1
+        
+
+        self.p2 = 1 - self.p1
+
+        print('p1 in fast:', self.p1)
+
         theta_T = params['theta']
         self.k_s = 0
         T = 1./(self.get_omega_prime()*self.f0)
@@ -468,13 +453,15 @@ class spnc_anisotropy:
 
         noise_enable = params.get('noise_enable', 'none')
         noise_std = params.get('noise_std', 0.0)
-        test_samples = params.get('test_samples', 1000)
-        train_samples = params.get('train_samples', 2000)
+        train_samples = params.get('train_sample', 2000)
+        test_samples = params.get('test_sample', 1000)
 
-        
 
+    
         # check automatically the current phase of the machine learning
 
+        print('len(K_s):', len(K_s))
+        print('train_samples:', train_samples)
         phase = 'train' if len(K_s) == train_samples else 'test'
 
         theta = theta_T*T
@@ -496,11 +483,11 @@ class spnc_anisotropy:
             if add_noise:
                 mag[idx] += np.random.normal(0.0001, noise_std)
 
-        if initialize:
-            self.initialize()
-            print('initialized')
-        else:
-            print('skip initialization')
+        # if initialize:
+        #     self.initialize()
+        #     print('initialized')
+        # else:
+        #     print('skip initialization')
 
         if self.restart:
             self.minirestart()
@@ -515,8 +502,14 @@ class spnc_anisotropy:
 
         return mag
     
-    def gen_signal_slow_delayed_feedback(self, K_s, params, initialize = initialize, *args,**kwargs):
-        print('model p1:', self.p1)  
+    def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
+        if self.Primep1 is not None:
+            self.p1 = self.Primep1
+        
+
+        self.p2 = 1 - self.p1
+        print('p1 in slow:', self.p1)
+
         theta_T = params['theta']
         
         self.k_s = 0
@@ -530,14 +523,21 @@ class spnc_anisotropy:
          # noise parameters
 
         noise_enable = params.get('noise_enable', 'none')
+        noise_seed = params.get('noise_seed', None)
+        print('noise_seed:', noise_seed)
+        rng = np.random.default_rng(noise_seed)
+        noise_mean = params.get('noise_mean', 0.0001)
+        print('noise_mean:', noise_mean)
         noise_std = params.get('noise_std', 0.0)
-        test_samples = params.get('test_samples', 1000)
-        train_samples = params.get('train_samples', 2000)
+        train_samples = params.get('train_sample', 2000)
+        test_samples = params.get('test_sample', 1000)
 
         # check automatically the current phase of the machine learning
 
+        print('len(K_s):', len(K_s))
+        print('train_samples:', train_samples)
         phase = 'train' if len(K_s) == train_samples else 'test'
-    
+
         theta = theta_T*T
 
         N = K_s.shape[0]
@@ -552,19 +552,19 @@ class spnc_anisotropy:
 
         for idx, j in enumerate(K_s):
             self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-            self.get_energy_barriers()
+            calculate_energy_barriers(self)
             self.evolve(self.f0,theta) # update the p1 and p2
-            mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
-
             if add_noise:
-                mag[idx] += np.random.normal(0.0001, noise_std)
+                mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+            else:
+                mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
             
 
-        if initialize:
-            self.initialize()
-            print('initialized')
-        else:
-            print('skip initializing..')
+        # if initialize:
+        #     self.initialize()
+        #     print('initialized')
+        # else:
+        #     print('skip initializing..')
 
         if self.restart:
             self.minirestart()
