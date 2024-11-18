@@ -458,6 +458,7 @@ class spnc_anisotropy:
         if phase == 'train':
             if self.Primep1 is not None:
                 self.p1 = self.Primep1
+                self.k_s = 0.00095219
             self.p2 = 1 - self.p1
 
             print('p1 in train & fast:', self.p1)
