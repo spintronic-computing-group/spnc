@@ -462,6 +462,8 @@ class spnc_anisotropy:
 
             print('p1 in train & fast:', self.p1)
 
+            print('==================== parameters after changing p1 ====================')
+
             calculate_energy_barriers(self)
             
             if self.compute_interpolation:
@@ -498,6 +500,8 @@ class spnc_anisotropy:
                 plt.ylabel("y")
                 plt.legend()
                 plt.show()
+
+            print('==================== parameters after changing p1 ====================')
 
             theta_T = params['theta']
             self.k_s = 0
