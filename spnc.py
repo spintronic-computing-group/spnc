@@ -302,6 +302,9 @@ class spnc_anisotropy:
         if compute_interpolation:
             (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
             (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
+
+        self.k_s_lim = k_s_lim
+        self.compute_interpolation = compute_interpolation
     
         # save the initial values
         # self._initial_state = copy.deepcopy(self.__dict__)
@@ -435,6 +438,14 @@ class spnc_anisotropy:
     develop a new judge function to determine the phase of machine learning
 
     '''
+    '''
+    18/11/24 by chen
+
+    add a new function to print out all parameters after changing the p1
+
+    '''
+
+
     def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
 
         # determine the phase of machine learning
@@ -450,6 +461,43 @@ class spnc_anisotropy:
             self.p2 = 1 - self.p1
 
             print('p1 in train & fast:', self.p1)
+
+            calculate_energy_barriers(self)
+            
+            if self.compute_interpolation:
+                (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,self.k_s_lim)
+                (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(self.k_s_lim)
+
+
+
+            import scipy.interpolate
+            import matplotlib.pyplot as plt
+
+            interpolations = []
+
+            for attr, value in vars(self).items():
+                if isinstance(value, scipy.interpolate.interpolate.interp1d):
+                    # collect interpolation functions
+                    x_data = value.x
+                    y_data = value.y
+                    interpolations.append((attr, x_data, y_data))
+                elif isinstance(value, np.ndarray):
+                    print(f"{attr}: shape: {value.shape}")
+                    print(f"  value: {value}")
+                elif callable(value):
+                    print(f"{attr}: callable")
+                else:
+                    print(f"{attr}: {value}")
+
+            # plot interpolation functions
+            for attr, x_data, y_data in interpolations:
+                plt.figure()
+                plt.plot(x_data, y_data, label=f"{attr}")
+                plt.title(f"{attr} interpolation")
+                plt.xlabel("x")
+                plt.ylabel("y")
+                plt.legend()
+                plt.show()
 
             theta_T = params['theta']
             self.k_s = 0
@@ -540,7 +588,6 @@ class spnc_anisotropy:
             else:
                 print('skip restarting..')
         
-
         return mag
     
     def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
