@@ -443,23 +443,58 @@ class spnc_anisotropy:
 
     add a new function to print out all parameters after changing the p1
 
+    19/11/24 by chen
+
+    add a new judge about restart in order to avoid the restart after the warmup
+
     '''
 
     def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
 
         # determine the phase of machine learning
+        warmup_samples = params.get('warmup_sample', 1000)
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
-        phase = 'train' if len(K_s) == train_samples else 'test'
+        if len(K_s) == warmup_samples:
+            phase = 'warmup'
+        elif len(K_s) == train_samples:
+            phase = 'train'
+        else:
+            phase = 'test'
+        
         print('current phase:', phase)
 
-        if phase == 'train':
+        if phase == 'warmup':
             if self.Primep1 is not None:
                 self.p1 = self.Primep1
             self.p2 = 1 - self.p1
 
+            print('p1 in warmup & fast:', self.p1)
+
+            
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+
+        if phase == 'train':
+
             print('p1 in train & fast:', self.p1)
+
 
             # print('==================== parameters after changing p1 ====================')
 
@@ -545,7 +580,8 @@ class spnc_anisotropy:
             else:
                 print('skip restarting..')
 
-        else:
+        if phase == 'test':
+
             print('p1 in test & fast:', self.p1)
 
             theta_T = params['theta']
@@ -596,16 +632,46 @@ class spnc_anisotropy:
     def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
 
         # determine the phase of machine learning
+        warmup_samples = params.get('warmup_sample', 1000)
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
-        phase = 'train' if len(K_s) == train_samples else 'test'
+        if len(K_s) == warmup_samples:
+            phase = 'warmup'
+        elif len(K_s) == train_samples:
+            phase = 'train'
+        else:
+            phase = 'test'
+        
         print('current phase:', phase)
 
-        if phase == 'train':
+        if phase == 'warmup':
             if self.Primep1 is not None:
                 self.p1 = self.Primep1
             self.p2 = 1 - self.p1
+
+            print('p1 in warmup & slow:', self.p1)
+
+            
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                calculate_energy_barriers(self)
+                self.evolve(self.f0,theta)
+                mag[idx] = self.get_m()
+
+        if phase == 'train':
 
             print('p1 in train & slow:', self.p1)
 
@@ -656,7 +722,7 @@ class spnc_anisotropy:
             else:
                 print('skip restarting..')
 
-        else:
+        if phase == 'test':
             print('p1 in test & slow:', self.p1)
 
             theta_T = params['theta']
