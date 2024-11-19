@@ -171,16 +171,16 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
         parameters for the resevoir
     """
     # NARMA10 warmup
-    seed_warmup = kwargs.get('seed_warmup', None)
+    seed_warmup = params.get('seed_warmup', None)
     print("seed warmup: "+str(seed_warmup))
-    length_warmup = kwargs.get('length_warmup', 100)
+    length_warmup = params.get('length_warmup', 100)
     print("length warmup: "+str(length_warmup))
     z,f = NARMA10(length_warmup,seed=seed_warmup)
     
     # Check the warmup
-    print("Warmup data:",len(z))
-    plt.plot(z)
-    plt.show()
+    # print("Warmup data:",len(z))
+    # plt.plot(z)
+    # plt.show()
 
 
     # NARMA10
