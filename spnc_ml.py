@@ -170,7 +170,20 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     params : dict
         parameters for the resevoir
     """
+    # NARMA10 warmup
+    seed_warmup = kwargs.get('seed_warmup', None)
+    print("seed warmup: "+str(seed_warmup))
+    length_warmup = kwargs.get('length_warmup', 100)
+    print("length warmup: "+str(length_warmup))
+    z,f = NARMA10(length_warmup,seed=seed_warmup)
+    
+    # Check the warmup
+    print("Warmup data:",len(z))
+    plt.plot(z)
+    plt.show()
 
+
+    # NARMA10
     seed_NARMA = kwargs.get('seed_NARMA', None)
     print("seed NARMA: "+str(seed_NARMA))
     u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
@@ -203,7 +216,8 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
-
+    # Warmup before training
+    S_warmup, J_warmup = snr.transform(z,params)
 
     # Training
     S_train, J_train = snr.transform(x_train,params)
@@ -213,6 +227,9 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
+
+    # Warmup before testing
+    S_warmup, J_warmup = snr.transform(z,params)
 
     # Testing
     S_test, J_test = snr.transform(x_test,params)
@@ -229,8 +246,6 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     plt.plot(y_test, pred, 'o')
     plt.show()
 
-    
-
     return_outputs = kwargs.get('return_outputs', False)
     if return_outputs:
         return(y_test,pred)
@@ -238,9 +253,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
-    
-
-    
+     
     return_y_train = kwargs.get('return_y_train', False)
     if return_y_train:
         return(S_train)
