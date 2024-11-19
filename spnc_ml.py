@@ -107,6 +107,8 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     # Training
     S_train, J_train = snr.transform(x_train,params)
     np.size(S_train)
+    print("Training data size: ", np.size(S_train))
+    print("Training data shape: ", S_train.shape)
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
@@ -126,6 +128,8 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     plt.plot(y_test, pred, 'o')
     plt.show()
 
+    
+
     return_outputs = kwargs.get('return_outputs', False)
     if return_outputs:
         return(y_test,pred)
@@ -133,6 +137,16 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
+    
+    '''
+    18/11/24 by chen
+
+    add a return_y_train option to return the training data
+    '''
+    
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(S_train)
 
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     """
