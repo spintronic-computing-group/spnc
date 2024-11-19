@@ -452,9 +452,10 @@ class spnc_anisotropy:
     def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
 
         # determine the phase of machine learning
-        warmup_samples = params.get('warmup_sample', 1000)
+        
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
+        warmup_samples = params.get('warmup_sample', 1000)
 
         if len(K_s) == warmup_samples:
             phase = 'warmup'
