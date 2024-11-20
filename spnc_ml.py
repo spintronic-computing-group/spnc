@@ -229,6 +229,13 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
 
+    # y_train = snr.M.apply(y_train)
+
+    # M = snr.M.M
+
+    # print("First few rows of Mask Matrix:")
+    # print(M)  
+
     # Warmup before testing
     S_warmup, J_warmup = snr.transform(z,params)
 
