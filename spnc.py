@@ -684,13 +684,13 @@ class spnc_anisotropy:
             Nvirt = params['Nvirt']
 
             # noise parameters
-            noise_enable = params.get('noise_enable', 'none')
+            noise_train = params.get('noise_train', False)
             noise_seed = params.get('noise_seed', None)
             print('noise_seed:', noise_seed)
             rng = np.random.default_rng(noise_seed)
-            noise_mean = params.get('noise_mean', 0.0001)
-            print('noise_mean:', noise_mean)
-            noise_std = params.get('noise_std', 0.0)
+            noise_mean_train = params.get('noise_mean_train', 0.0001)
+            print('noise_mean_train:', noise_mean_train)
+            noise_std_train = params.get('noise_std_train', 0.0)
 
             theta = theta_T*T
 
@@ -699,7 +699,7 @@ class spnc_anisotropy:
 
             # determine if the noise will be added
 
-            add_noise = (noise_enable == 'both') or (noise_enable == 'train')
+            add_noise = noise_train == True 
             print('noisy training output') if add_noise else print('noise-free training output')
 
             for idx, j in enumerate(K_s):
@@ -707,7 +707,7 @@ class spnc_anisotropy:
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if add_noise:
-                    mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+                    mag[idx] = self.get_m() + rng.normal(noise_mean_train, noise_std_train,1)
                 else:
                     mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
 
@@ -734,13 +734,13 @@ class spnc_anisotropy:
             Nvirt = params['Nvirt']
 
             # noise parameters
-            noise_enable = params.get('noise_enable', 'none')
+            noise_test = params.get('noise_test', False)
             noise_seed = params.get('noise_seed', None)
             print('noise_seed:', noise_seed)
             rng = np.random.default_rng(noise_seed)
-            noise_mean = params.get('noise_mean', 0.0001)
-            print('noise_mean:', noise_mean)
-            noise_std = params.get('noise_std', 0.0)
+            noise_mean_test = params.get('noise_mean_test', 0.0001)
+            print('noise_mean_test:', noise_mean_test)
+            noise_std_test = params.get('noise_std_test', 0.0)
 
             theta = theta_T*T
 
@@ -749,7 +749,7 @@ class spnc_anisotropy:
 
             # determine if the noise will be added
 
-            add_noise = (noise_enable == 'both') or (noise_enable == 'test')
+            add_noise = noise_test == True
             print('noisy testing output') if add_noise else print('noise-free testing output')
 
             for idx, j in enumerate(K_s):
@@ -757,7 +757,7 @@ class spnc_anisotropy:
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if add_noise:
-                    mag[idx] = self.get_m() + rng.normal(noise_mean, noise_std,1)
+                    mag[idx] = self.get_m() + rng.normal(noise_mean_test, noise_std_test,1)
                 else:
                     mag[idx] = self.get_m()
 
