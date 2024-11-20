@@ -126,6 +126,7 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
 
     plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
     plt.plot(y_test, pred, 'o')
+    plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
     plt.show()
 
     
