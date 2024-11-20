@@ -171,6 +171,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
         parameters for the resevoir
     """
     # NARMA10 warmup
+
     seed_warmup = params.get('seed_warmup', None)
     print("seed warmup: "+str(seed_warmup))
     length_warmup = params.get('length_warmup', 100)
@@ -256,7 +257,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
      
     return_y_train = kwargs.get('return_y_train', False)
     if return_y_train:
-        return(S_train)
+        return(y_train, S_train)
 
 
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
