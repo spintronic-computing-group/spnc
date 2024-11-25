@@ -710,6 +710,15 @@ class spnc_anisotropy:
                     mag[idx] = self.get_m() + rng.normal(noise_mean_train, noise_std_train,1)
                 else:
                     mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+            print('add linear fitting noise')
+            linear_noise = -1.0900 * mag + 0.0008
+            
+            print('linear_noise:', linear_noise)
+            print('linear_noise shape:', linear_noise.shape)
+            print('mag shape:', mag.shape)  
+
+            mag = mag + linear_noise
+
 
             # if initialize:
             #     self.initialize()
