@@ -124,10 +124,150 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     predNRMSE = NRMSE(pred, y_test, spacer=spacer)
     print(error, predNRMSE)
 
-    plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
-    plt.plot(y_test, pred, 'o')
-    plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
-    plt.show()
+    # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+    # plt.plot(y_test, pred, 'o')
+    # plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
+    # plt.show()
+
+    
+
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
+
+    return_NRMSE = kwargs.get('return_NRMSE', False)
+    if return_NRMSE:
+        return(predNRMSE)
+    
+    '''
+    18/11/24 by chen
+
+    add a return_y_train option to return the training data
+    '''
+    
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(y_train,S_train)
+    
+def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
+                       transform,params,*args,**kwargs):
+    """
+    perform the NARMA10 task with a given resevoir
+
+    Parameters
+    ----------
+    Ntrain : int
+        Number of samples to train
+    Ntest : int
+        Number of sampels to test
+    Nvirt : int
+        Number of virtual nodes for the resevoir
+    m0 : float
+        input scaling, no scaling for value of 1
+    bias : bool
+        True - use bias, False - don't
+    transform : function or class method
+        transforms a 1D numpy array through the resevoir
+    params : dict
+        parameters for the resevoir
+    """
+
+    seed_NARMA = kwargs.get('seed_NARMA', None)
+    print("seed NARMA: "+str(seed_NARMA))
+    u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+
+    x_train = u[:Ntrain]
+    y_train = d[:Ntrain]
+    x_test = u[Ntrain:]
+    y_test = d[Ntrain:]
+
+    print("Samples for training: ", len(x_train))
+    print("Samples for test: ", len(x_test))
+
+    # Net setup
+    Nin = x_train[0].shape[-1]
+    Nout = len(np.unique(y_train))
+
+    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    net = linear(Nin, Nout, bias = bias)
+
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask==True:
+        print("Deterministic mask will be used")
+        seed_mask = kwargs.get('seed_mask', 1234)
+        if seed_mask>=0:
+            print(seed_mask)
+            snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        else:
+            print("Max_sequences mask will be used")
+            snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+
+
+    # Training
+    S_train, J_train = snr.transform(x_train,params)
+    np.size(S_train)
+    print("Training data size: ", np.size(S_train))
+    print("Training data shape: ", S_train.shape)
+
+    # # # Flat and add noise
+    # original_shape = S_train.shape
+    # S_train = S_train.flatten()
+
+
+    # lag1 = np.roll(S_train, 1)
+    # lag2 = np.roll(S_train, 2)
+
+    # lag1[0] = 0
+    # lag2[0:2] = 0
+
+    # noise = -0.0502 + 0.1259 * S_train + (-0.3237) * lag1 + 0.7971 * lag2
+    # S_train = S_train + noise  
+    # S_train = S_train.reshape(original_shape) 
+
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
+
+
+    # Testing
+    S_test, J_test = snr.transform(x_test,params)
+    print("Testing data shape: ", np.shape(S_test))
+    print('S_test before adding noise:', S_test)
+
+    # Flat and add noise
+    original_shape = S_test.shape
+    S_test = S_test.flatten()
+
+
+    lag1 = np.roll(S_test, 1)
+    lag2 = np.roll(S_test, 2)
+
+    lag1[0] = 0
+    lag2[0:2] = 0
+
+    noise = -0.000502 + 0.1259 * S_test + (-0.3237) * lag1 + 0.7971 * lag2
+    S_test = S_test + noise  
+    S_test = S_test.reshape(original_shape)
+
+    print('noise in test:', noise)
+    print('noise shape:', np.shape(noise))
+    print('S_test shape:', np.shape(S_test))
+    print('S_test after adding:', S_test)
+
+    spacer = kwargs.get('spacer_NRMSE', 0)
+    print("Spacer NRMSE:"+str(spacer))
+    pred = net.forward(S_test)
+    np.size(pred)
+    error = MSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+    print(error, predNRMSE)
+
+    # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+    # plt.plot(y_test, pred, 'o')
+    # plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
+    # plt.show()
 
     
 
@@ -148,6 +288,7 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     return_y_train = kwargs.get('return_y_train', False)
     if return_y_train:
         return(S_train)
+    
     
 def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
                        transform,params,*args,**kwargs):
@@ -230,7 +371,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
 
-    # y_train = snr.M.apply(y_train)
+    y_train = snr.M.apply(y_train)
 
     # M = snr.M.M
 
