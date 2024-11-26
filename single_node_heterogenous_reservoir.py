@@ -46,10 +46,13 @@ class single_node_heterogenous_reservoir:
         # Initialize multiple spnc_anisotropy instances
         self.anisotropy_instances = [spnc_anisotropy(h, 90, 0, 45, beta_prime + delta) for delta in delta_betas]
 
-        # # check the parameters of the anisotropy instances
-        # for idx, instance in enumerate(self.anisotropy_instances):
-        #     print(f"Anisotropy instance {idx + 1} parameters:")
-        #     print(f"h: {instance.h}, beta_prime: {instance.beta_prime},theta_H: {instance.theta_H},")
+        # print("\n=== Anisotropy Instances Parameters ===")
+        # for i, instance in enumerate(self.anisotropy_instances):
+        #     print(f"\nInstance {i}:")
+        #     instance_attrs = vars(instance)
+        #     for attr, value in instance_attrs.items():
+        #         print(f"{attr}: {value}")
+        #     print("-" * 40)
 
     def transform(self, x, params, beta_ref, *weights, force_compute=False, nthreads=1):
 
@@ -101,6 +104,9 @@ class single_node_heterogenous_reservoir:
 
 
         for i, (instance, weight) in enumerate(zip(self.anisotropy_instances, weights)):
+            print(f"Processing instance {i + 1} with weight {weight}")
+            print(params)
+
 
             mag = instance.gen_signal_fast_delayed_feedback_varing_temp(J_1d, params, beta_ref)* weight
 
