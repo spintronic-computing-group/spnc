@@ -17,19 +17,27 @@ spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs)
     Perform the TI46 spoken digit task with a given resevoir
 """
 
-
 # libraries
 from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 
 
-# local repos and search paths. Each repo will be searched on every path
+#tuple of Path variables 
+import os 
 
-#tuple of Path variables
-searchpaths = Path(r'C:\\Users\\Chen\\Desktop\\Repository'),
-#tuple of repos
-repos = ('machine_learning_library',)
+#tuple of Path variables 
+if os.name == 'nt':  # Windows
+    searchpaths = (
+        Path(r'C:\\Users\\Chen\\Desktop\\Repository'),
+    )
+else:  # macOS or other Unix-like systems
+    searchpaths = (
+        Path(r'/Users/vvvps/Documents/repository'),
+    )
+
+# tuple of repos
+repos = ('machine_learning_library', 'machine_learning_library') 
 
 
 # Add local modules and paths to local repos
