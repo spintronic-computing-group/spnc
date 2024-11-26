@@ -6,14 +6,24 @@ this function is used to control the termination of the study under certain cond
 '''
 
 
-def callback(study, trial):
-    target_performance = 0.6  # Target for the first objective
-    target_stability = 0.05   # Target for the second objective
+def callback(targets):
+    """
+    设置多目标优化的callback函数
+    
+    Args:
+        targets: 包含两个目标值的元组 (target1, target2)
+    """
+    def callback(study, trial):
+        # 获取当前的Pareto前沿解
+        pareto_front = study.best_trials
 
-    # Access the best trial's values for each objective
-    best_performance, best_stability = study.best_trials[0].values
-
-    # Stop the study if both objectives meet their respective targets
-    if best_performance <= target_performance and best_stability <= target_stability:
-        study.stop()
+        # 检查是否有解同时满足两个目标
+        for t in pareto_front:
+            values = t.values  # 对于多目标优化，values是一个元组
+            if values[0] <= targets[0] and values[1] <= targets[1]:
+                print(f"找到满足目标的解: {values}")
+                study.stop()
+                return
+            
+    return callback
 
