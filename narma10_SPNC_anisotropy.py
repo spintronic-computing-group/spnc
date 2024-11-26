@@ -11,8 +11,8 @@ Ntrain = 2000
 Ntest = 1000
 
 # Net Parameters
-Nvirt = 400
-m0 = 0.003
+Nvirt = 40
+m0 = 1e-2
 bias = True
 
 # Resevoir parameters
@@ -20,8 +20,8 @@ h = 0.4
 theta_H = 90
 k_s_0 = 0
 phi = 45
-beta_prime = 20
-params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
 spn = spnc_anisotropy(h,theta_H,k_s_0,phi,beta_prime)
 
 transform = spn.gen_signal_fast_delayed_feedback
