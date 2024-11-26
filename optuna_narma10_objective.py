@@ -68,7 +68,7 @@ def objective(trial: optuna.Trial, Ntrain, Ntest, hyperparameter_ranges: dict,te
 
         # run in the range of temperature
 
-        beta_prime, nrmse = spnc_narma10_heterogenous(Ntrain,Ntest, Nvirt, gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0, step, beta_left, beta_right, *weights, bias=bias, params=params, seed_NARMA=1234)
+        beta_prime, nrmse = spnc_narma10_heterogenous(Ntrain,Ntest, Nvirt, gamma, beta_prime, beta_ref, deltabeta_list, h, theta, m0, step, beta_left, beta_right, *weights, bias=bias, params=params, seed_NARMA=1234, fixed_mask=True)
 
         model_performance = np.mean(nrmse)
         thermal_stability = np.std(nrmse)
