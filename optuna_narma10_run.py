@@ -3,6 +3,7 @@ from optuna_narma10_study import create_study
 from optuna_narma10_objective import objective
 import optuna
 from optuna_narma10_callback import callback
+from contextmanager import suppress_stdout
 
 
 '''
@@ -16,13 +17,15 @@ The purpose of callback is to control the termination of the study under certain
 
 if __name__ == "__main__":
 
+    verbose = False
+
     hyperparameter_ranges = {
-    'Nvirt': (50,400),
+    'Nvirt': (50,600),
     'gamma': (0.05, 0.2),    
-    'h': (0.3, 0.5),
-    'm0': (0.002, 0.004),
-    'theta': (0.23, 0.35),
-    'num_instances': (2, 7),        
+    'h': (0.2, 0.6),
+    'm0': (0.001, 0.005),
+    'theta': (0.1, 0.5),
+    'num_instances': (2, 8),        
     'deltabeta_range': (-5.0, 5.0), 
     'weight_range': (0.0, 1.0)      
     }
@@ -40,15 +43,23 @@ if __name__ == "__main__":
         'beta_right': 21.1  # right beta_prime range
     }
 
-    study = create_study()
+    with suppress_stdout(suppress=verbose):
+        study = create_study()
 
-    # study_name = 'MOO_test_30'
-    # storage_name = "sqlite:///db.sqlite3"
-    # study = optuna.load_study(study_name=study_name, storage=storage_name)
+        # study_name = 'MOO_test_30'
+        # storage_name = "sqlite:///db.sqlite3"
+        # study = optuna.load_study(study_name=study_name, storage=storage_name)
+        target = (0.6, 0.05)
+        callback = callback(target)
 
-    study.optimize(
-    lambda trial:objective(trial, Ntrain, Ntest, hyperparameter_ranges,  temp_params,True),
-    n_trials=None, callbacks=[callback]
-    )
+        study.optimize(
+        lambda trial:objective(trial, Ntrain, Ntest, hyperparameter_ranges,  temp_params,True),
+        n_trials=None, callbacks=[callback]
+        )
 
-
+    # Print
+    print('Best trial:')
+    print('  Value: ', study.best_trial.value)
+    print('  Params: ')
+    for key, value in study.best_trial.params.items():
+        print(f'    {key}: {value}')
