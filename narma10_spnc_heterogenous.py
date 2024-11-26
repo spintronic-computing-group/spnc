@@ -15,8 +15,8 @@ Ntrain = 2000
 Ntest = 1000
 
 # Net Parameters
-Nvirt = 30
-m0 = 0.003
+Nvirt = 40
+m0 = 1e-2
 bias = True
 
 # Resevoir parameters
@@ -24,17 +24,17 @@ h = 0.4
 theta_H = 90
 k_s_0 = 0
 phi = 45
-beta_prime = 20
-params = {'theta': 0.3,'gamma' : .113,'delay_feedback' : 0,'Nvirt' : Nvirt}
+beta_prime = 10
+params = {'theta': 1/3,'gamma' : .25,'delay_feedback' : 0,'Nvirt' : Nvirt}
 
-gamma = 0.113
-beta_ref = 20
-deltabeta_list = [0.1, 0.2, 0.3]
-theta = 0.3
+gamma = 0.25
+beta_ref = 10
+deltabeta_list = [0.0,0.0,0.0]
+theta = 1/3
 step = 1
-beta_left = 18.9
-beta_right = 21.1
-weights = [0.3,0.3,0.3]  # weights 长度应与 deltabeta_list 匹配
+beta_left = 10
+beta_right = 10
+weights = [1,0,0]  # weights 长度应与 deltabeta_list 匹配
 
 
 # DO IT
