@@ -183,6 +183,8 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
     x_test = u[Ntrain:]
     y_test = d[Ntrain:]
 
+    # print('x_train', x_train[:10])
+
     # print("Samples for training: ", len(x_train))
     # print("Samples for test: ", len(x_test))
 
@@ -237,6 +239,8 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
     # Testing in a wide temperature range
     for i in tqdm(beta_prime_list, desc="Processing beta_prime"):
         params['beta_prime'] = i
+
+        print("beta_prime: "+str(i))
         
         snr_test = single_node_heterogenous_reservoir(Nin, Nvirt,Nout, gamma, i, beta_ref, deltabeta_list,h, theta, m0)
         
@@ -254,7 +258,7 @@ def spnc_narma10_heterogenous(Ntrain,Ntest,Nvirt,gamma, beta_prime, beta_ref,del
 
         plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
         plt.plot(y_test, pred, 'o')
-        plt.text(0.5, 0.5, f'NRMSE: {predNRMSE}', fontsize=12)
+        plt.text(0.7, 0.25, f'NRMSE: {predNRMSE}', fontsize=12)
         plt.show()
 
         beta_primes_temp.append(i)
