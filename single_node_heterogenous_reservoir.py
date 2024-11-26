@@ -102,8 +102,6 @@ class single_node_heterogenous_reservoir:
 
         for i, (instance, weight) in enumerate(zip(self.anisotropy_instances, weights)):
 
-            instance.p1 = 0.50174584
-            instance.p2 = 1.0 - instance.p1
             mag = instance.gen_signal_fast_delayed_feedback_varing_temp(J_1d, params, beta_ref)* weight
 
             S_1d_avarage += mag
