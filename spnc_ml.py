@@ -343,6 +343,10 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     y_train = d[:Ntrain]
     x_test = u[Ntrain:]
     y_test = d[Ntrain:]
+    c = u[:length_warmup]
+    l = d[:length_warmup]
+    z = u[Ntrain-length_warmup:Ntrain]
+    f = d[Ntrain-length_warmup:Ntrain]
 
     print("Samples for training: ", len(x_train))
     print("Samples for test: ", len(x_test))
@@ -368,7 +372,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
     # Warmup before training
-    S_warmup, J_warmup = snr.transform(z,params)
+    S_warmup, J_warmup = snr.transform(c,params)
 
     # Training
     S_train, J_train = snr.transform(x_train,params)
@@ -387,7 +391,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     # print(M)  
 
     # Warmup before testing
-    S_warmup, J_warmup = snr.transform(z,params)
+    # S_warmup, J_warmup = snr.transform(z,params)
 
     # Testing
     S_test, J_test = snr.transform(x_test,params)
@@ -402,6 +406,7 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
 
     plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
     plt.plot(y_test, pred, 'o')
+    plt.text(0.75,0.75, 'NRMSE = '+str(predNRMSE), fontsize=12)
     plt.show()
 
     return_outputs = kwargs.get('return_outputs', False)
