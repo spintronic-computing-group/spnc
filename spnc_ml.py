@@ -337,16 +337,21 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     # NARMA10
     seed_NARMA = kwargs.get('seed_NARMA', None)
     print("seed NARMA: "+str(seed_NARMA))
-    u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+    Nwarmup = kwargs.get('Nwarmup', 0)
+    print("Nwarmup: "+str(Nwarmup))
+    u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
 
-    x_train = u[:Ntrain]
-    y_train = d[:Ntrain]
-    x_test = u[Ntrain:]
-    y_test = d[Ntrain:]
-    c = u[:length_warmup]
-    l = d[:length_warmup]
-    z = u[Ntrain-length_warmup:Ntrain]
-    f = d[Ntrain-length_warmup:Ntrain]
+  
+
+
+    x_train = u[Nwarmup:Nwarmup+Ntrain]
+    y_train = d[Nwarmup:Nwarmup+Ntrain]
+    x_test = u[Nwarmup+Ntrain:]
+    y_test = d[Nwarmup+Ntrain:]
+    c = u[:Nwarmup]
+    l = d[:Nwarmup]
+    # z = u[Ntrain-length_warmup:Ntrain]
+    # f = d[Ntrain-length_warmup:Ntrain]
 
     print("Samples for training: ", len(x_train))
     print("Samples for test: ", len(x_test))
@@ -371,8 +376,16 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
+    '''
+    09/12/20 by chen    
+    Try to repeat the warmup process
+    '''
+
+    repeat_warmup = kwargs.get('repeat_warmup', 1)
+
+    for _ in range(repeat_warmup):
     # Warmup before training
-    S_warmup, J_warmup = snr.transform(c,params)
+        S_warmup, J_warmup = snr.transform(c,params)
 
     # Training
     S_train, J_train = snr.transform(x_train,params)
@@ -390,8 +403,9 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     # print("First few rows of Mask Matrix:")
     # print(M)  
 
-    # Warmup before testing
-    # S_warmup, J_warmup = snr.transform(z,params)
+    # for _ in range(repeat_warmup):
+    # # Warmup before testing
+    #     S_warmup, J_warmup = snr.transform(z,params)
 
     # Testing
     S_test, J_test = snr.transform(x_test,params)
@@ -420,6 +434,10 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     return_y_train = kwargs.get('return_y_train', False)
     if return_y_train:
         return(y_train, S_train)
+    
+    return_all = kwargs.get('return_all', False)
+    if return_all:
+        return(predNRMSE, y_test, pred, y_train, S_train)
 
 
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
