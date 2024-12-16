@@ -630,12 +630,17 @@ class spnc_anisotropy:
         
         return mag
     
+    
     def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
 
         # determine the phase of machine learning
         warmup_samples = params.get('warmup_sample', 1000)
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
+
+        value = params.get('value', [-0.000007,0.000005])
+        prob = params.get('prob', [1/3,2/3])
+
 
         if len(K_s) == warmup_samples:
             phase = 'warmup'
@@ -702,12 +707,18 @@ class spnc_anisotropy:
             add_noise = noise_train == True 
             print('noisy training output') if add_noise else print('noise-free training output')
 
+            
+
             for idx, j in enumerate(K_s):
                 self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if add_noise:
-                    mag[idx] = self.get_m() + rng.normal(noise_mean_train, noise_std_train,1)
+
+                    # mag[idx] = self.get_m() + rng.choice(value, p=prob)
+                    # mag[idx] = self.get_m() + rng.normal(noise_mean_train, noise_std_train,1)
+                    mag[idx] = self.get_m()
+                    mag = mag + rng.normal(noise_mean_train, noise_std_train,1)
                 else:
                     mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
             # print('add linear fitting noise')
@@ -766,7 +777,10 @@ class spnc_anisotropy:
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if add_noise:
+                    # mag[idx] = self.get_m() + rng.choice(value, p=prob)
                     mag[idx] = self.get_m() + rng.normal(noise_mean_test, noise_std_test,1)
+                    # mag[idx] = self.get_m()
+                    # mag = mag + rng.normal(noise_mean_test, noise_std_test,1)
                 else:
                     mag[idx] = self.get_m()
 
@@ -852,5 +866,46 @@ class spnc_anisotropy:
 
         for idx, j in enumerate(K_s):
             mag[idx] = f(j + gamma*mag[(idx-Nvirt-delay_fb)%N])
+
+        return mag
+
+    def fast_calculate(self, K_s,params,*args,**kwargs):
+        theta_T = params['theta']
+        self.k_s = 0
+        T = 1./(self.get_omega_prime()*self.f0)
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            self.evolve_fast(self.f0,theta)
+            mag[idx] = self.get_m_fast()
+
+        return mag
+    
+    def slow_calculate(self, K_s,params,*args,**kwargs):
+        theta_T = params['theta']
+        self.k_s = 0
+        T = 1./(self.get_omega_prime()*self.f0)
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            calculate_energy_barriers(self)
+            self.evolve(self.f0,theta)
+            mag[idx] = self.get_m()
 
         return mag
