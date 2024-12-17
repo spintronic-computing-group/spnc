@@ -447,6 +447,10 @@ class spnc_anisotropy:
 
     add a new judge about restart in order to avoid the restart after the warmup
 
+    17/12/24 by chen
+
+    optimize the code by adding the noise parameters
+
     '''
 
     def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
@@ -630,35 +634,51 @@ class spnc_anisotropy:
         
         return mag
     
-    
     def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
 
         # determine the phase of machine learning
-        warmup_samples = params.get('warmup_sample', 1000)
+        warmup_samples = params.get('warmup_sample', 100)
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
-        value = params.get('value', [-0.000007,0.000005])
-        prob = params.get('prob', [1/3,2/3])
-
-
         if len(K_s) == warmup_samples:
-            phase = 'warmup'
+            phase = 'warmup period'
         elif len(K_s) == train_samples:
-            phase = 'train'
+            phase = 'train period'
         else:
-            phase = 'test'
+            phase = 'test period'
+
+        # Set the Johnson noise
+            johnson_noise = params.get('johnson_noise', False)
+            if johnson_noise == True:
+                seed_johnson_noise = params.get('seed_johnson_noise', None)
+                print('seed_johnson_noise:', seed_johnson_noise)
+                rng_johnson = np.random.default_rng(seed_johnson_noise)
+                mean_johnson_noise = params.get('mean_johnson_noise', 0.000)
+                print('mean_johnson_noise:', mean_johnson_noise)
+                std_johnson_noise = params.get('std_johnson_noise', 0.00001)
+                print('std_johnson_noise:', std_johnson_noise)
+
+        # Set the thermal fluctuation noise
+            thermal_noise = params.get('thermal_noise', False)
+            if thermal_noise == True:
+                lambda_ou = params.get('lambda_ou', 1.0) # regression rate
+                print('lambda_ou:', lambda_ou)
+                sigma_ou = params.get('sigma_ou', 0.1) # noise strength
+                print('sigma_ou:', sigma_ou)
+                seed_thermal_noise = params.get('seed_thermal_noise', None)
+                rng_thermal = np.random.default_rng(seed_thermal_noise)
+
         
         print('current phase:', phase)
+        print('----------------------')
 
-        if phase == 'warmup':
+        if phase == 'warmup period':
             if self.Primep1 is not None:
                 self.p1 = self.Primep1
             self.p2 = 1 - self.p1
+            print('Initial p1 in warmup period:', self.p1)
 
-            print('p1 in warmup & slow:', self.p1)
-
-            
             theta_T = params['theta']
             self.k_s = 0
             T = 1./(self.get_omega_prime()*self.f0)
@@ -671,15 +691,36 @@ class spnc_anisotropy:
             N = K_s.shape[0]
             mag = np.zeros(N)
 
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
+
+                # set the ou process step
+                dt_ou = theta
+
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
+
             for idx, j in enumerate(K_s):
-                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-                calculate_energy_barriers(self)
-                self.evolve(self.f0,theta)
-                mag[idx] = self.get_m()
+                if thermal_noise == True:
+                    self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                    calculate_energy_barriers(self)
+                    self.evolve(self.f0,theta) # update the p1 and p2
+                    if johnson_noise == True:
+                        mag[idx] = self.get_m()
+                        mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+                        print('noisy raw output')
+                    else:
+                        mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+                        print('noise-free raw output')
 
-        if phase == 'train':
+        if phase == 'train period':
 
-            print('p1 in train & slow:', self.p1)
+            print('Initial p1 in train period:', self.p1)
 
             theta_T = params['theta']
             self.k_s = 0
@@ -688,63 +729,46 @@ class spnc_anisotropy:
             delay_fb = params['delay_feedback']
             Nvirt = params['Nvirt']
 
-            # noise parameters
-            noise_train = params.get('noise_train', False)
-            noise_seed = params.get('noise_seed', None)
-            print('noise_seed:', noise_seed)
-            rng = np.random.default_rng(noise_seed)
-            noise_mean_train = params.get('noise_mean_train', 0.0001)
-            print('noise_mean_train:', noise_mean_train)
-            noise_std_train = params.get('noise_std_train', 0.0)
-
             theta = theta_T*T
 
             N = K_s.shape[0]
             mag = np.zeros(N)
 
-            # determine if the noise will be added
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
 
-            add_noise = noise_train == True 
-            print('noisy training output') if add_noise else print('noise-free training output')
+                # set the ou process step
+                dt_ou = theta
 
-            
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
 
             for idx, j in enumerate(K_s):
                 self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
-                if add_noise:
-
-                    # mag[idx] = self.get_m() + rng.choice(value, p=prob)
-                    # mag[idx] = self.get_m() + rng.normal(noise_mean_train, noise_std_train,1)
+                if johnson_noise == True:
                     mag[idx] = self.get_m()
-                    mag = mag + rng.normal(noise_mean_train, noise_std_train,1)
+                    mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+                    print('noisy raw output')
                 else:
                     mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
-            # print('add linear fitting noise')
-            # linear_noise = -1.0900 * mag + 0.0008
-            
-            # print('linear_noise:', linear_noise)
-            # print('linear_noise shape:', linear_noise.shape)
-            # print('mag shape:', mag.shape)  
-
-            # mag = mag + linear_noise
-
-
-            # if initialize:
-            #     self.initialize()
-            #     print('initialized')
-            # else:
-            #     print('skip initializing..')
+                    print('noise-free raw output')
 
             if self.restart:
                 self.minirestart()
-                print('restarted')
+                print('reservoir restarted')
             else:
-                print('skip restarting..')
+                print('reservoir skip restarting..')
 
-        if phase == 'test':
-            print('p1 in test & slow:', self.p1)
+        if phase == 'test period':
+
+            print('Initial p1 in test period:', self.p1)
 
             theta_T = params['theta']
             self.k_s = 0
@@ -753,51 +777,44 @@ class spnc_anisotropy:
             delay_fb = params['delay_feedback']
             Nvirt = params['Nvirt']
 
-            # noise parameters
-            noise_test = params.get('noise_test', False)
-            noise_seed = params.get('noise_seed', None)
-            print('noise_seed:', noise_seed)
-            rng = np.random.default_rng(noise_seed)
-            noise_mean_test = params.get('noise_mean_test', 0.0001)
-            print('noise_mean_test:', noise_mean_test)
-            noise_std_test = params.get('noise_std_test', 0.0)
-
             theta = theta_T*T
 
             N = K_s.shape[0]
             mag = np.zeros(N)
 
-            # determine if the noise will be added
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
 
-            add_noise = noise_test == True
-            print('noisy testing output') if add_noise else print('noise-free testing output')
+                # set the ou process step
+                dt_ou = theta
+
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
+
 
             for idx, j in enumerate(K_s):
                 self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
-                if add_noise:
-                    # mag[idx] = self.get_m() + rng.choice(value, p=prob)
-                    mag[idx] = self.get_m() + rng.normal(noise_mean_test, noise_std_test,1)
-                    # mag[idx] = self.get_m()
-                    # mag = mag + rng.normal(noise_mean_test, noise_std_test,1)
+                if johnson_noise == True:
+                    mag[idx] = self.get_m() + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+                    print('noisy raw output')
                 else:
                     mag[idx] = self.get_m()
+                    print('noise-free raw output')
 
-            # if initialize:
-            #     self.initialize()
-            #     print('initialized')
-            # else:
-            #     print('skip initializing..')
-            
             if self.restart:
                 self.minirestart()
-                print('restarted')
+                print('reservoir restarted')
             else:
-                print('skip restarting..')
+                print('reservoir skip restarting..')
 
         return mag
-    
     
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
 
