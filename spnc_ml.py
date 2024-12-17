@@ -192,6 +192,23 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
     print("Samples for training: ", len(x_train))
     print("Samples for test: ", len(x_test))
 
+    # Consider DAC noise
+    voltage_noise = params.get('voltage_noise', False)
+    if voltage_noise == True:
+        seed_voltage_noise = params.get('seed_voltage_noise', None) 
+        print("Voltage noise will be added")
+        delta_V = params.get('delta_V', 0.0)
+        print("Delta_V: "+str(delta_V))
+        
+        rng_DAC = np.random.default_rng(seed_voltage_noise)
+        DAC_noise_train = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_train[0]))
+        DAC_noise_test = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_test[0]))
+        
+        x_train = x_train + DAC_noise_train
+        x_test = x_test + DAC_noise_test
+    else:
+        print("No voltage noise will be added")
+
     # Net setup
     Nin = x_train[0].shape[-1]
     Nout = len(np.unique(y_train))
@@ -212,28 +229,11 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
-
-
     # Training
     S_train, J_train = snr.transform(x_train,params)
     np.size(S_train)
     print("Training data size: ", np.size(S_train))
     print("Training data shape: ", S_train.shape)
-
-    # # # Flat and add noise
-    # original_shape = S_train.shape
-    # S_train = S_train.flatten()
-
-
-    # lag1 = np.roll(S_train, 1)
-    # lag2 = np.roll(S_train, 2)
-
-    # lag1[0] = 0
-    # lag2[0:2] = 0
-
-    # noise = -0.0502 + 0.1259 * S_train + (-0.3237) * lag1 + 0.7971 * lag2
-    # S_train = S_train + noise  
-    # S_train = S_train.reshape(original_shape) 
 
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
