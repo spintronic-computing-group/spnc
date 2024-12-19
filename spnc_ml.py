@@ -180,32 +180,38 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
         parameters for the resevoir
     """
 
+    # NARMA10
     seed_NARMA = kwargs.get('seed_NARMA', None)
     print("seed NARMA: "+str(seed_NARMA))
-    u, d = NARMA10(Ntrain + Ntest,seed=seed_NARMA)
+    Nwarmup = kwargs.get('Nwarmup', 0)
+    print("Nwarmup: "+str(Nwarmup))
+    u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
 
-    x_train = u[:Ntrain]
-    y_train = d[:Ntrain]
-    x_test = u[Ntrain:]
-    y_test = d[Ntrain:]
+    x_train = u[Nwarmup:Nwarmup+Ntrain]
+    y_train = d[Nwarmup:Nwarmup+Ntrain]
+    x_test = u[Nwarmup+Ntrain:]
+    y_test = d[Nwarmup+Ntrain:]
+    c = u[:Nwarmup]
+    l = d[:Nwarmup]
 
     print("Samples for training: ", len(x_train))
     print("Samples for test: ", len(x_test))
 
     # Consider DAC noise
     voltage_noise = params.get('voltage_noise', False)
+    seed_voltage_noise = params.get('seed_voltage_noise', None) 
+    delta_V = params.get('delta_V', 0.0)
+    
+    
+    rng_DAC = np.random.default_rng(seed_voltage_noise)
+    DAC_noise_train = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_train[0]))
+    DAC_noise_test = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_test[0]))
+    
     if voltage_noise == True:
-        seed_voltage_noise = params.get('seed_voltage_noise', None) 
-        print("Voltage noise will be added")
-        delta_V = params.get('delta_V', 0.0)
-        print("Delta_V: "+str(delta_V))
-        
-        rng_DAC = np.random.default_rng(seed_voltage_noise)
-        DAC_noise_train = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_train[0]))
-        DAC_noise_test = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_test[0]))
-        
         x_train = x_train + DAC_noise_train
         x_test = x_test + DAC_noise_test
+        print("Voltage noise was added")
+        print("Delta_V: "+str(delta_V))
     else:
         print("No voltage noise will be added")
 
@@ -229,40 +235,21 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
             print("Max_sequences mask will be used")
             snr.M = max_sequences_mask(Nin, Nvirt, m0)
 
+    # Warmup before training
+    S_warmup, J_warmup = snr.transform(c,params)
+
     # Training
     S_train, J_train = snr.transform(x_train,params)
     np.size(S_train)
-    print("Training data size: ", np.size(S_train))
-    print("Training data shape: ", S_train.shape)
 
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
+    # Warmup before testing
+    S_warmup, J_warmup = snr.transform(c,params)
 
     # Testing
     S_test, J_test = snr.transform(x_test,params)
-    print("Testing data shape: ", np.shape(S_test))
-    print('S_test before adding noise:', S_test)
-
-    # Flat and add noise
-    original_shape = S_test.shape
-    S_test = S_test.flatten()
-
-
-    lag1 = np.roll(S_test, 1)
-    lag2 = np.roll(S_test, 2)
-
-    lag1[0] = 0
-    lag2[0:2] = 0
-
-    noise = -0.000502 + 0.1259 * S_test + (-0.3237) * lag1 + 0.7971 * lag2
-    S_test = S_test + noise  
-    S_test = S_test.reshape(original_shape)
-
-    print('noise in test:', noise)
-    print('noise shape:', np.shape(noise))
-    print('S_test shape:', np.shape(S_test))
-    print('S_test after adding:', S_test)
 
     spacer = kwargs.get('spacer_NRMSE', 0)
     print("Spacer NRMSE:"+str(spacer))
@@ -272,12 +259,6 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
     predNRMSE = NRMSE(pred, y_test, spacer=spacer)
     print(error, predNRMSE)
 
-    # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
-    # plt.plot(y_test, pred, 'o')
-    # plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
-    # plt.show()
-
-    
 
     return_outputs = kwargs.get('return_outputs', False)
     if return_outputs:
@@ -286,6 +267,10 @@ def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
+    
+    return_all = kwargs.get('return_all', False)
+    if return_all:
+        return(predNRMSE, y_test, pred, S_test, x_test, y_train, S_train, x_train, l, c, S_warmup, net, DAC_noise_train)
     
     '''
     18/11/24 by chen
@@ -340,10 +325,6 @@ def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
     Nwarmup = kwargs.get('Nwarmup', 0)
     print("Nwarmup: "+str(Nwarmup))
     u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
-
-  
-
-
     x_train = u[Nwarmup:Nwarmup+Ntrain]
     y_train = d[Nwarmup:Nwarmup+Ntrain]
     x_test = u[Nwarmup+Ntrain:]
