@@ -641,6 +641,27 @@ class spnc_anisotropy:
         train_samples = params.get('train_sample', 2000)
         test_samples = params.get('test_sample', 1000)
 
+        # Set the Johnson noise
+        johnson_noise = params.get('johnson_noise', False)
+        if johnson_noise == True:
+            seed_johnson_noise = params.get('seed_johnson_noise', None)
+            print('seed_johnson_noise:', seed_johnson_noise)
+            rng_johnson = np.random.default_rng(seed_johnson_noise)
+            mean_johnson_noise = params.get('mean_johnson_noise', 0.000)
+            print('mean_johnson_noise:', mean_johnson_noise)
+            std_johnson_noise = params.get('std_johnson_noise', 0.00001)
+            print('std_johnson_noise:', std_johnson_noise)
+
+        # Set the thermal fluctuation noise
+        thermal_noise = params.get('thermal_noise', False)
+        if thermal_noise == True:
+            lambda_ou = params.get('lambda_ou', 1.0) # regression rate
+            print('lambda_ou:', lambda_ou)
+            sigma_ou = params.get('sigma_ou', 0.1) # noise strength
+            print('sigma_ou:', sigma_ou)
+            seed_thermal_noise = params.get('seed_thermal_noise', None)
+            rng_thermal = np.random.default_rng(seed_thermal_noise)
+
         if len(K_s) == warmup_samples:
             phase = 'warmup period'
         elif len(K_s) == train_samples:
@@ -648,28 +669,9 @@ class spnc_anisotropy:
         else:
             phase = 'test period'
 
-        # Set the Johnson noise
-            johnson_noise = params.get('johnson_noise', False)
-            if johnson_noise == True:
-                seed_johnson_noise = params.get('seed_johnson_noise', None)
-                print('seed_johnson_noise:', seed_johnson_noise)
-                rng_johnson = np.random.default_rng(seed_johnson_noise)
-                mean_johnson_noise = params.get('mean_johnson_noise', 0.000)
-                print('mean_johnson_noise:', mean_johnson_noise)
-                std_johnson_noise = params.get('std_johnson_noise', 0.00001)
-                print('std_johnson_noise:', std_johnson_noise)
 
-        # Set the thermal fluctuation noise
-            thermal_noise = params.get('thermal_noise', False)
-            if thermal_noise == True:
-                lambda_ou = params.get('lambda_ou', 1.0) # regression rate
-                print('lambda_ou:', lambda_ou)
-                sigma_ou = params.get('sigma_ou', 0.1) # noise strength
-                print('sigma_ou:', sigma_ou)
-                seed_thermal_noise = params.get('seed_thermal_noise', None)
-                rng_thermal = np.random.default_rng(seed_thermal_noise)
 
-        
+        print('----------------------')
         print('current phase:', phase)
         print('----------------------')
 
@@ -691,6 +693,8 @@ class spnc_anisotropy:
             N = K_s.shape[0]
             mag = np.zeros(N)
 
+
+
             if thermal_noise == True: # consider thermal fluctuation
                 # pick up the base value of beta_prime in current period
                 base_beta_prime = self.beta_prime
@@ -705,18 +709,29 @@ class spnc_anisotropy:
                     T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
 
             for idx, j in enumerate(K_s):
-                if thermal_noise == True:
                     self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                    if thermal_noise == True:
+                        self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                    else:
+                        pass
                     calculate_energy_barriers(self)
                     self.evolve(self.f0,theta) # update the p1 and p2
                     if johnson_noise == True:
                         mag[idx] = self.get_m()
                         mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
-                        print('noisy raw output')
+
                     else:
                         mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
-                        print('noise-free raw output')
+            
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+
 
         if phase == 'train period':
 
@@ -734,6 +749,8 @@ class spnc_anisotropy:
             N = K_s.shape[0]
             mag = np.zeros(N)
 
+
+
             if thermal_noise == True: # consider thermal fluctuation
                 # pick up the base value of beta_prime in current period
                 base_beta_prime = self.beta_prime
@@ -749,16 +766,27 @@ class spnc_anisotropy:
 
             for idx, j in enumerate(K_s):
                 self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-                self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                if thermal_noise == True:
+                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                else:
+                    pass
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if johnson_noise == True:
                     mag[idx] = self.get_m()
                     mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
-                    print('noisy raw output')
                 else:
                     mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
-                    print('noise-free raw output')
+
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+                
 
             if self.restart:
                 self.minirestart()
@@ -798,15 +826,27 @@ class spnc_anisotropy:
 
             for idx, j in enumerate(K_s):
                 self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-                self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                if thermal_noise == True:
+                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                else:
+                    pass
                 calculate_energy_barriers(self)
                 self.evolve(self.f0,theta) # update the p1 and p2
                 if johnson_noise == True:
                     mag[idx] = self.get_m() + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
-                    print('noisy raw output')
+
                 else:
                     mag[idx] = self.get_m()
-                    print('noise-free raw output')
+            
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+
 
             if self.restart:
                 self.minirestart()
