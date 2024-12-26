@@ -279,7 +279,7 @@ class spnc_anisotropy:
         self.interdensity = kwargs.get('interdensity',100)
         self.restart = kwargs.get('restart',True)
         self.Primep1 = kwargs.get('Primep1', None)             
-        # initialize = kwargs.get('initialize', False) 
+        
         #Parameters
         self.h = h
         self.theta_H = theta_H
