@@ -17,19 +17,27 @@ spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs)
     Perform the TI46 spoken digit task with a given resevoir
 """
 
-
 # libraries
 from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 
 
-# local repos and search paths. Each repo will be searched on every path
+#tuple of Path variables 
+import os 
 
-#tuple of Path variables
-searchpaths = (Path.home() / 'repos', Path.home() / 'Desktop' / 'Stage_3A' / 'ML_library')
-#tuple of repos
-repos = ('machine_learning_library',)
+#tuple of Path variables 
+if os.name == 'nt':  # Windows
+    searchpaths = (
+        Path(r'C:\\Users\\Chen\\Desktop\\Repository'),
+    )
+else:  # macOS or other Unix-like systems
+    searchpaths = (
+        Path(r'/Users/vvvps/Documents/repository'),
+    )
+
+# tuple of repos
+repos = ('machine_learning_library', 'machine_learning_library') 
 
 
 # Add local modules and paths to local repos
@@ -107,6 +115,8 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     # Training
     S_train, J_train = snr.transform(x_train,params)
     np.size(S_train)
+    print("Training data size: ", np.size(S_train))
+    print("Training data shape: ", S_train.shape)
     seed_training = kwargs.get('seed_training', 1234)
     RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
 
@@ -122,8 +132,276 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     predNRMSE = NRMSE(pred, y_test, spacer=spacer)
     print(error, predNRMSE)
 
+    # plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+    # plt.plot(y_test, pred, 'o')
+    # plt.text(0.5,0.1, 'NRMSE = '+str(predNRMSE), fontsize=12)
+    # plt.show()
+
+    
+
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
+
+    return_NRMSE = kwargs.get('return_NRMSE', False)
+    if return_NRMSE:
+        return(predNRMSE)
+    
+    '''
+    18/11/24 by chen
+
+    add a return_y_train option to return the training data
+    '''
+    
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(y_train,S_train)
+    
+def spnc_narma10_noise(Ntrain,Ntest,Nvirt,m0, bias,
+                       transform,params,*args,**kwargs):
+    """
+    perform the NARMA10 task with a given resevoir
+
+    Parameters
+    ----------
+    Ntrain : int
+        Number of samples to train
+    Ntest : int
+        Number of sampels to test
+    Nvirt : int
+        Number of virtual nodes for the resevoir
+    m0 : float
+        input scaling, no scaling for value of 1
+    bias : bool
+        True - use bias, False - don't
+    transform : function or class method
+        transforms a 1D numpy array through the resevoir
+    params : dict
+        parameters for the resevoir
+    """
+
+    # NARMA10
+    seed_NARMA = kwargs.get('seed_NARMA', None)
+    print("seed NARMA: "+str(seed_NARMA))
+    Nwarmup = kwargs.get('Nwarmup', 0)
+    print("Nwarmup: "+str(Nwarmup))
+    u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
+
+    x_train = u[Nwarmup:Nwarmup+Ntrain]
+    y_train = d[Nwarmup:Nwarmup+Ntrain]
+    x_test = u[Nwarmup+Ntrain:]
+    y_test = d[Nwarmup+Ntrain:]
+    c = u[:Nwarmup]
+    l = d[:Nwarmup]
+
+    print("Samples for training: ", len(x_train))
+    print("Samples for test: ", len(x_test))
+
+    # Consider DAC noise
+    voltage_noise = params.get('voltage_noise', False)
+    seed_voltage_noise = params.get('seed_voltage_noise', None) 
+    delta_V = params.get('delta_V', 0.0)
+    
+    
+    rng_DAC = np.random.default_rng(seed_voltage_noise)
+    DAC_noise_train = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_train[0]))
+    DAC_noise_test = rng_DAC.normal(-delta_V/2, delta_V/2, len(x_test[0]))
+    
+    if voltage_noise == True:
+        x_train = x_train + DAC_noise_train
+        x_test = x_test + DAC_noise_test
+        print("Voltage noise was added")
+        print("Delta_V: "+str(delta_V))
+    else:
+        print("No voltage noise will be added")
+
+    # Net setup
+    Nin = x_train[0].shape[-1]
+    Nout = len(np.unique(y_train))
+
+    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    net = linear(Nin, Nout, bias = bias)
+
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask==True:
+        print("Deterministic mask will be used")
+        seed_mask = kwargs.get('seed_mask', 1234)
+        if seed_mask>=0:
+            print(seed_mask)
+            snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        else:
+            print("Max_sequences mask will be used")
+            snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+    # Warmup before training
+    S_warmup, J_warmup = snr.transform(c,params)
+
+    # Training
+    S_train, J_train = snr.transform(x_train,params)
+    np.size(S_train)
+
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
+
+    # Warmup before testing
+    S_warmup, J_warmup = snr.transform(c,params)
+
+    # Testing
+    S_test, J_test = snr.transform(x_test,params)
+
+    spacer = kwargs.get('spacer_NRMSE', 0)
+    print("Spacer NRMSE:"+str(spacer))
+    pred = net.forward(S_test)
+    np.size(pred)
+    error = MSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+    print(error, predNRMSE)
+
+
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
+
+    return_NRMSE = kwargs.get('return_NRMSE', False)
+    if return_NRMSE:
+        return(predNRMSE)
+    
+    return_all = kwargs.get('return_all', False)
+    if return_all:
+        return(predNRMSE, y_test, pred, S_test, x_test, y_train, S_train, x_train, l, c, S_warmup, net, DAC_noise_train)
+    
+    '''
+    18/11/24 by chen
+
+    add a return_y_train option to return the training data
+    '''
+    
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(S_train)
+    
+    
+def spnc_narma10_warmup(Ntrain,Ntest,Nvirt,m0, bias,
+                       transform,params,*args,**kwargs):
+    """
+    perform the NARMA10 task with a given resevoir
+
+    Parameters
+    ----------
+    Ntrain : int
+        Number of samples to train
+    Ntest : int
+        Number of sampels to test
+    Nvirt : int
+        Number of virtual nodes for the resevoir
+    m0 : float
+        input scaling, no scaling for value of 1
+    bias : bool
+        True - use bias, False - don't
+    transform : function or class method
+        transforms a 1D numpy array through the resevoir
+    params : dict
+        parameters for the resevoir
+    """
+    # NARMA10 warmup
+
+    seed_warmup = params.get('seed_warmup', None)
+    print("seed warmup: "+str(seed_warmup))
+    length_warmup = params.get('length_warmup', 100)
+    print("length warmup: "+str(length_warmup))
+    z,f = NARMA10(length_warmup,seed=seed_warmup)
+    
+    # Check the warmup
+    # print("Warmup data:",len(z))
+    # plt.plot(z)
+    # plt.show()
+
+
+    # NARMA10
+    seed_NARMA = kwargs.get('seed_NARMA', None)
+    print("seed NARMA: "+str(seed_NARMA))
+    Nwarmup = kwargs.get('Nwarmup', 0)
+    print("Nwarmup: "+str(Nwarmup))
+    u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
+    x_train = u[Nwarmup:Nwarmup+Ntrain]
+    y_train = d[Nwarmup:Nwarmup+Ntrain]
+    x_test = u[Nwarmup+Ntrain:]
+    y_test = d[Nwarmup+Ntrain:]
+    c = u[:Nwarmup]
+    l = d[:Nwarmup]
+    # z = u[Ntrain-length_warmup:Ntrain]
+    # f = d[Ntrain-length_warmup:Ntrain]
+
+    print("Samples for training: ", len(x_train))
+    print("Samples for test: ", len(x_test))
+
+    # Net setup
+    Nin = x_train[0].shape[-1]
+    Nout = len(np.unique(y_train))
+
+    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    net = linear(Nin, Nout, bias = bias)
+
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask==True:
+        print("Deterministic mask will be used")
+        seed_mask = kwargs.get('seed_mask', 1234)
+        if seed_mask>=0:
+            print(seed_mask)
+            snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        else:
+            print("Max_sequences mask will be used")
+            snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+    '''
+    09/12/20 by chen    
+    Try to repeat the warmup process
+    '''
+
+    repeat_warmup = kwargs.get('repeat_warmup', 1)
+
+    for _ in range(repeat_warmup):
+    # Warmup before training
+        S_warmup, J_warmup = snr.transform(c,params)
+
+    # Training
+    S_train, J_train = snr.transform(x_train,params)
+    np.size(S_train)
+    print("Training data size: ", np.size(S_train))
+    print("Training data shape: ", S_train.shape)
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, quiet = True, seed_training=seed_training)
+
+
+    y_train = snr.M.apply(y_train)
+
+    # M = snr.M.M
+
+    # print("First few rows of Mask Matrix:")
+    # print(M)  
+
+    # for _ in range(repeat_warmup):
+    # # Warmup before testing
+    #     S_warmup, J_warmup = snr.transform(z,params)
+
+    # Testing
+    S_test, J_test = snr.transform(x_test,params)
+
+    spacer = kwargs.get('spacer_NRMSE', 0)
+    print("Spacer NRMSE:"+str(spacer))
+    pred = net.forward(S_test)
+    np.size(pred)
+    error = MSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+    print(error, predNRMSE)
+
     plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
     plt.plot(y_test, pred, 'o')
+    plt.text(0.75,0.75, 'NRMSE = '+str(predNRMSE), fontsize=12)
     plt.show()
 
     return_outputs = kwargs.get('return_outputs', False)
@@ -133,7 +411,165 @@ def spnc_narma10(Ntrain,Ntest,Nvirt,m0, bias,
     return_NRMSE = kwargs.get('return_NRMSE', False)
     if return_NRMSE:
         return(predNRMSE)
+     
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(y_train, S_train)
+    
+    return_all = kwargs.get('return_all', False)
+    if return_all:
+        return(predNRMSE, y_test, pred, y_train, S_train)
 
+def spnc_narma10_weight(Ntrain,Ntest,Nvirt,m0, bias,
+                       transform,params,*args,**kwargs):
+    """
+    perform the NARMA10 task with a given resevoir
+
+    Parameters
+    ----------
+    Ntrain : int
+        Number of samples to train
+    Ntest : int
+        Number of sampels to test
+    Nvirt : int
+        Number of virtual nodes for the resevoir
+    m0 : float
+        input scaling, no scaling for value of 1
+    bias : bool
+        True - use bias, False - don't
+    transform : function or class method
+        transforms a 1D numpy array through the resevoir
+    params : dict
+        parameters for the resevoir
+    """
+    # NARMA10 warmup
+
+    seed_warmup = params.get('seed_warmup', None)
+    print("seed warmup: "+str(seed_warmup))
+    length_warmup = params.get('length_warmup', 100)
+    print("length warmup: "+str(length_warmup))
+    z,f = NARMA10(length_warmup,seed=seed_warmup)
+    
+    # Check the warmup
+    # print("Warmup data:",len(z))
+    # plt.plot(z)
+    # plt.show()
+
+
+    # NARMA10
+    seed_NARMA = kwargs.get('seed_NARMA', None)
+    print("seed NARMA: "+str(seed_NARMA))
+    Nwarmup = kwargs.get('Nwarmup', 0)
+    print("Nwarmup: "+str(Nwarmup))
+    u, d = NARMA10(Nwarmup + Ntrain + Ntest,seed=seed_NARMA)
+
+    x_train = u[Nwarmup:Nwarmup+Ntrain]
+    y_train = d[Nwarmup:Nwarmup+Ntrain]
+    x_test = u[Nwarmup+Ntrain:]
+    y_test = d[Nwarmup+Ntrain:]
+    c = u[:Nwarmup]
+    l = d[:Nwarmup]
+    # z = u[Ntrain-length_warmup:Ntrain]
+    # f = d[Ntrain-length_warmup:Ntrain]
+
+    print("Samples for training: ", len(x_train))
+    print("Samples for test: ", len(x_test))
+
+    # Net setup
+    Nin = x_train[0].shape[-1]
+    Nout = len(np.unique(y_train))
+
+    print( 'Nin =', Nin, ', Nout = ', Nout, ', Nvirt = ', Nvirt)
+
+    snr = single_node_reservoir(Nin, Nout, Nvirt, m0, res = transform)
+    net = linear(Nin, Nout, bias = bias)
+
+    fixed_mask = kwargs.get('fixed_mask', False)
+    if fixed_mask==True:
+        print("Deterministic mask will be used")
+        seed_mask = kwargs.get('seed_mask', 1234)
+        if seed_mask>=0:
+            print(seed_mask)
+            snr.M = fixed_seed_mask(Nin, Nvirt, m0, seed=seed_mask)
+        else:
+            print("Max_sequences mask will be used")
+            snr.M = max_sequences_mask(Nin, Nvirt, m0)
+
+    '''
+    09/12/20 by chen    
+    Try to repeat the warmup process
+    '''
+
+    repeat_warmup = kwargs.get('repeat_warmup', 1)
+
+    for _ in range(repeat_warmup):
+    # Warmup before training
+        S_warmup, J_warmup = snr.transform(c,params)
+
+    # Training
+    S_train, J_train = snr.transform(x_train,params)
+
+    np.size(S_train)
+    print("Training data size: ", np.size(S_train))
+    print("Training data shape: ", S_train.shape)
+    seed_training = kwargs.get('seed_training', 1234)
+    RR.Kfold_train(net,S_train,y_train,10, lmin = -10, lmax = 1, quiet = False, seed_training=seed_training)
+
+
+    # y_train = snr.M.apply(y_train)
+
+    external_net = kwargs.get('external_net', None)
+    if external_net is not None:
+        print("External net will be used")
+        net = external_net
+    else:
+        print("External net will not be used")
+        net = net
+
+    # M = snr.M.M
+
+    # print("First few rows of Mask Matrix:")
+    # print(M)  
+
+    # for _ in range(repeat_warmup):
+    # # Warmup before testing
+    #     S_warmup, J_warmup = snr.transform(z,params)
+
+    # Testing
+    S_test, J_test = snr.transform(x_test,params)
+
+    
+
+    spacer = kwargs.get('spacer_NRMSE', 0)
+    print("Spacer NRMSE:"+str(spacer))
+    pred = net.forward(S_test)
+    np.size(pred)
+    error = MSE(pred, y_test)
+    predNRMSE = NRMSE(pred, y_test, spacer=spacer)
+    print(error, predNRMSE)
+
+    plt.plot( np.linspace(0.0,1.0), np.linspace(0.0,1.0), 'k--')
+    plt.plot(y_test, pred, 'o')
+    plt.text(0.75,0.75, f'NRMSE = {predNRMSE:.4f}', fontsize=12)
+    plt.show()
+
+    return_outputs = kwargs.get('return_outputs', False)
+    if return_outputs:
+        return(y_test,pred)
+
+    return_NRMSE = kwargs.get('return_NRMSE', False)
+    if return_NRMSE:
+        return(predNRMSE)
+     
+    return_y_train = kwargs.get('return_y_train', False)
+    if return_y_train:
+        return(y_train, S_train)
+    
+    return_all = kwargs.get('return_all', False)
+    if return_all:
+        return(predNRMSE, y_test, pred, y_train, S_train, net,x_train,S_train,x_test,S_test)
+    
+    
 def spnc_spoken_digits(speakers,Nvirt,m0,bias,transform,params,*args,**kwargs):
     """
     perfoms the spoken digit task with a given resevoirs

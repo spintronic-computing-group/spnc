@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 from scipy import constants
 from scipy.signal import argrelextrema
 from scipy import interpolate
+import copy
 
 
 class spnc_basic:
@@ -273,7 +274,12 @@ class spnc_anisotropy:
 
     """
 
-    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+    def __init__(self,h,theta_H,k_s,phi,beta_prime,k_s_lim=1.,compute_interpolation=True,f0=1e10,**kwargs):
+        # Meta parameters
+        self.interdensity = kwargs.get('interdensity',100)
+        self.restart = kwargs.get('restart',True)
+        self.Primep1 = kwargs.get('Primep1', None)             
+        
         #Parameters
         self.h = h
         self.theta_H = theta_H
@@ -292,6 +298,57 @@ class spnc_anisotropy:
         self.f0 = f0
         self.p1 = self.get_p1_eq()
         self.p2 = self.get_p2_eq()
+        #Interpolations to fasten the code
+        if compute_interpolation:
+            (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
+            (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(k_s_lim)
+
+        self.k_s_lim = k_s_lim
+        self.compute_interpolation = compute_interpolation
+    
+        # save the initial values
+        # self._initial_state = copy.deepcopy(self.__dict__)
+        # Initialize
+        # if initialize:
+            # self.initialize()
+
+        # Initialisation
+    # def initialize(self):
+
+        # print("Initializing...")
+        # print("Current state before initializing:", self.__dict__['p1'])
+        # print("Initial state p1:", self._initial_state['p1'])
+        
+        # 1. save a copy of the initial state
+        # initial_state_copy = copy.deepcopy(self._initial_state)
+
+        # print("Initial state:", initial_state_copy)
+        
+        # 2. update the current state with the initial state
+        # self.__dict__.update(initial_state_copy)
+        
+        # print("After initializing - current dict p1:", self.__dict__['p1'])
+        # print("After initializing - initial state p1:", self._initial_state['p1'])
+        # print('finished initializing..')
+
+    def minirestart(self,k_s_lim=1.,compute_interpolation=True,f0=1e10):
+        #Parameters
+        self.k_s = 0
+
+        #Computed
+        self.e_12_small = np.nan
+        self.e_21_small = np.nan
+        self.e_12_big = np.nan
+        self.e_21_big = np.nan
+        self.theta_1 = np.nan
+        self.theta_2 = np.nan
+
+        #Dynamic
+        calculate_energy_barriers(self)
+        self.f0 = f0
+        self.p1 = self.get_p1_eq()
+        self.p2 = self.get_p2_eq()
+
         #Interpolations to fasten the code
         if compute_interpolation:
             (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,k_s_lim)
@@ -371,26 +428,434 @@ class spnc_anisotropy:
         f_m = lambda x: self.f_p1_eq(x)*np.cos(self.f_theta_1(x)*np.pi/180)+(1-self.f_p1_eq(x))*np.cos(self.f_theta_2(x)*np.pi/180)
         return(f_m)
 
-    def gen_signal_fast_delayed_feedback(self, K_s,params,*args,**kwargs):
-        theta_T = params['theta']
-        self.k_s = 0
-        T = 1./(self.get_omega_prime()*self.f0)
-        gamma = params['gamma']
-        delay_fb = params['delay_feedback']
-        Nvirt = params['Nvirt']
+    '''
+    add the noise function here
 
-        theta = theta_T*T
+    here, the len(input) is chosen as the metrics for judging the phase of machine learning, and to decide if adding noise will be carried out
 
-        N = K_s.shape[0]
-        mag = np.zeros(N)
+    17/11/24 by chen
 
-        for idx, j in enumerate(K_s):
-            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
-            self.evolve_fast(self.f0,theta)
-            mag[idx] = self.get_m_fast()
+    develop a new judge function to determine the phase of machine learning
+
+    '''
+    '''
+    18/11/24 by chen
+
+    add a new function to print out all parameters after changing the p1
+
+    19/11/24 by chen
+
+    add a new judge about restart in order to avoid the restart after the warmup
+
+    17/12/24 by chen
+
+    optimize the code by adding the noise parameters
+
+    '''
+
+    def gen_signal_fast_delayed_feedback(self, K_s,params, *args,**kwargs):
+
+        # determine the phase of machine learning
+        
+        train_samples = params.get('train_sample', 2000)
+        test_samples = params.get('test_sample', 1000)
+        warmup_samples = params.get('warmup_sample', 1000)
+
+        if len(K_s) == warmup_samples:
+            phase = 'warmup'
+        elif len(K_s) == train_samples:
+            phase = 'train'
+        else:
+            phase = 'test'
+        
+        print('current phase:', phase)
+
+        if phase == 'warmup':
+            if self.Primep1 is not None:
+                self.p1 = self.Primep1
+            self.p2 = 1 - self.p1
+
+            print('p1 in warmup & fast:', self.p1)
+
+            
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+
+        if phase == 'train':
+
+            print('p1 in train & fast:', self.p1)
+
+
+            # print('==================== parameters after changing p1 ====================')
+
+            # calculate_energy_barriers(self)
+            
+            # if self.compute_interpolation:
+            #     (self.f_theta_1,self.f_theta_2,self.f_e_12_small,self.f_e_21_small,self.f_e_12_big,self.f_e_21_big) = functions_energy_barriers(self,self.k_s_lim)
+            #     (self.f_p1_eq,self.f_om_tot) = self.calculate_f_p1_om(self.k_s_lim)
+
+
+
+            # import scipy.interpolate
+            # import matplotlib.pyplot as plt
+
+            # interpolations = []
+
+            # for attr, value in vars(self).items():
+            #     if isinstance(value, scipy.interpolate.interpolate.interp1d):
+            #         # collect interpolation functions
+            #         x_data = value.x
+            #         y_data = value.y
+            #         interpolations.append((attr, x_data, y_data))
+            #     elif isinstance(value, np.ndarray):
+            #         print(f"{attr}: shape: {value.shape}")
+            #         print(f"  value: {value}")
+            #     elif callable(value):
+            #         print(f"{attr}: callable")
+            #     else:
+            #         print(f"{attr}: {value}")
+
+            # # plot interpolation functions
+            # for attr, x_data, y_data in interpolations:
+            #     plt.figure()
+            #     plt.plot(x_data, y_data, label=f"{attr}")
+            #     plt.title(f"{attr} interpolation")
+            #     plt.xlabel("x")
+            #     plt.ylabel("y")
+            #     plt.legend()
+            #     plt.show()
+
+            # print('==================== parameters after changing p1 ====================')
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            # noise parameters
+
+            noise_enable = params.get('noise_enable', 'none')
+            noise_std = params.get('noise_std', 0.0)
+        
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            # determine if the noise will be added
+
+            add_noise = (noise_enable == 'both') or (noise_enable == 'train')
+
+            print('noisy training output') if add_noise else print('noise-free training output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+                if add_noise:
+                    mag[idx] += np.random.normal(0.0001, noise_std)
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initialization')
+
+            if self.restart:
+                self.minirestart()
+                print('restarted')
+            else:
+                print('skip restarting..')
+
+        if phase == 'test':
+
+            print('p1 in test & fast:', self.p1)
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            # noise parameters
+
+            noise_enable = params.get('noise_enable', 'none')
+            noise_std = params.get('noise_std', 0.0)
+        
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            # determine if the noise will be added
+
+            add_noise = (noise_enable == 'both') or (noise_enable == 'test')
+
+            print('noisy testing output') if add_noise else print('noise-free testing output')
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                self.evolve_fast(self.f0,theta)
+                mag[idx] = self.get_m_fast()
+
+                if add_noise:
+                    mag[idx] += np.random.normal(0.0001, noise_std)
+
+            # if initialize:
+            #     self.initialize()
+            #     print('initialized')
+            # else:
+            #     print('skip initialization')
+
+            if self.restart:
+                self.minirestart()
+                print('restarted')
+            else:
+                print('skip restarting..')
+        
+        return mag
+    
+    def gen_signal_slow_delayed_feedback(self, K_s, params, *args,**kwargs):  
+
+        # determine the phase of machine learning
+        warmup_samples = params.get('warmup_sample', 100)
+        train_samples = params.get('train_sample', 2000)
+        test_samples = params.get('test_sample', 1000)
+
+        # Set the Johnson noise
+        johnson_noise = params.get('johnson_noise', False)
+        if johnson_noise == True:
+            seed_johnson_noise = params.get('seed_johnson_noise', None)
+            print('seed_johnson_noise:', seed_johnson_noise)
+            rng_johnson = np.random.default_rng(seed_johnson_noise)
+            mean_johnson_noise = params.get('mean_johnson_noise', 0.000)
+            print('mean_johnson_noise:', mean_johnson_noise)
+            std_johnson_noise = params.get('std_johnson_noise', 0.00001)
+            print('std_johnson_noise:', std_johnson_noise)
+
+        # Set the thermal fluctuation noise
+        thermal_noise = params.get('thermal_noise', False)
+        if thermal_noise == True:
+            lambda_ou = params.get('lambda_ou', 1.0) # regression rate
+            print('lambda_ou:', lambda_ou)
+            sigma_ou = params.get('sigma_ou', 0.1) # noise strength
+            print('sigma_ou:', sigma_ou)
+            seed_thermal_noise = params.get('seed_thermal_noise', None)
+            rng_thermal = np.random.default_rng(seed_thermal_noise)
+
+        if len(K_s) == warmup_samples:
+            phase = 'warmup period'
+        elif len(K_s) == train_samples:
+            phase = 'train period'
+        else:
+            phase = 'test period'
+
+
+
+        print('----------------------')
+        print('current phase:', phase)
+        print('----------------------')
+
+        if phase == 'warmup period':
+            if self.Primep1 is not None:
+                self.p1 = self.Primep1
+            self.p2 = 1 - self.p1
+            print('Initial p1 in warmup period:', self.p1)
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+
+
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
+
+                # set the ou process step
+                dt_ou = theta
+
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
+
+            for idx, j in enumerate(K_s):
+                    self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                    if thermal_noise == True:
+                        self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                    else:
+                        pass
+                    calculate_energy_barriers(self)
+                    self.evolve(self.f0,theta) # update the p1 and p2
+                    if johnson_noise == True:
+                        mag[idx] = self.get_m()
+                        mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+
+                    else:
+                        mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+            
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+
+
+        if phase == 'train period':
+
+            print('Initial p1 in train period:', self.p1)
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+
+
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
+
+                # set the ou process step
+                dt_ou = theta
+
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                if thermal_noise == True:
+                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                else:
+                    pass
+                calculate_energy_barriers(self)
+                self.evolve(self.f0,theta) # update the p1 and p2
+                if johnson_noise == True:
+                    mag[idx] = self.get_m()
+                    mag = mag + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+                else:
+                    mag[idx] = self.get_m() # depends on the updated p1, p2, theta_1, theta_2
+
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+                
+
+            if self.restart:
+                self.minirestart()
+                print('reservoir restarted')
+            else:
+                print('reservoir skip restarting..')
+
+        if phase == 'test period':
+
+            print('Initial p1 in test period:', self.p1)
+
+            theta_T = params['theta']
+            self.k_s = 0
+            T = 1./(self.get_omega_prime()*self.f0)
+            gamma = params['gamma']
+            delay_fb = params['delay_feedback']
+            Nvirt = params['Nvirt']
+
+            theta = theta_T*T
+
+            N = K_s.shape[0]
+            mag = np.zeros(N)
+
+            if thermal_noise == True: # consider thermal fluctuation
+                # pick up the base value of beta_prime in current period
+                base_beta_prime = self.beta_prime
+
+                # set the ou process step
+                dt_ou = theta
+
+                # pregenerate an OU distrubution sequence Tou with the same length as K_s
+                T_ou = np.zeros(N)
+                dW = rng_thermal.normal(0, 1, N)
+                for i in range(1, N):
+                    T_ou[i] = T_ou[i-1] + (-lambda_ou * T_ou[i-1]) * dt_ou + sigma_ou * np.sqrt(dt_ou) * dW[i]
+
+
+            for idx, j in enumerate(K_s):
+                self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+                if thermal_noise == True:
+                    self.beta_prime = base_beta_prime + T_ou[idx] # update the thermal
+                else:
+                    pass
+                calculate_energy_barriers(self)
+                self.evolve(self.f0,theta) # update the p1 and p2
+                if johnson_noise == True:
+                    mag[idx] = self.get_m() + rng_johnson.normal(mean_johnson_noise, std_johnson_noise,1)
+
+                else:
+                    mag[idx] = self.get_m()
+            
+            if thermal_noise == True and johnson_noise == True:
+                print('johnson noise and thermal noise are added')
+            elif thermal_noise == True:
+                print('only thermal noise is added')
+            elif johnson_noise == True:
+                print('only johnson noise is added')
+            else:
+                print('noise-free raw output')
+
+
+            if self.restart:
+                self.minirestart()
+                print('reservoir restarted')
+            else:
+                print('reservoir skip restarting..')
 
         return mag
-
+    
     def gen_trace_fast_delayed_feedback(self,klist,theta,density,params,*args,**kwargs):
 
         theta_step = theta/density
@@ -458,5 +923,46 @@ class spnc_anisotropy:
 
         for idx, j in enumerate(K_s):
             mag[idx] = f(j + gamma*mag[(idx-Nvirt-delay_fb)%N])
+
+        return mag
+
+    def fast_calculate(self, K_s,params,*args,**kwargs):
+        theta_T = params['theta']
+        self.k_s = 0
+        T = 1./(self.get_omega_prime()*self.f0)
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            self.evolve_fast(self.f0,theta)
+            mag[idx] = self.get_m_fast()
+
+        return mag
+    
+    def slow_calculate(self, K_s,params,*args,**kwargs):
+        theta_T = params['theta']
+        self.k_s = 0
+        T = 1./(self.get_omega_prime()*self.f0)
+        gamma = params['gamma']
+        delay_fb = params['delay_feedback']
+        Nvirt = params['Nvirt']
+
+        theta = theta_T*T
+
+        N = K_s.shape[0]
+        mag = np.zeros(N)
+
+        for idx, j in enumerate(K_s):
+            self.k_s = j + gamma*mag[(idx-Nvirt-delay_fb)%N] #Delayed Feedback
+            calculate_energy_barriers(self)
+            self.evolve(self.f0,theta)
+            mag[idx] = self.get_m()
 
         return mag
